@@ -1,0 +1,7 @@
+﻿query {
+  getNumber(
+    input: {"number":123,"text":"321"}
+  ) {
+    number
+  }
+}

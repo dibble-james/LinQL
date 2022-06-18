@@ -1,0 +1,6 @@
+﻿query {
+  float
+  getNumber {
+    number
+  }
+}

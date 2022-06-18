@@ -1,0 +1,7 @@
+﻿query {
+  getNumber(
+    value: "321"
+  ) {
+    number
+  }
+}

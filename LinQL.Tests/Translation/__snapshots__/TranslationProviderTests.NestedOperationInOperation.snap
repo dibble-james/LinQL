@@ -1,0 +1,14 @@
+﻿query {
+  operation(
+    number: 123
+  ) {
+    operation {
+      getNumber(
+        value: "321"
+      ) {
+        number
+      }
+    }
+  }
+  text
+}

@@ -1,0 +1,6 @@
+﻿query {
+  object {
+    number
+    text
+  }
+}

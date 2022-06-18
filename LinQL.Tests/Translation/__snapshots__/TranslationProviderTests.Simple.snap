@@ -1,0 +1,4 @@
+﻿query {
+  number
+  text
+}

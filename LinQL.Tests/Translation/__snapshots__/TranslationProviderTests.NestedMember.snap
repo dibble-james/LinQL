@@ -1,0 +1,6 @@
+﻿query {
+  float
+  nested {
+    number
+  }
+}

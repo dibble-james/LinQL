@@ -1,0 +1,39 @@
+name: Nuget
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: "*"
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get the version
+        id: tag
+        run: |
+          echo "ref: $GITHUB_REF"
+          echo "tag: ${GITHUB_REF/refs\/tags\//}"
+          version=$([[ "$GITHUB_REF" == *"refs/tags/"* ]] && echo ${GITHUB_REF/refs\/tags\//} || echo "1.0.0")
+          echo $version
+          echo ::set-output name=VERSION::$version
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Run Tests
+        run: dotnet test --no-restore
+      - name: Pack
+        run: dotnet pack --no-restore -c release --include-symbols /p:SymbolPackageFormat=snupkg /p:AssemblyVersion=1.0.0.0 /p:Version=${{ steps.tag.outputs.VERSION }}
+      - name: Push
+        if: github.ref_type == 'tag'
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          VERSION: ${{ steps.tag.outputs.VERSION }}
+        run: dotnet nuget push "**/LinQL.$VERSION.nupkg" -s https://api.nuget.org/v3/index.json -k "$NUGET_API_KEY"

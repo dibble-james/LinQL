@@ -1,0 +1,8 @@
+﻿query {
+  float
+  getNumber(
+    value: "123"
+  ) {
+    number
+  }
+}

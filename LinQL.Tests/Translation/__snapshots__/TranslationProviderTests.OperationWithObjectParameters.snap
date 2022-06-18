@@ -1,0 +1,8 @@
+﻿query {
+  float
+  getNumber(
+    input: {"number":0,"text":null}
+  ) {
+    number
+  }
+}
