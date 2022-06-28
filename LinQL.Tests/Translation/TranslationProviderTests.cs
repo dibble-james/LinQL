@@ -101,7 +101,11 @@ public class TranslationProviderTests
     public void RenameOperation() => this.Test<RenamedType, object>(x => x.GetObject());
 
     [Fact]
-    public void SelectInterface() => this.Test<InterfaceRootType, object>(x => x.SimpleType!.Number);
+    public void SimpleSelectInterface() => this.Test<InterfaceRootType, object>(x => x.SimpleType!.Number);
+
+    [Fact]
+    public void SelectInterfaceAsConcreteType()
+        => this.Test<InterfaceRootType, object>(x => (x.SimpleType as SomeOtherSimpleType)!.Float);
 
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
     {
@@ -203,6 +207,8 @@ public class TranslationProviderTests
         public string? Text { get; }
 
         public int Number { get; }
+
+        public float Float { get; }
     }
 
     [OperationType]
