@@ -29,4 +29,8 @@
     <ProjectReference Include="..\LinQL\LinQL.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Translation\__snapshots__\" />
+  </ItemGroup>
+
 </Project>

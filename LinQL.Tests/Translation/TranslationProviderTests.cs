@@ -1,8 +1,10 @@
 namespace LinQL.Tests.Translation;
+using System;
 
 using System.Linq.Expressions;
 using LinQL.Description;
 using LinQL.Translation;
+using Xunit;
 
 public class TranslationProviderTests
 {
@@ -98,6 +100,9 @@ public class TranslationProviderTests
     [Fact]
     public void RenameOperation() => this.Test<RenamedType, object>(x => x.GetObject());
 
+    [Fact]
+    public void SelectInterface() => this.Test<InterfaceRootType, object>(x => x.SimpleType!.Number);
+
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
     {
         var graphExpression = this.target.ToExpression(this.fakeGraph, expression);
@@ -105,7 +110,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class SimpleScalarType
+    private class SimpleScalarType : ISimpleType
     {
         public int Number { get; set; }
 
@@ -184,5 +189,25 @@ public class TranslationProviderTests
         [GraphQLField(Name = "object")]
         [GraphQLOperation()]
         public SimpleScalarType GetObject() => default!;
+    }
+
+    private interface ISimpleType
+    {
+        string? Text { get; }
+
+        int Number { get; }
+    }
+
+    private class SomeOtherSimpleType : ISimpleType
+    {
+        public string? Text { get; }
+
+        public int Number { get; }
+    }
+
+    [OperationType]
+    private class InterfaceRootType
+    {
+        public ISimpleType? SimpleType { get; set; }
     }
 }

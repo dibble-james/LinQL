@@ -43,6 +43,18 @@ public class GraphBuilder<TGraph>
     }
 
     /// <summary>
+    /// Register an interface type.
+    /// </summary>
+    /// <typeparam name="T">The interface type to recognize and deserialize too.</typeparam>
+    /// <param name="knownTypes">Known implementations of the interface.</param>
+    /// <returns>This builder.</returns>
+    public GraphBuilder<TGraph> AddInterfaceType<T>(params Type[] knownTypes)
+    {
+        this.serializerOptions.Converters.Add(new InterfaceJsonDeserializer<T>(knownTypes));
+        return this;
+    }
+
+    /// <summary>
     /// Use an <see cref="HttpClient"/> to access the GraphQL server.
     /// </summary>
     /// <param name="configure">Setup for the <see cref="HttpClient"/>.</param>
