@@ -111,6 +111,14 @@ public class TranslationProviderTests
     public void SelectInterfaceArray()
         => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => new { y.Number, y.Text, y.Float }));
 
+    [Fact]
+    public void SelectInterfaceArrayMultipleTypes()
+        => this.Test<InterfaceRootType, object>(x => new
+        {
+            Types = x.ArrayOfInterfaces.OfType<SimpleScalarType>().Select(y => new { y.Number, y.Text }),
+            OtherTypes = x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => new { y.Number, y.Text, y.Float }),
+        });
+
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
     {
         var graphExpression = this.target.ToExpression(this.fakeGraph, expression);
