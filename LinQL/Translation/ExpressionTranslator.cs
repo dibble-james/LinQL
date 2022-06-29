@@ -11,9 +11,9 @@ using LinQL.Expressions;
 /// </summary>
 public class ExpressionTranslator : ExpressionVisitor
 {
-    private readonly IHaveFields expression;
+    private readonly TypeFieldExpression expression;
 
-    private ExpressionTranslator(IHaveFields root)
+    private ExpressionTranslator(TypeFieldExpression root)
         => this.expression = root;
 
     /// <summary>
@@ -55,12 +55,19 @@ public class ExpressionTranslator : ExpressionVisitor
         _ => base.VisitMethodCall(node),
     };
 
+    /// <inheritdoc/>
+    protected override Expression VisitUnary(UnaryExpression node) => node switch
+    {
+        { NodeType: ExpressionType.TypeAs } => this.TraverseMember(node.Operand),
+        _ => base.VisitUnary(node),
+    };
+
     private Expression VisitLambdas(MethodCallExpression methodCallExpression)
     {
         var parent = methodCallExpression.Object is not null
             ? this.TraverseMember(methodCallExpression.Object)
             : methodCallExpression.Method.IsDefined(typeof(ExtensionAttribute))
-                ? (this.Visit(methodCallExpression.Arguments[0]) as IHaveFields)
+                ? (this.Visit(methodCallExpression.Arguments[0]) as TypeFieldExpression)
                 : this.expression;
 
         var translator = new ExpressionTranslator(parent ?? throw new InvalidOperationException("Not a field expression"));
@@ -74,9 +81,9 @@ public class ExpressionTranslator : ExpressionVisitor
         return methodCallExpression;
     }
 
-    private IHaveFields TraverseMember(Expression member)
+    private TypeFieldExpression TraverseMember(Expression member)
     {
-        var innerExpression = this.Visit(member) as IHaveFields;
+        var innerExpression = this.Visit(member) as TypeFieldExpression;
 
         return innerExpression ?? this.expression;
     }

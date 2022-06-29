@@ -1,7 +1,7 @@
 query {
   simpleType {
     __typename
-    ...on SomeOtherSimpleType {
+    ...on someOtherSimpleType {
       float
     }
   }

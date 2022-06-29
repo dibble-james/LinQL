@@ -10,6 +10,7 @@ public class ScalarFieldExpression : FieldExpression
     /// </summary>
     /// <param name="field">The name of the field.</param>
     /// <param name="fieldType">The return type of the field.</param>
-    public ScalarFieldExpression(string field, Type fieldType)
-        : base(field, fieldType) { }
+    /// <param name="declaringType">The .Net type that field is a member of.</param>
+    public ScalarFieldExpression(string field, Type fieldType, Type declaringType)
+        : base(field, fieldType, declaringType) { }
 }

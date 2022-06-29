@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Translation\__snapshots__\" />
+    <Folder Include="Translation\__snapshots__\__mismatch__\" />
   </ItemGroup>
 
 </Project>
