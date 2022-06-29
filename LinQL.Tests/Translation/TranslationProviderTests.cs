@@ -107,6 +107,10 @@ public class TranslationProviderTests
     public void SelectInterfaceAsConcreteType()
         => this.Test<InterfaceRootType, object>(x => (x.SimpleType as SomeOtherSimpleType)!.Float);
 
+    [Fact]
+    public void SelectInterfaceArray()
+        => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => new { y.Number, y.Text, y.Float }));
+
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
     {
         var graphExpression = this.target.ToExpression(this.fakeGraph, expression);
@@ -215,5 +219,7 @@ public class TranslationProviderTests
     private class InterfaceRootType
     {
         public ISimpleType? SimpleType { get; set; }
+
+        public IEnumerable<ISimpleType> ArrayOfInterfaces { get; set; } = Enumerable.Empty<ISimpleType>();
     }
 }

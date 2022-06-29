@@ -52,6 +52,7 @@ public class ExpressionTranslator : ExpressionVisitor
         { Object: object, Method: var method } when method.IsOperation() => this.TraverseMember(node.Object).WithField(VisitFieldWithArguments(node)),
         { Method: var method } when method.IsOperation() => this.expression.WithField(VisitFieldWithArguments(node)),
         { Arguments: var args } when args.Any(x => x.UnwrapLambdaFromQuote() is not null) => this.VisitLambdas(node),
+        { Method.Name: nameof(Enumerable.OfType) } => this.TraverseExtensionMethodCall(node).WithField(new SpreadExpression(node.Method.GetGenericArguments()[0])),
         _ => base.VisitMethodCall(node),
     };
 
@@ -67,10 +68,10 @@ public class ExpressionTranslator : ExpressionVisitor
         var parent = methodCallExpression.Object is not null
             ? this.TraverseMember(methodCallExpression.Object)
             : methodCallExpression.Method.IsDefined(typeof(ExtensionAttribute))
-                ? (this.Visit(methodCallExpression.Arguments[0]) as TypeFieldExpression)
+                ? this.Visit(methodCallExpression.Arguments[0]) as TypeFieldExpression
                 : this.expression;
 
-        var translator = new ExpressionTranslator(parent ?? throw new InvalidOperationException("Not a field expression"));
+        var translator = new ExpressionTranslator(parent ?? throw new InvalidOperationException("Not a TypeFieldExpression"));
 
         var lamdas = methodCallExpression.Arguments
             .Select(x => x.UnwrapLambdaFromQuote())
@@ -86,6 +87,13 @@ public class ExpressionTranslator : ExpressionVisitor
         var innerExpression = this.Visit(member) as TypeFieldExpression;
 
         return innerExpression ?? this.expression;
+    }
+
+    private TypeFieldExpression TraverseExtensionMethodCall(MethodCallExpression member)
+    {
+        var innerExpression = base.VisitMethodCall(member) as MethodCallExpression;
+
+        return innerExpression?.Arguments[0] as TypeFieldExpression ?? this.expression;
     }
 
     private static TypeFieldExpression VisitFieldWithArguments(MethodCallExpression node)
