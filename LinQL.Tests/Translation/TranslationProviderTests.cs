@@ -104,6 +104,10 @@ public class TranslationProviderTests
     public void SimpleSelectInterface() => this.Test<InterfaceRootType, object>(x => x.SimpleType!.Number);
 
     [Fact]
+    public void SelectInterfaceCastConcreteType()
+        => this.Test<InterfaceRootType, object>(x => ((SomeOtherSimpleType)x.SimpleType!)!.Float);
+
+    [Fact]
     public void SelectInterfaceAsConcreteType()
         => this.Test<InterfaceRootType, object>(x => (x.SimpleType as SomeOtherSimpleType)!.Float);
 

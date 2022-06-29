@@ -60,6 +60,7 @@ public class ExpressionTranslator : ExpressionVisitor
     protected override Expression VisitUnary(UnaryExpression node) => node switch
     {
         { NodeType: ExpressionType.TypeAs } => this.TraverseMember(node.Operand),
+        { NodeType: ExpressionType.Convert } => this.TraverseMember(node.Operand),
         _ => base.VisitUnary(node),
     };
 
