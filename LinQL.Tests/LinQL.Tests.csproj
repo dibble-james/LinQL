@@ -33,4 +33,19 @@
     <Folder Include="Translation\__snapshots__\__mismatch__\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="JsonFiles.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>JsonFiles.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="JsonFiles.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>JsonFiles.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

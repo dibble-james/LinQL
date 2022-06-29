@@ -1,0 +1,10 @@
+[
+  {
+    "__typename": "ConcreteClass1",
+    "text": "I am a concrete type"
+  },
+  {
+    "__typename": "ConcreteClass2",
+    "number": 87
+  }
+]

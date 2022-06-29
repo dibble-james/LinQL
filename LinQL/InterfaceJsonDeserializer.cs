@@ -21,7 +21,14 @@ public class InterfaceJsonDeserializer<T> : JsonConverter<T>
         => this.knownTypes = knownTypes.ToDictionary(x => x.GetCustomAttribute<GraphQLTypeAttribute>()?.Name ?? x.Name);
 
     /// <inheritdoc/>
-    public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override bool HandleNull => true;
+
+    /// <inheritdoc/>
+    public override bool CanConvert(Type typeToConvert)
+        => typeToConvert.Equals(typeof(T));
+
+    /// <inheritdoc/>
+    public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
@@ -46,7 +53,7 @@ public class InterfaceJsonDeserializer<T> : JsonConverter<T>
             return @interface;
         }
 
-        return default;
+        return default!;
     }
 
     /// <inheritdoc/>
