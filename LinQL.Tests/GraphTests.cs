@@ -1,4 +1,4 @@
-namespacenamespace LinQL.Tests;
+namespace LinQL.Tests;
 
 using LinQL;
 
