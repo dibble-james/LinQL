@@ -1,0 +1,9 @@
+﻿query {
+  arrayOfInterfaces {
+    __typename
+    ...on someOtherSimpleType {
+      float
+    }
+    text
+  }
+}

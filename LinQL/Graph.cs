@@ -3,21 +3,33 @@ namespace LinQL;
 using LinQL.Translation;
 using LinQL.Expressions;
 using FastExpressionCompiler;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// The base class for defining GraphQL graphs.
 /// </summary>
 public abstract class Graph
 {
+    private static readonly Action<ILogger, string, Exception?> SendingGraphQLRequest = LoggerMessage.Define<string>(
+        LogLevel.Debug,
+        new EventId(1, nameof(SendingGraphQLRequest)),
+        "Sending GraphQL query: {Query}");
+    private static readonly Action<ILogger, string[], Exception?> FailedGraphQLResponse = LoggerMessage.Define<string[]>(
+        LogLevel.Error,
+        new EventId(2, nameof(FailedGraphQLResponse)),
+        "GrapQL response contains errors: {Errors}");
+
+    private readonly ILogger<Graph> logger;
     private readonly IGraphQLConnection connection;
 
     /// <summary>
     /// Create a new Graph.
     /// </summary>
+    /// <param name="logger">Access to a logger.</param>
     /// <param name="connection">How to query the server.</param>
     /// <param name="queryTranslator">Expression converter.</param>
-    protected Graph(IGraphQLConnection connection, IQueryTranslator queryTranslator)
-        => (this.connection, this.QueryTranslator) = (connection, queryTranslator);
+    protected Graph(ILogger<Graph> logger, IGraphQLConnection connection, IQueryTranslator queryTranslator)
+        => (this.logger, this.connection, this.QueryTranslator) = (logger, connection, queryTranslator);
 
     /// <summary>
     /// Gets the <see cref="IQueryTranslator"/> used by this graph.
@@ -85,7 +97,14 @@ public abstract class Graph
     /// <returns>The query result.</returns>
     public async Task<GraphQLResponse<TData>> FromRawGraphQLToResult<TData>(string query, IReadOnlyDictionary<string, object>? variables = null, CancellationToken cancellationToken = default)
     {
+        SendingGraphQLRequest(this.logger, query, null);
+
         var response = await this.connection.SendRequest<TData>(new GraphQLRequest(this, query, variables), cancellationToken).ConfigureAwait(false);
+
+        if (response.Errors?.Any() == true)
+        {
+            FailedGraphQLResponse(this.logger, response.Errors.Select(x => x.ToString()).ToArray(), null);
+        }
 
         return response;
     }

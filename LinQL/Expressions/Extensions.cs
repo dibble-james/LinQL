@@ -28,13 +28,16 @@ internal static class Extensions
 
     public static FieldExpression ToField(this MemberInfo member) => member switch
     {
-        PropertyInfo prop when prop.PropertyType.IsScalar() => new ScalarFieldExpression(member.GetFieldName(), prop.PropertyType),
-        FieldInfo field when field.FieldType.IsScalar() => new ScalarFieldExpression(member.GetFieldName(), field.FieldType),
-        MethodInfo method when method.IsOperation() => new TypeFieldExpression(member.GetFieldName(), method.ReturnType),
-        PropertyInfo prop => new TypeFieldExpression(prop.GetFieldName(), prop.PropertyType),
-        FieldInfo field => new TypeFieldExpression(field.GetFieldName(), field.FieldType),
+        PropertyInfo prop when prop.PropertyType.IsScalar() => new ScalarFieldExpression(member.GetFieldName(), prop.PropertyType, member.DeclaringType!),
+        FieldInfo field when field.FieldType.IsScalar() => new ScalarFieldExpression(member.GetFieldName(), field.FieldType, member.DeclaringType!),
+        MethodInfo method when method.IsOperation() => new TypeFieldExpression(member.GetFieldName(), method.ReturnType, member.DeclaringType!),
+        PropertyInfo prop => new TypeFieldExpression(prop.GetFieldName(), prop.PropertyType, member.DeclaringType!),
+        FieldInfo field => new TypeFieldExpression(field.GetFieldName(), field.FieldType, member.DeclaringType!),
         _ => throw new NotSupportedException(),
     };
+
+    public static string GetTypeName(this Type member)
+        => member.GetCustomAttribute<GraphQLFieldAttribute>()?.Name ?? member.Name.ToCamelCase();
 
     public static string GetFieldName(this MemberInfo member)
         => member.GetCustomAttribute<GraphQLFieldAttribute>()?.Name ?? member.Name.ToCamelCase();

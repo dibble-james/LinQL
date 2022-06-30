@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 /// <summary>
 /// An expression that defines access to a field that can have child fields.
 /// </summary>
-public class TypeFieldExpression : FieldExpression, IHaveFields
+public class TypeFieldExpression : FieldExpression
 {
     private readonly Dictionary<string, Expression> fields = new();
     private readonly Dictionary<string, object?> arguments = new();
@@ -15,8 +15,9 @@ public class TypeFieldExpression : FieldExpression, IHaveFields
     /// </summary>
     /// <param name="field">The field name.</param>
     /// <param name="fieldType">The return type of the field.</param>
-    public TypeFieldExpression(string field, Type fieldType)
-        : base(field, fieldType) { }
+    /// <param name="declaringType">The .Net type that field is a member of.</param>
+    public TypeFieldExpression(string field, Type fieldType, Type declaringType)
+        : base(field, fieldType, declaringType) { }
 
     /// <summary>
     /// Gets the arguments to be passed to the field on the server.

@@ -1,6 +1,7 @@
 namespace LinQL.Tests;
 
 using LinQL;
+using Microsoft.Extensions.Logging;
 
 public class GraphTests
 {
@@ -30,7 +31,7 @@ public class GraphTests
 
     private class StubGraph : Graph
     {
-        public StubGraph(IGraphQLConnection connection) : base(connection, null!)
+        public StubGraph(IGraphQLConnection connection) : base(Substitute.For<ILogger<Graph>>(), connection, null!)
         {
         }
     }

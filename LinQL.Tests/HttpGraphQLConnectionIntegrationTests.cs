@@ -3,6 +3,7 @@ namespace LinQL.Tests;
 using LinQL.Description;
 using LinQL.Translation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 public class HttpGraphQLConnectionIntegrationTests
 {
@@ -25,7 +26,7 @@ public class HttpGraphQLConnectionIntegrationTests
     private class StarWarsGraph : Graph
     {
         public StarWarsGraph(IGraphQLConnection connection, IQueryTranslator queryTranslator)
-            : base(connection, queryTranslator)
+            : base(Substitute.For<ILogger<Graph>>(), connection, queryTranslator)
         {
         }
 

@@ -1,8 +1,11 @@
 namespace LinQL.Tests.Translation;
+using System;
 
 using System.Linq.Expressions;
 using LinQL.Description;
 using LinQL.Translation;
+using Microsoft.Extensions.Logging;
+using Xunit;
 
 public class TranslationProviderTests
 {
@@ -10,7 +13,7 @@ public class TranslationProviderTests
     private readonly Graph fakeGraph;
 
     public TranslationProviderTests()
-        => (this.target, this.fakeGraph) = (new TranslationProvider(), Substitute.For<Graph>(Substitute.For<IGraphQLConnection>(), this.target));
+        => (this.target, this.fakeGraph) = (new TranslationProvider(), Substitute.For<Graph>(Substitute.For<ILogger<Graph>>(), Substitute.For<IGraphQLConnection>(), this.target));
 
     [Fact]
     public void Simple()
@@ -77,9 +80,6 @@ public class TranslationProviderTests
     }
 
     [Fact]
-    public void SelectAllFields() => this.Test<SimpleScalarType, object>(x => x);
-
-    [Fact]
     public void SelectAllNestedFields() => this.Test<NestedClassType, object>(x => x.Nested!);
 
     [Fact]
@@ -98,6 +98,53 @@ public class TranslationProviderTests
     [Fact]
     public void RenameOperation() => this.Test<RenamedType, object>(x => x.GetObject());
 
+    [Fact]
+    public void SimpleSelectInterface() => this.Test<InterfaceRootType, object>(x => x.SimpleType!.Number);
+
+    [Fact]
+    public void SelectInterfaceCastConcreteType()
+        => this.Test<InterfaceRootType, object>(x => ((SomeOtherSimpleType)x.SimpleType!)!.Float);
+
+    [Fact]
+    public void SelectAllFieldsInterfaceCastConcreteType()
+        => this.Test<InterfaceRootType, object>(x => (SomeOtherSimpleType)x.SimpleType!);
+
+    [Fact]
+    public void SelectInterfaceAsConcreteType()
+        => this.Test<InterfaceRootType, object>(x => (x.SimpleType as SomeOtherSimpleType)!.Float);
+
+    [Fact]
+    public void SelectAllFieldsInterfaceAsConcreteType()
+        => this.Test<InterfaceRootType, object>(x => (x.SimpleType as SomeOtherSimpleType)!);
+
+    [Fact]
+    public void SelectInterfaceArray()
+        => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => new { y.Number, y.Text, y.Float }));
+
+    [Fact]
+    public void SelectInterfaceArrayAllFieldsOnType()
+        => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>());
+
+    [Fact]
+    public void SelectInterfaceArrayCastConcreteType()
+        => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.Select(y => new { ((SomeOtherSimpleType)y).Float, y.Text }));
+
+    [Fact]
+    public void SelectInterfaceArrayAsConcreteType()
+        => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.Select(y => new { (y as SomeOtherSimpleType)!.Float, y.Text }));
+
+    [Fact]
+    public void SelectInterfaceArrayAsConcreteTypeWithOperation()
+        => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.Select(y => new { Number = (y as SomeOtherSimpleType)!.Operation.GetNumber("123"), y.Text }));
+
+    [Fact]
+    public void SelectInterfaceArrayMultipleTypes()
+        => this.Test<InterfaceRootType, object>(x => new
+        {
+            Types = x.ArrayOfInterfaces.OfType<SimpleScalarType>().Select(y => new { y.Number, y.Text }),
+            OtherTypes = x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => new { y.Number, y.Text, y.Float }),
+        });
+
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
     {
         var graphExpression = this.target.ToExpression(this.fakeGraph, expression);
@@ -105,7 +152,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class SimpleScalarType
+    private class SimpleScalarType : ISimpleType
     {
         public int Number { get; set; }
 
@@ -184,5 +231,31 @@ public class TranslationProviderTests
         [GraphQLField(Name = "object")]
         [GraphQLOperation()]
         public SimpleScalarType GetObject() => default!;
+    }
+
+    private interface ISimpleType
+    {
+        string? Text { get; }
+
+        int Number { get; }
+    }
+
+    private class SomeOtherSimpleType : ISimpleType
+    {
+        public string? Text { get; }
+
+        public int Number { get; }
+
+        public float Float { get; }
+
+        public OperationWithScalarParametersType Operation { get; } = default!;
+    }
+
+    [OperationType]
+    private class InterfaceRootType
+    {
+        public ISimpleType? SimpleType { get; set; }
+
+        public IEnumerable<ISimpleType> ArrayOfInterfaces { get; set; } = Enumerable.Empty<ISimpleType>();
     }
 }
