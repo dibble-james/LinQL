@@ -3,6 +3,7 @@ namespace LinQL.Tests;
 using LinQL.Description;
 using LinQL.Translation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 public class HttpGraphQLConnectionIntegrationTests
 {

@@ -101,7 +101,7 @@ public abstract class Graph
 
         var response = await this.connection.SendRequest<TData>(new GraphQLRequest(this, query, variables), cancellationToken).ConfigureAwait(false);
 
-        if (response.Errors.Any())
+        if (response.Errors?.Any() == true)
         {
             FailedGraphQLResponse(this.logger, response.Errors.Select(x => x.ToString()).ToArray(), null);
         }

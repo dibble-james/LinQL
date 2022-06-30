@@ -4,6 +4,7 @@ using System;
 using System.Linq.Expressions;
 using LinQL.Description;
 using LinQL.Translation;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 public class TranslationProviderTests
@@ -12,7 +13,7 @@ public class TranslationProviderTests
     private readonly Graph fakeGraph;
 
     public TranslationProviderTests()
-        => (this.target, this.fakeGraph) = (new TranslationProvider(), Substitute.For<Graph>(Substitute.For<IGraphQLConnection>(), this.target));
+        => (this.target, this.fakeGraph) = (new TranslationProvider(), Substitute.For<Graph>(Substitute.For<ILogger<Graph>>(), Substitute.For<IGraphQLConnection>(), this.target));
 
     [Fact]
     public void Simple()

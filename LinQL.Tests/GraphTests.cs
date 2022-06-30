@@ -1,6 +1,7 @@
 namespace LinQL.Tests;
 
 using LinQL;
+using Microsoft.Extensions.Logging;
 
 public class GraphTests
 {
