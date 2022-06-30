@@ -25,7 +25,7 @@ public class HttpGraphQLConnectionIntegrationTests
     private class StarWarsGraph : Graph
     {
         public StarWarsGraph(IGraphQLConnection connection, IQueryTranslator queryTranslator)
-            : base(connection, queryTranslator)
+            : base(Substitute.For<ILogger<Graph>>(), connection, queryTranslator)
         {
         }
 
