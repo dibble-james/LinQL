@@ -59,8 +59,8 @@ public class ExpressionTranslator : ExpressionVisitor
     /// <inheritdoc/>
     protected override Expression VisitUnary(UnaryExpression node) => node switch
     {
-        { NodeType: ExpressionType.TypeAs } => this.TraverseMember(node.Operand),
-        { NodeType: ExpressionType.Convert } => this.TraverseMember(node.Operand),
+        { NodeType: ExpressionType.TypeAs or ExpressionType.Convert } t when !t.Type.Equals(this.expression.Type)
+            => this.TraverseMember(node.Operand).WithField(new SpreadExpression(node.Type)),
         _ => base.VisitUnary(node),
     };
 

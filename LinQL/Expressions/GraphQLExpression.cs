@@ -16,7 +16,7 @@ public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
     /// <param name="rootOperation">The root operation to query against.</param>
     /// <param name="originalQuery">The expression this will be based on.</param>
     public GraphQLExpression(Graph graph, RootOperation rootOperation, Expression<Func<TRoot, TResult>> originalQuery)
-        : base(rootOperation.Name, typeof(TRoot), typeof(TRoot))
+        : base(rootOperation.Name, typeof(TResult), typeof(TRoot))
         => (this.graph, this.RootOperation, this.OriginalQuery) = (graph, rootOperation, originalQuery);
 
     /// <summary>

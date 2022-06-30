@@ -26,16 +26,7 @@ public class TypeFieldExpression : FieldExpression
 
     /// <inheritdoc/>
     public FieldExpression WithField(FieldExpression field)
-    {
-        if (!this.Type.Equals(field.DeclaringType) && field.DeclaringType.IsAssignableTo(this.Type))
-        {
-            var spread = new SpreadExpression(field.DeclaringType);
-            spread = this.fields.GetOrAdd(spread.FieldName, () => spread);
-            return spread.WithField(field);
-        }
-
-        return this.fields.GetOrAdd(field.FieldName, () => field);
-    }
+        => this.fields.GetOrAdd(field.FieldName, () => field);
 
     /// <summary>
     /// Add an argument to the field.

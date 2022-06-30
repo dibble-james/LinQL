@@ -1,6 +1,5 @@
 namespace LinQL.Tests;
 
-using System.Text;
 using System.Text.Json;
 
 public class InterfaceJsonDeserializerTests
