@@ -6,6 +6,17 @@
 
 [![NuGet Badge](https://buildstats.info/nuget/LinQL)](https://www.nuget.org/packages/LinQL/)
 
+### Supported Operations
+- [x] Queries
+- [x] Mutations
+- [x] Input Types
+- [x] Arguments
+- [x] Interfaces
+#### Coming soon
+- [ ] Unions
+- [ ] Subscriptions
+- [ ] Auto-generating client via introspection
+
 ### Getting Started
 
 1. Install the Nuget package
