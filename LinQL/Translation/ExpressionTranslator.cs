@@ -49,6 +49,7 @@ public class ExpressionTranslator : ExpressionVisitor
     /// <inheritdoc/>
     protected override Expression VisitMethodCall(MethodCallExpression node) => node switch
     {
+        var m when m.IsOn() => this.TraverseOn(node),
         { Object: object, Method: var method } when method.IsOperation() => this.TraverseMember(node.Object).WithField(VisitFieldWithArguments(node)),
         { Method: var method } when method.IsOperation() => this.expression.WithField(VisitFieldWithArguments(node)),
         { Arguments: var args } when args.Any(x => x.UnwrapLambdaFromQuote() is not null) => this.VisitLambdas(node),
@@ -66,11 +67,13 @@ public class ExpressionTranslator : ExpressionVisitor
 
     private Expression VisitLambdas(MethodCallExpression methodCallExpression)
     {
-        var parent = methodCallExpression.Object is not null
-            ? this.TraverseMember(methodCallExpression.Object)
-            : methodCallExpression.Method.IsDefined(typeof(ExtensionAttribute))
-                ? this.Visit(methodCallExpression.Arguments[0]) as TypeFieldExpression
-                : this.expression;
+        var parent = methodCallExpression switch
+        {
+            { Object: not null } => this.TraverseMember(methodCallExpression.Object),
+            var m when m.IsOn() => this.TraverseOn(methodCallExpression),
+            { Method: var m } when m.IsDefined(typeof(ExtensionAttribute)) => this.Visit(methodCallExpression.Arguments[0]) as TypeFieldExpression,
+            _ => this.expression,
+        };
 
         var translator = new ExpressionTranslator(parent ?? throw new InvalidOperationException("Not a TypeFieldExpression"));
 
@@ -95,6 +98,21 @@ public class ExpressionTranslator : ExpressionVisitor
         var innerExpression = base.VisitMethodCall(member) as MethodCallExpression;
 
         return innerExpression?.Arguments[0] as TypeFieldExpression ?? this.expression;
+    }
+
+    private TypeFieldExpression TraverseOn(MethodCallExpression member)
+    {
+        var field = new SpreadExpression(member.Method.GetGenericArguments()[1]);
+        var translator = new ExpressionTranslator(field);
+        translator.Visit(member.Arguments[1]);
+
+        var parent = member.Arguments[0] is MethodCallExpression m && m.IsOn()
+            ? this.TraverseOn(m)
+            : this.TraverseMember(member.Arguments[0]);
+
+        parent.WithField(field);
+
+        return parent;
     }
 
     private static TypeFieldExpression VisitFieldWithArguments(MethodCallExpression node)

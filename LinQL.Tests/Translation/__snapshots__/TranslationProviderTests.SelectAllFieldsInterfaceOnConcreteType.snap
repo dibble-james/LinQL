@@ -1,0 +1,11 @@
+query {
+  simpleType {
+    __typename
+      ...on simpleScalarType {
+      text
+    }
+    ...on someOtherSimpleType {
+      number
+    }
+  }
+}

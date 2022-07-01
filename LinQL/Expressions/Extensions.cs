@@ -48,4 +48,8 @@ internal static class Extensions
         => (expression is UnaryExpression unary && expression.NodeType == ExpressionType.Quote
             ? unary.Operand
             : expression) as LambdaExpression;
+
+    public static bool IsOn(this MethodCallExpression method)
+        => method.Method.DeclaringType?.Equals(typeof(SelectExtentions)) == true
+            && method.Method.Name == nameof(SelectExtentions.On);
 }

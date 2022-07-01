@@ -1,6 +1,5 @@
 namespace LinQL.Tests.Translation;
 using System;
-
 using System.Linq.Expressions;
 using LinQL.Description;
 using LinQL.Translation;
@@ -118,6 +117,12 @@ public class TranslationProviderTests
         => this.Test<InterfaceRootType, object>(x => (x.SimpleType as SomeOtherSimpleType)!);
 
     [Fact]
+    public void SelectAllFieldsInterfaceOnConcreteType()
+        => this.Test<InterfaceRootType, object>(x =>
+            x.SimpleType.On((SomeOtherSimpleType y) => y.Number.ToString()!)
+                        .On((SimpleScalarType y) => y.Text));
+
+    [Fact]
     public void SelectInterfaceArray()
         => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => new { y.Number, y.Text, y.Float }));
 
@@ -136,6 +141,12 @@ public class TranslationProviderTests
     [Fact]
     public void SelectInterfaceArrayAsConcreteTypeWithOperation()
         => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.Select(y => new { Number = (y as SomeOtherSimpleType)!.Operation.GetNumber("123"), y.Text }));
+
+    [Fact]
+    public void SelectInterfaceArrayOnConcreteType()
+        => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces
+            .Select(y => y.On((SimpleScalarType z) => z.Text)
+                          .On((SomeOtherSimpleType z) => z.Float.ToString()!)));
 
     [Fact]
     public void SelectInterfaceArrayMultipleTypes()
