@@ -36,6 +36,21 @@ public class ExpressionTranslator : ExpressionVisitor
         return root;
     }
 
+    /// <summary>
+    /// Add an extra field to the selection.
+    /// </summary>
+    /// <typeparam name="TRoot">The root operation to start the query from.</typeparam>
+    /// <typeparam name="TData">The result of the query.</typeparam>
+    /// <param name="expression">The original expression.</param>
+    /// <param name="include">The field to include.</param>
+    /// <returns>The translated expression.</returns>
+    public static GraphQLExpression<TRoot, TData> Include<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, Expression<Func<TRoot, object>> include)
+    {
+        var translator = new ExpressionTranslator(expression);
+        translator.Visit(include.Body);
+        return expression;
+    }
+
     /// <inheritdoc/>
     protected override Expression VisitMember(MemberExpression node) => node switch
     {

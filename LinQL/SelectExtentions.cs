@@ -2,6 +2,7 @@ namespace LinQL;
 
 using System.Linq.Expressions;
 using FastExpressionCompiler;
+using LinQL.Expressions;
 using OneOf;
 
 /// <summary>

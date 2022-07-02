@@ -14,6 +14,10 @@ public class TranslationProvider : IQueryTranslator
         => ExpressionTranslator.Translate(graph, query);
 
     /// <inheritdoc/>
+    public GraphQLExpression<TRoot, TData> Include<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, Expression<Func<TRoot, object>> include)
+        => ExpressionTranslator.Include(expression, include);
+
+    /// <inheritdoc/>
     public string ToQueryString<TRoot, TData>(GraphQLExpression<TRoot, TData> query)
     {
         var expressionTranslator = new GraphQLExpressionTranslator<TRoot, TData>();

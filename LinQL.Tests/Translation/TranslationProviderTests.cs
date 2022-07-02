@@ -2,6 +2,7 @@ namespace LinQL.Tests.Translation;
 using System;
 using System.Linq.Expressions;
 using LinQL.Description;
+using LinQL.Expressions;
 using LinQL.Translation;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -12,7 +13,14 @@ public class TranslationProviderTests
     private readonly Graph fakeGraph;
 
     public TranslationProviderTests()
-        => (this.target, this.fakeGraph) = (new TranslationProvider(), Substitute.For<Graph>(Substitute.For<ILogger<Graph>>(), Substitute.For<IGraphQLConnection>(), this.target));
+    {
+        this.target = new TranslationProvider();
+        this.fakeGraph = Substitute.For<Graph>(
+            Substitute.For<ILogger<Graph>>(),
+            Substitute.For<IGraphQLConnection>(),
+            this.target);
+        this.fakeGraph.QueryTranslator.Returns(this.target);
+    }
 
     [Fact]
     public void Simple()
@@ -155,6 +163,18 @@ public class TranslationProviderTests
             Types = x.ArrayOfInterfaces.OfType<SimpleScalarType>().Select(y => new { y.Number, y.Text }),
             OtherTypes = x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => new { y.Number, y.Text, y.Float }),
         });
+
+    [Fact]
+    public void BasicInclude()
+        => this.TestInclude<NestedOperationType, object>(x => x.Operation, x => x.Include(y => y.Operation.GetNumber("123")));
+
+    private void TestInclude<TRoot, TData>(Expression<Func<TRoot, TData>> expression, Action<GraphQLExpression<TRoot, TData>> includes)
+    {
+        var graphExpression = this.target.ToExpression(this.fakeGraph, expression);
+        includes(graphExpression);
+
+        Snapshot.Match(this.target.ToQueryString(graphExpression));
+    }
 
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
     {

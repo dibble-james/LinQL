@@ -34,7 +34,7 @@ public abstract class Graph
     /// <summary>
     /// Gets the <see cref="IQueryTranslator"/> used by this graph.
     /// </summary>
-    public IQueryTranslator QueryTranslator { get; }
+    public virtual IQueryTranslator QueryTranslator { get; }
 
     /// <summary>
     /// Run a <see cref="GraphQLExpression{TRoot, TResult}"/>.
