@@ -7,8 +7,8 @@ using System.Linq.Expressions;
 /// </summary>
 public class TypeFieldExpression : FieldExpression
 {
-    private readonly Dictionary<string, Expression> fields = new();
-    private readonly Dictionary<string, object?> arguments = new();
+    private Dictionary<string, Expression> fields = new();
+    private Dictionary<string, object?> arguments = new();
 
     /// <summary>
     /// Create a new <see cref="TypeFieldExpression"/>.
@@ -39,6 +39,13 @@ public class TypeFieldExpression : FieldExpression
         this.arguments.Add(name, argument);
         return this;
     }
+
+    internal TypeFieldExpression ReplaceType(Type type)
+        => new(this.FieldName, type, this.DeclaringType)
+        {
+            fields = this.fields,
+            arguments = this.arguments
+        };
 
     /// <inheritdoc />
     protected override Expression VisitChildren(ExpressionVisitor visitor)
