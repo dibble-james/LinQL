@@ -59,9 +59,9 @@ public class TypeFieldExpression : FieldExpression
         }
         else
         {
-            foreach (var scalar in this.Type.GetProperties().Where(p => p.PropertyType.IsScalar()))
+            foreach (var scalar in this.Type.GetAllScalars())
             {
-                visitor.Visit(scalar.ToField());
+                visitor.Visit(scalar);
             }
         }
 

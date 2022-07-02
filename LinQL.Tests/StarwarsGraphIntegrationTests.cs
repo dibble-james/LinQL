@@ -26,8 +26,8 @@ public class StarwarsGraphIntegrationTests
     [Fact]
     public async Task GetAllPeople()
     {
-        var result = await this.client.Query.Select(x => x.GetAllPeople(null, null, null, null).People.Select(x => x))
-            .Include(p => p.AllPeople.People.Select(x => x.GetFilmsConnection(null, null, null, null).Films.Select(x => x)))
+        var result = await this.client.Query.Select(x => x.GetAllPeople(null, null, null, null).People.Select(x => x.SelectAll()))
+            .Include(p => p.AllPeople.People.Select(x => x.GetFilmsConnection(null, null, null, null).Films.Select(x => x.SelectAll())))
             .Execute();
 
         result.Any().Should().BeTrue();

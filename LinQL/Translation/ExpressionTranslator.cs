@@ -69,6 +69,7 @@ public class ExpressionTranslator : ExpressionVisitor
         { Method: var method } when method.IsOperation() => this.expression.WithField(VisitFieldWithArguments(node)),
         { Method.Name: nameof(Enumerable.OfType) } => this.TraverseExtensionMethodCall(node).WithField(new SpreadExpression(node.Method.GetGenericArguments()[0])),
         { Method.Name: nameof(Enumerable.Select) } => this.TraverseSelect(node),
+        { Method.Name: nameof(SelectExtentions.SelectAll), Method.DeclaringType.Name: nameof(SelectExtentions) } => this.TraverseSelectAll(node),
         { Arguments: var args } when args.Any(x => x.UnwrapLambdaFromQuote() is not null) => this.VisitLambdas(node),
         _ => base.VisitMethodCall(node),
     };
@@ -127,6 +128,22 @@ public class ExpressionTranslator : ExpressionVisitor
         var field = this.TraverseMember(member.Arguments[0]);
         var translator = new ExpressionTranslator(field);
         translator.Visit(member.Arguments[1]);
+
+        return field.ReplaceType(member.Method.ReturnType);
+    }
+
+    private TypeFieldExpression TraverseSelectAll(MethodCallExpression member)
+    {
+        var field = this.TraverseMember(member.Arguments[0]);
+
+        var type = typeof(IEnumerable<>).IsAssignableFromGenericInterface(field.Type)
+            ? field.Type.GetGenericArguments()[0]
+            : field.Type;
+
+        foreach (var scalar in type.GetAllScalars())
+        {
+            field.WithField(scalar);
+        }
 
         return field.ReplaceType(member.Method.ReturnType);
     }

@@ -53,4 +53,12 @@ public static class SelectExtentions
 
         return that.AsT0;
     }
+
+    /// <summary>
+    /// Instruct the query to get all scalar fields on this type.
+    /// </summary>
+    /// <typeparam name="T">The type to select from.</typeparam>
+    /// <param name="that">The type.</param>
+    /// <returns>The type.</returns>
+    public static T SelectAll<T>(this T that) => that;
 }

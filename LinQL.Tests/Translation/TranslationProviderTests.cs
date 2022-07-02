@@ -90,7 +90,13 @@ public class TranslationProviderTests
     public void SelectAllNestedFields() => this.Test<NestedClassType, object>(x => x.Nested!);
 
     [Fact]
+    public void SelectAllWithHelperNestedFields() => this.Test<NestedClassType, object>(x => x.Nested!.SelectAll());
+
+    [Fact]
     public void SelectAllNestedFieldsFromOperation() => this.Test<NestedOperationType, object>(x => x.Operation.GetNumber("123")!);
+
+    [Fact]
+    public void SelectAllNestedFieldsWithHelperFromOperation() => this.Test<NestedOperationType, object>(x => x.Operation.GetNumber("123")!.SelectAll());
 
     [Fact]
     public void SelectFromArray() => this.Test<NestedArrayType, object>(x => x.Types.Select(x => new
@@ -162,6 +168,14 @@ public class TranslationProviderTests
         {
             Types = x.ArrayOfInterfaces.OfType<SimpleScalarType>().Select(y => new { y.Number, y.Text }),
             OtherTypes = x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => new { y.Number, y.Text, y.Float }),
+        });
+
+    [Fact]
+    public void SelectInterfaceArrayMultipleTypesSelectAll()
+        => this.Test<InterfaceRootType, object>(x => new
+        {
+            Types = x.ArrayOfInterfaces.OfType<SimpleScalarType>().Select(y => y.SelectAll()),
+            OtherTypes = x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => y.SelectAll()),
         });
 
     [Fact]

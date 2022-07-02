@@ -59,7 +59,7 @@ public abstract class Graph
     {
         var result = await this.FromRawGraphQLToResult<T>(this.QueryTranslator.ToQueryString(query), null, cancellationToken).ConfigureAwait(false);
 
-        return new GraphQLResponse<TData>(UnwrapResult(result, query), result.Errors);
+        return new GraphQLResponse<TData>(UnwrapResult(result, query), result.Errors) { Request = result.Request };
     }
 
     /// <summary>
