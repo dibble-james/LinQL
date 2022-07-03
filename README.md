@@ -11,9 +11,8 @@
 - [x] Mutations
 - [x] Input Types
 - [x] Arguments
-- [x] Interfaces
+- [x] Interfaces/Unions
 #### Coming soon
-- [ ] Unions
 - [ ] Subscriptions
 - [ ] Auto-generating client via introspection
 
