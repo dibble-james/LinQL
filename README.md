@@ -11,11 +11,11 @@
 - [x] Mutations
 - [x] Input Types
 - [x] Arguments
-- [x] Interfaces
+- [x] Interfaces/Unions
 #### Coming soon
-- [ ] Unions
 - [ ] Subscriptions
 - [ ] Auto-generating client via introspection
+- [ ] Custom Scalars
 
 ### Getting Started
 
@@ -85,5 +85,7 @@ public class StarWarsClient
         => await this.graph.Query.Select(x => x.GetFilm(id)).Execute(cancellationToken);
 }
 ```
+
+For more help check out the [docs](./docs/)
 
 A range of expressions can be converted as demonstrated by [the `TranslationProviderTests`](https://github.com/dibble-james/LinQL/blob/interface-support/LinQL.Tests/Translation/TranslationProviderTests.cs).  If you come accross something that doesn't work, please raise an issue or a pull request with a supporting test.

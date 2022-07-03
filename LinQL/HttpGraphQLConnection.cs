@@ -30,6 +30,6 @@ internal class HttpGraphQLConnection : IGraphQLConnection
             throw new InvalidOperationException("Server responded with invalid json.");
         }
 
-        return response;
+        return response with { Request = request };
     }
 }

@@ -1,8 +1,8 @@
 namespace LinQL.Tests.Translation;
 using System;
-
 using System.Linq.Expressions;
 using LinQL.Description;
+using LinQL.Expressions;
 using LinQL.Translation;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -13,7 +13,14 @@ public class TranslationProviderTests
     private readonly Graph fakeGraph;
 
     public TranslationProviderTests()
-        => (this.target, this.fakeGraph) = (new TranslationProvider(), Substitute.For<Graph>(Substitute.For<ILogger<Graph>>(), Substitute.For<IGraphQLConnection>(), this.target));
+    {
+        this.target = new TranslationProvider();
+        this.fakeGraph = Substitute.For<Graph>(
+            Substitute.For<ILogger<Graph>>(),
+            Substitute.For<IGraphQLConnection>(),
+            this.target);
+        this.fakeGraph.QueryTranslator.Returns(this.target);
+    }
 
     [Fact]
     public void Simple()
@@ -83,7 +90,13 @@ public class TranslationProviderTests
     public void SelectAllNestedFields() => this.Test<NestedClassType, object>(x => x.Nested!);
 
     [Fact]
+    public void SelectAllWithHelperNestedFields() => this.Test<NestedClassType, object>(x => x.Nested!.SelectAll());
+
+    [Fact]
     public void SelectAllNestedFieldsFromOperation() => this.Test<NestedOperationType, object>(x => x.Operation.GetNumber("123")!);
+
+    [Fact]
+    public void SelectAllNestedFieldsWithHelperFromOperation() => this.Test<NestedOperationType, object>(x => x.Operation.GetNumber("123")!.SelectAll());
 
     [Fact]
     public void SelectFromArray() => this.Test<NestedArrayType, object>(x => x.Types.Select(x => new
@@ -118,6 +131,12 @@ public class TranslationProviderTests
         => this.Test<InterfaceRootType, object>(x => (x.SimpleType as SomeOtherSimpleType)!);
 
     [Fact]
+    public void SelectAllFieldsInterfaceOnConcreteType()
+        => this.Test<InterfaceRootType, object>(x =>
+            x.SimpleType.On((SomeOtherSimpleType y) => y.Number.ToString()!)
+                        .On((SimpleScalarType y) => y.Text));
+
+    [Fact]
     public void SelectInterfaceArray()
         => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => new { y.Number, y.Text, y.Float }));
 
@@ -138,12 +157,38 @@ public class TranslationProviderTests
         => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.Select(y => new { Number = (y as SomeOtherSimpleType)!.Operation.GetNumber("123"), y.Text }));
 
     [Fact]
+    public void SelectInterfaceArrayOnConcreteType()
+        => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces
+            .Select(y => y.On((SimpleScalarType z) => z.Text)
+                          .On((SomeOtherSimpleType z) => z.Float.ToString()!)));
+
+    [Fact]
     public void SelectInterfaceArrayMultipleTypes()
         => this.Test<InterfaceRootType, object>(x => new
         {
             Types = x.ArrayOfInterfaces.OfType<SimpleScalarType>().Select(y => new { y.Number, y.Text }),
             OtherTypes = x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => new { y.Number, y.Text, y.Float }),
         });
+
+    [Fact]
+    public void SelectInterfaceArrayMultipleTypesSelectAll()
+        => this.Test<InterfaceRootType, object>(x => new
+        {
+            Types = x.ArrayOfInterfaces.OfType<SimpleScalarType>().Select(y => y.SelectAll()),
+            OtherTypes = x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => y.SelectAll()),
+        });
+
+    [Fact]
+    public void BasicInclude()
+        => this.TestInclude<NestedOperationType, object>(x => x.Operation, x => x.Include(y => y.Operation.GetNumber("123")));
+
+    private void TestInclude<TRoot, TData>(Expression<Func<TRoot, TData>> expression, Action<GraphQLExpression<TRoot, TData>> includes)
+    {
+        var graphExpression = this.target.ToExpression(this.fakeGraph, expression);
+        includes(graphExpression);
+
+        Snapshot.Match(this.target.ToQueryString(graphExpression));
+    }
 
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
     {

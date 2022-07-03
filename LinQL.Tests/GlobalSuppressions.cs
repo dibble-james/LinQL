@@ -6,3 +6,4 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Don't care here thanks")]
+[assembly: SuppressMessage("Globalization", "CA1305:Specify IFormatProvider", Justification = "It'll be ok")]

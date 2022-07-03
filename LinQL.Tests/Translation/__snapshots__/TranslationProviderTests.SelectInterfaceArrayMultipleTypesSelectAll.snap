@@ -1,0 +1,14 @@
+﻿query {
+  arrayOfInterfaces {
+    __typename
+    ...on simpleScalarType {
+      number
+      text
+    }
+    ...on someOtherSimpleType {
+      text
+      number
+      float
+    }
+  }
+}

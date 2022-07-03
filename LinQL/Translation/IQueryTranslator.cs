@@ -19,6 +19,16 @@ public interface IQueryTranslator
     GraphQLExpression<TRoot, TData> ToExpression<TRoot, TData>(Graph graph, Expression<Func<TRoot, TData>> query);
 
     /// <summary>
+    /// Add an extra field to the selection.
+    /// </summary>
+    /// <typeparam name="TRoot">The root operation to start the query from.</typeparam>
+    /// <typeparam name="TData">The result of the query.</typeparam>
+    /// <param name="expression">The original expression.</param>
+    /// <param name="include">The field to include.</param>
+    /// <returns>The translated expression.</returns>
+    GraphQLExpression<TRoot, TData> Include<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, Expression<Func<TRoot, object>> include);
+
+    /// <summary>
     /// Convert a <see cref="GraphQLExpression{TRoot, TResult}"/> to a GraphQL query string.
     /// </summary>
     /// <typeparam name="TRoot">The root operation to start the query from.</typeparam>

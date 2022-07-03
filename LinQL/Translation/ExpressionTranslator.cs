@@ -36,6 +36,21 @@ public class ExpressionTranslator : ExpressionVisitor
         return root;
     }
 
+    /// <summary>
+    /// Add an extra field to the selection.
+    /// </summary>
+    /// <typeparam name="TRoot">The root operation to start the query from.</typeparam>
+    /// <typeparam name="TData">The result of the query.</typeparam>
+    /// <param name="expression">The original expression.</param>
+    /// <param name="include">The field to include.</param>
+    /// <returns>The translated expression.</returns>
+    public static GraphQLExpression<TRoot, TData> Include<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, Expression<Func<TRoot, object>> include)
+    {
+        var translator = new ExpressionTranslator(expression);
+        translator.Visit(include.Body);
+        return expression;
+    }
+
     /// <inheritdoc/>
     protected override Expression VisitMember(MemberExpression node) => node switch
     {
@@ -49,10 +64,13 @@ public class ExpressionTranslator : ExpressionVisitor
     /// <inheritdoc/>
     protected override Expression VisitMethodCall(MethodCallExpression node) => node switch
     {
+        var m when m.IsOn() => this.TraverseOn(node),
         { Object: object, Method: var method } when method.IsOperation() => this.TraverseMember(node.Object).WithField(VisitFieldWithArguments(node)),
         { Method: var method } when method.IsOperation() => this.expression.WithField(VisitFieldWithArguments(node)),
-        { Arguments: var args } when args.Any(x => x.UnwrapLambdaFromQuote() is not null) => this.VisitLambdas(node),
         { Method.Name: nameof(Enumerable.OfType) } => this.TraverseExtensionMethodCall(node).WithField(new SpreadExpression(node.Method.GetGenericArguments()[0])),
+        { Method.Name: nameof(Enumerable.Select) } => this.TraverseSelect(node),
+        { Method.Name: nameof(SelectExtentions.SelectAll), Method.DeclaringType.Name: nameof(SelectExtentions) } => this.TraverseSelectAll(node),
+        { Arguments: var args } when args.Any(x => x.UnwrapLambdaFromQuote() is not null) => this.VisitLambdas(node),
         _ => base.VisitMethodCall(node),
     };
 
@@ -61,16 +79,24 @@ public class ExpressionTranslator : ExpressionVisitor
     {
         { NodeType: ExpressionType.TypeAs or ExpressionType.Convert } t when !t.Type.Equals(this.expression.Type)
             => this.TraverseMember(node.Operand).WithField(new SpreadExpression(node.Type)),
+        { NodeType: ExpressionType.Convert, Operand: MethodCallExpression }
+            => node.Update(this.Visit(node.Operand)),
         _ => base.VisitUnary(node),
     };
 
     private Expression VisitLambdas(MethodCallExpression methodCallExpression)
     {
-        var parent = methodCallExpression.Object is not null
-            ? this.TraverseMember(methodCallExpression.Object)
-            : methodCallExpression.Method.IsDefined(typeof(ExtensionAttribute))
-                ? this.Visit(methodCallExpression.Arguments[0]) as TypeFieldExpression
-                : this.expression;
+        if (methodCallExpression.IsOn())
+        {
+            return this.TraverseOn(methodCallExpression);
+        }
+
+        var parent = methodCallExpression switch
+        {
+            { Object: not null } => this.TraverseMember(methodCallExpression.Object),
+            { Method: var m } when m.IsDefined(typeof(ExtensionAttribute)) => this.TraverseMember(methodCallExpression.Arguments[0]),
+            _ => this.expression,
+        };
 
         var translator = new ExpressionTranslator(parent ?? throw new InvalidOperationException("Not a TypeFieldExpression"));
 
@@ -95,6 +121,61 @@ public class ExpressionTranslator : ExpressionVisitor
         var innerExpression = base.VisitMethodCall(member) as MethodCallExpression;
 
         return innerExpression?.Arguments[0] as TypeFieldExpression ?? this.expression;
+    }
+
+    private TypeFieldExpression TraverseSelect(MethodCallExpression member)
+    {
+        var field = this.TraverseMember(member.Arguments[0]);
+        var translator = new ExpressionTranslator(field);
+        translator.Visit(member.Arguments[1]);
+
+        return field.ReplaceType(member.Method.ReturnType);
+    }
+
+    private TypeFieldExpression TraverseSelectAll(MethodCallExpression member)
+    {
+        var field = this.TraverseMember(member.Arguments[0]);
+
+        var type = typeof(IEnumerable<>).IsAssignableFromGenericInterface(field.Type)
+            ? field.Type.GetGenericArguments()[0]
+            : field.Type;
+
+        foreach (var scalar in type.GetAllScalars())
+        {
+            field.WithField(scalar);
+        }
+
+        return field.ReplaceType(member.Method.ReturnType);
+    }
+
+    private Expression TraverseOn(MethodCallExpression member)
+    {
+        var field = new SpreadExpression(member.Method.GetGenericArguments()[1]);
+        var translator = new ExpressionTranslator(field);
+        translator.Visit(member.Arguments[1]);
+
+        var parent = member.Arguments[0] is MethodCallExpression m && m.IsOn()
+            ? this.TraverseChainedOn(m)
+            : this.TraverseMember(member.Arguments[0]);
+
+        parent.WithField(field);
+
+        return member;
+    }
+
+    private TypeFieldExpression TraverseChainedOn(MethodCallExpression member)
+    {
+        var field = new SpreadExpression(member.Method.GetGenericArguments()[1]);
+        var translator = new ExpressionTranslator(field);
+        translator.Visit(member.Arguments[1]);
+
+        var parent = member.Arguments[0] is MethodCallExpression m && m.IsOn()
+            ? this.TraverseChainedOn(m)
+            : this.TraverseMember(member.Arguments[0]);
+
+        parent.WithField(field);
+
+        return parent;
     }
 
     private static TypeFieldExpression VisitFieldWithArguments(MethodCallExpression node)

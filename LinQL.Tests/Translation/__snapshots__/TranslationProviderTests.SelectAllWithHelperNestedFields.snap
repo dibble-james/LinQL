@@ -1,0 +1,6 @@
+﻿query {
+  nested {
+    number
+    text
+  }
+}

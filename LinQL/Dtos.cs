@@ -14,7 +14,13 @@ public record GraphQLRequest(Graph Graph, string Query, IReadOnlyDictionary<stri
 /// <typeparam name="T">The data type.</typeparam>
 /// <param name="Data">The response from the server.</param>
 /// <param name="Errors">Any query errors.</param>
-public record GraphQLResponse<T>(T Data, IEnumerable<GraphQLError> Errors);
+public record GraphQLResponse<T>(T Data, IEnumerable<GraphQLError> Errors)
+{
+    /// <summary>
+    /// Gets the request that generated this response.
+    /// </summary>
+    public GraphQLRequest Request { get; init; } = default!;
+}
 
 /// <summary>
 /// An error from a GraphQL server.

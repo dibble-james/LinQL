@@ -48,4 +48,14 @@ internal static class Extensions
         => (expression is UnaryExpression unary && expression.NodeType == ExpressionType.Quote
             ? unary.Operand
             : expression) as LambdaExpression;
+
+    public static bool IsOn(this MethodCallExpression method)
+        => method.Method.DeclaringType?.Equals(typeof(SelectExtentions)) == true
+            && method.Method.Name == nameof(SelectExtentions.On);
+
+    public static IEnumerable<FieldExpression> GetAllScalars(this Type type)
+        => type.GetProperties().Where(p => p.PropertyType.IsScalar()).Select(x => x.ToField());
+
+    public static bool IsAssignableFromGenericInterface(this Type type, Type genericInterface)
+        => type.GetInterfaces().Any(@interface => @interface.IsAssignableFrom(genericInterface));
 }

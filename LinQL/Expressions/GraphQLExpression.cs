@@ -30,6 +30,14 @@ public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
     public Expression<Func<TRoot, TResult>> OriginalQuery { get; }
 
     /// <summary>
+    /// Add an extra field to the selection.
+    /// </summary>
+    /// <param name="include">The field to include.</param>
+    /// <returns>The translated expression.</returns>
+    public GraphQLExpression<TRoot, TResult> Include(Expression<Func<TRoot, object>> include)
+        => this.graph.QueryTranslator.Include(this, include);
+
+    /// <summary>
     /// Run the query against the graph.
     /// </summary>
     /// <param name="cancellationToken">A cancellation token.</param>
