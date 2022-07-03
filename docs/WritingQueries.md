@@ -95,6 +95,6 @@ graph.Query.Select(x => x.ExampleTypes.Select(y => new { y.Number, y.Text, IsAva
 You can then of course do whatever you like with the results
 ```csharp
 (await graph.Query.Select(x => x.ExampleTypes.Select(y => new { y.Number, y.Text, IsAvailable = y.IsTrue() })
-.Execute())
-.Where(x => x.IsAvailable).ToList();
+    .Execute())
+    .Where(x => x.IsAvailable).ToList();
 ```
