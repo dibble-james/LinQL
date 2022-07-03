@@ -15,6 +15,7 @@
 #### Coming soon
 - [ ] Subscriptions
 - [ ] Auto-generating client via introspection
+- [ ] Custom Scalars
 
 ### Getting Started
 
