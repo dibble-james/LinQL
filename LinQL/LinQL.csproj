@@ -25,5 +25,6 @@
     <PackageReference Include="FastExpressionCompiler" Version="3.3.2" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
     <PackageReference Include="OneOf" Version="*" />
+    <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
   </ItemGroup>
 </Project>
