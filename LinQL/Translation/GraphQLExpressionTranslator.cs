@@ -45,7 +45,7 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
             {
                 var last = field.Arguments.Last();
 
-                foreach (var argument in field.Arguments.Except(last))
+                foreach (var argument in field.Arguments[..^1])
                 {
                     this.query.AppendLine($"{argument.Key}: {JsonSerializer.Serialize(argument.Value, SerializerOptions)},");
                 }
