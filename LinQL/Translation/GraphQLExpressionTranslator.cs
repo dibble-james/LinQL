@@ -1,4 +1,4 @@
-LAnamespace LinQL.Translation;
+namespace LinQL.Translation;
 
 using System.Linq.Expressions;
 using System.Text;
