@@ -1,4 +1,4 @@
-namespace LinQL.Translation;
+LAnamespace LinQL.Translation;
 
 using System.Linq.Expressions;
 using System.Text;
@@ -43,13 +43,16 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
             this.query.AppendLine("(");
             using (this.query.Indent())
             {
-                foreach (var argument in field.Arguments.SkipLast(1))
+                var last = field.Arguments.Last();
+
+                foreach (var argument in field.Arguments.Except(last))
                 {
                     this.query.AppendLine($"{argument.Key}: {JsonSerializer.Serialize(argument.Value, SerializerOptions)},");
                 }
-                var last = field.Arguments.Last();
+
                 this.query.AppendLine($"{last.Key}: {JsonSerializer.Serialize(last.Value, SerializerOptions)}");
             }
+
             this.query.AppendLine(") {");
         }
         else
