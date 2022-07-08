@@ -1,0 +1,654 @@
+﻿namespace StarWars
+{
+    public partial class StarWarsGraph : Graph
+    {
+        public StarWarsGraph(ILogger<StarWarsGraph> logger, IGraphQLConnection connection, IQueryTranslator queryTranslator) : base(logger, connection, queryTranslator)
+        {
+        }
+
+        public Root Root => this.RootType<Root>() ; }
+
+    public class Root : RootType<Root>
+    {
+    }
+
+    public partial class Film
+    {
+        public FilmCharactersConnection characterConnection { get; set; }
+
+        public String created { get; set; }
+
+        public String director { get; set; }
+
+        public String edited { get; set; }
+
+        public Int episodeID { get; set; }
+
+        public ID id { get; set; }
+
+        public String openingCrawl { get; set; }
+
+        public FilmPlanetsConnection planetConnection { get; set; }
+
+        public String producers { get; set; }
+
+        public String releaseDate { get; set; }
+
+        public FilmSpeciesConnection speciesConnection { get; set; }
+
+        public FilmStarshipsConnection starshipConnection { get; set; }
+
+        public String title { get; set; }
+
+        public FilmVehiclesConnection vehicleConnection { get; set; }
+    }
+
+    public partial class FilmCharactersConnection
+    {
+        public Person characters { get; set; }
+
+        public FilmCharactersEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class FilmCharactersEdge
+    {
+        public String cursor { get; set; }
+
+        public Person node { get; set; }
+    }
+
+    public partial class FilmPlanetsConnection
+    {
+        public FilmPlanetsEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Planet planets { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class FilmPlanetsEdge
+    {
+        public String cursor { get; set; }
+
+        public Planet node { get; set; }
+    }
+
+    public partial class FilmSpeciesConnection
+    {
+        public FilmSpeciesEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Species species { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class FilmSpeciesEdge
+    {
+        public String cursor { get; set; }
+
+        public Species node { get; set; }
+    }
+
+    public partial class FilmStarshipsConnection
+    {
+        public FilmStarshipsEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Starship starships { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class FilmStarshipsEdge
+    {
+        public String cursor { get; set; }
+
+        public Starship node { get; set; }
+    }
+
+    public partial class FilmVehiclesConnection
+    {
+        public FilmVehiclesEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Int totalCount { get; set; }
+
+        public Vehicle vehicles { get; set; }
+    }
+
+    public partial class FilmVehiclesEdge
+    {
+        public String cursor { get; set; }
+
+        public Vehicle node { get; set; }
+    }
+
+    public partial class FilmsConnection
+    {
+        public FilmsEdge edges { get; set; }
+
+        public Film films { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class FilmsEdge
+    {
+        public String cursor { get; set; }
+
+        public Film node { get; set; }
+    }
+
+    public partial class PageInfo
+    {
+        public String endCursor { get; set; }
+
+        public Boolean hasNextPage { get; set; }
+
+        public Boolean hasPreviousPage { get; set; }
+
+        public String startCursor { get; set; }
+    }
+
+    public partial class PeopleConnection
+    {
+        public PeopleEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Person people { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class PeopleEdge
+    {
+        public String cursor { get; set; }
+
+        public Person node { get; set; }
+    }
+
+    public partial class Person
+    {
+        public String birthYear { get; set; }
+
+        public String created { get; set; }
+
+        public String edited { get; set; }
+
+        public String eyeColor { get; set; }
+
+        public PersonFilmsConnection filmConnection { get; set; }
+
+        public String gender { get; set; }
+
+        public String hairColor { get; set; }
+
+        public Int height { get; set; }
+
+        public Planet homeworld { get; set; }
+
+        public ID id { get; set; }
+
+        public Float mass { get; set; }
+
+        public String name { get; set; }
+
+        public String skinColor { get; set; }
+
+        public Species species { get; set; }
+
+        public PersonStarshipsConnection starshipConnection { get; set; }
+
+        public PersonVehiclesConnection vehicleConnection { get; set; }
+    }
+
+    public partial class PersonFilmsConnection
+    {
+        public PersonFilmsEdge edges { get; set; }
+
+        public Film films { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class PersonFilmsEdge
+    {
+        public String cursor { get; set; }
+
+        public Film node { get; set; }
+    }
+
+    public partial class PersonStarshipsConnection
+    {
+        public PersonStarshipsEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Starship starships { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class PersonStarshipsEdge
+    {
+        public String cursor { get; set; }
+
+        public Starship node { get; set; }
+    }
+
+    public partial class PersonVehiclesConnection
+    {
+        public PersonVehiclesEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Int totalCount { get; set; }
+
+        public Vehicle vehicles { get; set; }
+    }
+
+    public partial class PersonVehiclesEdge
+    {
+        public String cursor { get; set; }
+
+        public Vehicle node { get; set; }
+    }
+
+    public partial class Planet
+    {
+        public String climates { get; set; }
+
+        public String created { get; set; }
+
+        public Int diameter { get; set; }
+
+        public String edited { get; set; }
+
+        public PlanetFilmsConnection filmConnection { get; set; }
+
+        public String gravity { get; set; }
+
+        public ID id { get; set; }
+
+        public String name { get; set; }
+
+        public Int orbitalPeriod { get; set; }
+
+        public Float population { get; set; }
+
+        public PlanetResidentsConnection residentConnection { get; set; }
+
+        public Int rotationPeriod { get; set; }
+
+        public Float surfaceWater { get; set; }
+
+        public String terrains { get; set; }
+    }
+
+    public partial class PlanetFilmsConnection
+    {
+        public PlanetFilmsEdge edges { get; set; }
+
+        public Film films { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class PlanetFilmsEdge
+    {
+        public String cursor { get; set; }
+
+        public Film node { get; set; }
+    }
+
+    public partial class PlanetResidentsConnection
+    {
+        public PlanetResidentsEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Person residents { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class PlanetResidentsEdge
+    {
+        public String cursor { get; set; }
+
+        public Person node { get; set; }
+    }
+
+    public partial class PlanetsConnection
+    {
+        public PlanetsEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Planet planets { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class PlanetsEdge
+    {
+        public String cursor { get; set; }
+
+        public Planet node { get; set; }
+    }
+
+    public partial class Root
+    {
+        public FilmsConnection allFilms { get; set; }
+
+        public PeopleConnection allPeople { get; set; }
+
+        public PlanetsConnection allPlanets { get; set; }
+
+        public SpeciesConnection allSpecies { get; set; }
+
+        public StarshipsConnection allStarships { get; set; }
+
+        public VehiclesConnection allVehicles { get; set; }
+
+        public Film film { get; set; }
+
+        public Node node { get; set; }
+
+        public Person person { get; set; }
+
+        public Planet planet { get; set; }
+
+        public Species species { get; set; }
+
+        public Starship starship { get; set; }
+
+        public Vehicle vehicle { get; set; }
+    }
+
+    public partial class Species
+    {
+        public Float averageHeight { get; set; }
+
+        public Int averageLifespan { get; set; }
+
+        public String classification { get; set; }
+
+        public String created { get; set; }
+
+        public String designation { get; set; }
+
+        public String edited { get; set; }
+
+        public String eyeColors { get; set; }
+
+        public SpeciesFilmsConnection filmConnection { get; set; }
+
+        public String hairColors { get; set; }
+
+        public Planet homeworld { get; set; }
+
+        public ID id { get; set; }
+
+        public String language { get; set; }
+
+        public String name { get; set; }
+
+        public SpeciesPeopleConnection personConnection { get; set; }
+
+        public String skinColors { get; set; }
+    }
+
+    public partial class SpeciesConnection
+    {
+        public SpeciesEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Species species { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class SpeciesEdge
+    {
+        public String cursor { get; set; }
+
+        public Species node { get; set; }
+    }
+
+    public partial class SpeciesFilmsConnection
+    {
+        public SpeciesFilmsEdge edges { get; set; }
+
+        public Film films { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class SpeciesFilmsEdge
+    {
+        public String cursor { get; set; }
+
+        public Film node { get; set; }
+    }
+
+    public partial class SpeciesPeopleConnection
+    {
+        public SpeciesPeopleEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Person people { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class SpeciesPeopleEdge
+    {
+        public String cursor { get; set; }
+
+        public Person node { get; set; }
+    }
+
+    public partial class Starship
+    {
+        public Int MGLT { get; set; }
+
+        public Float cargoCapacity { get; set; }
+
+        public String consumables { get; set; }
+
+        public Float costInCredits { get; set; }
+
+        public String created { get; set; }
+
+        public String crew { get; set; }
+
+        public String edited { get; set; }
+
+        public StarshipFilmsConnection filmConnection { get; set; }
+
+        public Float hyperdriveRating { get; set; }
+
+        public ID id { get; set; }
+
+        public Float length { get; set; }
+
+        public String manufacturers { get; set; }
+
+        public Int maxAtmospheringSpeed { get; set; }
+
+        public String model { get; set; }
+
+        public String name { get; set; }
+
+        public String passengers { get; set; }
+
+        public StarshipPilotsConnection pilotConnection { get; set; }
+
+        public String starshipClass { get; set; }
+    }
+
+    public partial class StarshipFilmsConnection
+    {
+        public StarshipFilmsEdge edges { get; set; }
+
+        public Film films { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class StarshipFilmsEdge
+    {
+        public String cursor { get; set; }
+
+        public Film node { get; set; }
+    }
+
+    public partial class StarshipPilotsConnection
+    {
+        public StarshipPilotsEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Person pilots { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class StarshipPilotsEdge
+    {
+        public String cursor { get; set; }
+
+        public Person node { get; set; }
+    }
+
+    public partial class StarshipsConnection
+    {
+        public StarshipsEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Starship starships { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class StarshipsEdge
+    {
+        public String cursor { get; set; }
+
+        public Starship node { get; set; }
+    }
+
+    public partial class Vehicle
+    {
+        public Float cargoCapacity { get; set; }
+
+        public String consumables { get; set; }
+
+        public Float costInCredits { get; set; }
+
+        public String created { get; set; }
+
+        public String crew { get; set; }
+
+        public String edited { get; set; }
+
+        public VehicleFilmsConnection filmConnection { get; set; }
+
+        public ID id { get; set; }
+
+        public Float length { get; set; }
+
+        public String manufacturers { get; set; }
+
+        public Int maxAtmospheringSpeed { get; set; }
+
+        public String model { get; set; }
+
+        public String name { get; set; }
+
+        public String passengers { get; set; }
+
+        public VehiclePilotsConnection pilotConnection { get; set; }
+
+        public String vehicleClass { get; set; }
+    }
+
+    public partial class VehicleFilmsConnection
+    {
+        public VehicleFilmsEdge edges { get; set; }
+
+        public Film films { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class VehicleFilmsEdge
+    {
+        public String cursor { get; set; }
+
+        public Film node { get; set; }
+    }
+
+    public partial class VehiclePilotsConnection
+    {
+        public VehiclePilotsEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Person pilots { get; set; }
+
+        public Int totalCount { get; set; }
+    }
+
+    public partial class VehiclePilotsEdge
+    {
+        public String cursor { get; set; }
+
+        public Person node { get; set; }
+    }
+
+    public partial class VehiclesConnection
+    {
+        public VehiclesEdge edges { get; set; }
+
+        public PageInfo pageInfo { get; set; }
+
+        public Int totalCount { get; set; }
+
+        public Vehicle vehicles { get; set; }
+    }
+
+    public partial class VehiclesEdge
+    {
+        public String cursor { get; set; }
+
+        public Vehicle node { get; set; }
+    }
+}
