@@ -27,8 +27,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
-    <PackageReference Include="OneOf" Version="*" />
-    <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="6.*" />
+    <PackageReference Include="OneOf" Version="3.0.*" />
+    <PackageReference Include="System.Net.Http.Json" Version="6.*" />
   </ItemGroup>
 </Project>
