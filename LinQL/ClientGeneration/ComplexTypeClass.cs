@@ -23,12 +23,15 @@ internal class ComplexTypeClass : IClassFactory
         { "Uri", "System.Uri" }
     };
 
-    private readonly IReadOnlyList<FieldDefinitionNode> fields;
+    private readonly List<FieldDefinitionNode> fields;
 
     public ComplexTypeClass(string name, IReadOnlyList<FieldDefinitionNode> fields)
-        => (this.Name, this.fields) = (name, fields);
+        => (this.Name, this.fields) = (name, fields.ToList());
 
     public string Name { get; }
+
+    public void WithFields(IReadOnlyList<FieldDefinitionNode> fields)
+        => this.fields.AddRange(fields);
 
     public virtual MemberDeclarationSyntax Create()
         => ClassDeclaration(Identifier(this.Name))
@@ -39,14 +42,7 @@ internal class ComplexTypeClass : IClassFactory
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken))))
                 .ToArray())
-            .AddMembers(this.Methods.Select(f =>
-                MethodDeclaration(ParseTypeName(TypeName(f.Type.NamedType().Name.Value)), Identifier(FieldName(f.Name.Value)))
-                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                    .AddAttributeLists(AttributeList(SingletonSeparatedList(Attribute(IdentifierName(nameof(GraphQLOperationAttribute))))))
-                    .AddParameterListParameters(
-                        f.Arguments.Select(p => Parameter(Identifier(p.Name.Value)).WithType(ParseTypeName(TypeName(p.Type.NamedType().Name.Value)))).ToArray())
-                    .WithBody(Block(ParseStatement("return default!;"))))
-                .ToArray());
+            .AddMembers(this.Methods.SelectMany(CreateOperation).ToArray());
 
     private IEnumerable<FieldDefinitionNode> Properties
         => this.fields.Where(x => !x.Arguments.Any());
@@ -59,4 +55,25 @@ internal class ComplexTypeClass : IClassFactory
 
     private static string FieldName(string field)
         => char.ToUpperInvariant(field.First()) + field.ToCamelCase().Substring(1);
+
+    private static IEnumerable<MemberDeclarationSyntax> CreateOperation(FieldDefinitionNode f)
+        => new MemberDeclarationSyntax[]
+        {
+            PropertyDeclaration(ParseTypeName(TypeName(f.Type.NamedType().Name.Value)), Identifier(FieldName(f.Name.Value)))
+                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                    .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
+                    .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
+                    .WithInitializer(EqualsValueClause(ParseExpression("null!")))
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
+            MethodDeclaration(ParseTypeName(TypeName(f.Type.NamedType().Name.Value)), Identifier("Execute" + FieldName(f.Name.Value)))
+                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                    .AddAttributeLists(AttributeList(SeparatedList(new[]
+                    {
+                        Attribute(IdentifierName(nameof(GraphQLOperationAttribute))),
+                        Attribute(IdentifierName(nameof(GraphQLFieldAttribute)), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
+                    })))
+                    .AddParameterListParameters(
+                        f.Arguments.Select(p => Parameter(Identifier(p.Name.Value)).WithType(ParseTypeName(TypeName(p.Type.NamedType().Name.Value)))).ToArray())
+                    .WithBody(Block(ParseStatement("return default!;"))),
+        };
 }

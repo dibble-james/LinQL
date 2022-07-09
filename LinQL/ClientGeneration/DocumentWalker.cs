@@ -18,7 +18,16 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(ObjectTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        context.Graph.Types.Add(new ComplexTypeClass(node.Name.Value, node.Fields));
+        var rootNode = context.Graph.RootOperations.FirstOrDefault(x => x.Name == node.Name.Value);
+
+        if (rootNode is not null)
+        {
+            rootNode.WithFields(node.Fields);
+        }
+        else
+        {
+            context.Graph.Types.Add(new ComplexTypeClass(node.Name.Value, node.Fields));
+        }
 
         return base.VisitChildren(node, context);
     }

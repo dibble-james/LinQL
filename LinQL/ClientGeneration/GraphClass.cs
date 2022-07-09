@@ -39,7 +39,9 @@ internal class GraphClass : IClassFactory
             .AddMembers(this.RootOperations.Select(root =>
                 PropertyDeclaration(ParseTypeName(root.Name), root.Name)
                     .AddModifiers(Token(SyntaxKind.PublicKeyword))
-                    .WithExpressionBody(ArrowExpressionClause(ParseExpression($"this.RootType<{root.Name}>();"))))
+                    .WithExpressionBody(ArrowExpressionClause(ParseExpression($"this.RootType<{root.Name}>()")))
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                    .WithTrailingTrivia(Whitespace("\n")))
                 .ToArray());
 
         return graph;
