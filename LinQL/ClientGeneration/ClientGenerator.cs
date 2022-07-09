@@ -1,10 +1,23 @@
 namespace LinQL.ClientGeneration;
 
+using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
+
 /// <summary>
 /// Converts SDL into a <see cref="Graph"/>.
 /// </summary>
-public static class ClientGenerator
+[Generator]
+public class ClientGenerator : ISourceGenerator
 {
+    private static readonly DiagnosticDescriptor InvalidXmlWarning = new(
+        id: "LINQLGEN01",
+        title: "Starting code generation",
+        messageFormat: "Starting code generation",
+        category: "LinQLClientGenerator",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
     /// <summary>
     /// Takes a SDL input and generates a <see cref="Graph"/>.
     /// </summary>
@@ -22,4 +35,26 @@ public static class ClientGenerator
 
         return clientContext.ToString();
     }
+
+    /// <inheritdoc/>
+    public void Execute(GeneratorExecutionContext context)
+    {
+        context.ReportDiagnostic(Diagnostic.Create(InvalidXmlWarning, Location.None));
+
+        foreach (var schema in context.AdditionalFiles.Where(x => x.Path.EndsWith(".graphql")))
+        {
+            var content = schema.GetText(context.CancellationToken)!.ToString();
+            var schemaName = Path.GetFileName(schema.Path);
+
+            context.AddSource(
+                $"{schemaName}.g.cs",
+                SourceText.From(
+                    Generate(content, schemaName, schemaName + ".Client"),
+                    Encoding.UTF8)
+                );
+        }
+    }
+
+    /// <inheritdoc/>
+    public void Initialize(GeneratorInitializationContext context) { }
 }

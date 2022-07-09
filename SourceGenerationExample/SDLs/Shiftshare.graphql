@@ -1,0 +1,238 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+"""
+The `@defer` directive may be provided for fragment spreads and inline fragments to inform the executor to delay the execution of the current fragment to indicate deprioritization of the current fragment. A query with `@defer` directive will cause the request to potentially return multiple responses, where non-deferred data is delivered in the initial response and data deferred is delivered in a subsequent response. `@include` and `@skip` take precedence over `@defer`.
+"""
+directive @defer(
+  """
+  If this argument label has a value other than null, it will be passed on to the result of this defer directive. This label is intended to give client applications a way to identify to which fragment a deferred result belongs to.
+  """
+  label: String
+
+  """
+  Deferred when true.
+  """
+  if: Boolean
+) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"""
+The `@stream` directive may be provided for a field of `List` type so that the backend can leverage technology such as asynchronous iterators to provide a partial list in the initial response, and additional list items in subsequent responses. `@include` and `@skip` take precedence over `@stream`.
+"""
+directive @stream(
+  """
+  If this argument label has a value other than null, it will be passed on to the result of this stream directive. This label is intended to give client applications a way to identify to which fragment a streamed result belongs to.
+  """
+  label: String
+
+  """
+  The initial elements that shall be send down to the consumer.
+  """
+  initialCount: Int! = 0
+
+  """
+  Streamed when true.
+  """
+  if: Boolean
+) on FIELD
+
+directive @authorize(
+  """
+  The name of the authorization policy that determines access to the annotated resource.
+  """
+  policy: String
+
+  """
+  Roles that are allowed to access the annotated resource.
+  """
+  roles: [String!]
+
+  """
+  Defines when when the resolver shall be executed.By default the resolver is executed after the policy has determined that the current user is allowed to access the field.
+  """
+  apply: ApplyPolicy! = BEFORE_RESOLVER
+) repeatable on SCHEMA | OBJECT | FIELD_DEFINITION
+
+"""
+The `@oneOf` directive is used within the type system definition language
+ to indicate:
+
+ - an Input Object is a Oneof Input Object, or
+ - an Object Type's Field is a Oneof Field.
+"""
+directive @oneOf on INPUT_OBJECT
+
+type Query {
+  events(
+    calendar: UUID!
+    from: OffsetDateTime!
+    to: OffsetDateTime!
+  ): [IEvent!]!
+  me: User
+}
+
+enum ApplyPolicy {
+  BEFORE_RESOLVER
+  AFTER_RESOLVER
+}
+
+interface IEvent {
+  calendar: UUID!
+  id: UUID!
+  date: OffsetDate!
+}
+
+scalar UUID
+
+"""
+A combination of a LocalDate and an Offset, to represent a date at a specific offset from UTC but without any time-of-day information.
+"""
+scalar OffsetDate
+
+type Shift implements IEvent {
+  reschedule(to: OffsetDate!): IEvent!
+  cancel: IEvent!
+  shiftType: UUID!
+  calendar: UUID!
+  id: UUID!
+  version: Int!
+  correlationId: UUID!
+  state: String
+  date: OffsetDate!
+}
+
+"""
+A local date and time in a particular calendar system, combined with an offset from UTC.
+"""
+scalar OffsetDateTime
+
+type User {
+  id: UUID!
+  email: String!
+  name: String!
+  avatar: String!
+  calendars: [Calendar!]!
+}
+
+type Calendar {
+  scheduleShift(shiftType: UUID!, date: OffsetDate!): Shift!
+  id: UUID!
+  name: String!
+  access: [CalendarAccess!]!
+  shiftTypes: [ShiftType!]!
+}
+
+type CalendarAccess {
+  user: UUID!
+  permission: PermissionAttributes!
+}
+
+enum PermissionAttributes {
+  OWNER
+}
+
+type ShiftType {
+  id: UUID!
+  name: String!
+  starts: OffsetTime!
+  duration: Duration!
+}
+
+"""
+A combination of a LocalTime and an Offset, to represent a time-of-day at a specific offset from UTC but without any date information.
+"""
+scalar OffsetTime
+
+"""
+Represents a fixed (and calendar-independent) length of time.
+"""
+scalar Duration
+
+type Mutation {
+  cancelEvent(calendarId: UUID!, id: UUID!): IEvent!
+  createCalendar(input: CreateCalendarInput!): Calendar!
+  registerUser: User!
+  rescheduleShift(calendarId: UUID!, id: UUID!, date: OffsetDate!): IEvent!
+  scheduleShift(calendarId: UUID!, shiftType: UUID!, date: OffsetDate!): IEvent!
+  setupShiftType(calendarId: UUID!, shiftType: ShiftTypeInput!): Calendar!
+  syncCalendarEvents(
+    calendar: UUID!
+    after: OffsetDateTime!
+    newEvents: [CalendarEventInput!]!
+  ): [ICalendarEvent!]!
+}
+
+input CreateCalendarInput {
+  id: UUID!
+  name: String!
+}
+
+input ShiftTypeInput {
+  id: UUID!
+  name: String!
+  starts: OffsetTime!
+  duration: Duration!
+}
+
+interface ICalendarEvent {
+  id: UUID!
+  raised: OffsetDateTime!
+  calendar: UUID!
+  eventId: UUID!
+}
+
+type ShiftScheduled implements ICalendarEvent {
+  shiftType: UUID!
+  date: OffsetDate!
+  id: UUID!
+  raised: OffsetDateTime!
+  calendar: UUID!
+  eventId: UUID!
+}
+
+type ShiftRescheduled implements ICalendarEvent {
+  date: OffsetDate!
+  id: UUID!
+  raised: OffsetDateTime!
+  calendar: UUID!
+  eventId: UUID!
+}
+
+type EventCancelled implements ICalendarEvent {
+  id: UUID!
+  raised: OffsetDateTime!
+  calendar: UUID!
+  eventId: UUID!
+}
+
+input CalendarEventInput {
+  shiftScheduled: ShiftScheduledInput
+  shiftRescheduled: ShiftRescheduledInput
+  eventCancelled: EventCancelledInput
+}
+
+input ShiftScheduledInput {
+  shiftType: UUID!
+  date: OffsetDate!
+  id: UUID!
+  raised: OffsetDateTime!
+  calendar: UUID!
+  eventId: UUID!
+}
+
+input ShiftRescheduledInput {
+  date: OffsetDate!
+  id: UUID!
+  raised: OffsetDateTime!
+  calendar: UUID!
+  eventId: UUID!
+}
+
+input EventCancelledInput {
+  id: UUID!
+  raised: OffsetDateTime!
+  calendar: UUID!
+  eventId: UUID!
+}
