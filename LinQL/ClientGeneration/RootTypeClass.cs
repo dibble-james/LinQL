@@ -7,8 +7,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 internal class RootTypeClass : ComplexTypeClass
 {
-    public RootTypeClass(string name, OperationType rootOperationType, IReadOnlyList<FieldDefinitionNode> fields)
-        : base(name, fields) => this.RootOperation = rootOperationType;
+    public RootTypeClass(string name, OperationType rootOperationType)
+        : base(name) => this.RootOperation = rootOperationType;
 
     public OperationType RootOperation { get; }
 
@@ -18,7 +18,7 @@ internal class RootTypeClass : ComplexTypeClass
             .AddBaseListTypes(SimpleBaseType(IdentifierName($"{nameof(RootType<object>)}<{this.Name}>")))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(
                 Attribute(
-                    IdentifierName(nameof(OperationTypeAttribute)),
+                    IdentifierName(nameof(OperationTypeAttribute).AttributeName()),
                     AttributeArgumentList(SingletonSeparatedList(AttributeArgument(IdentifierName($"{nameof(RootOperationType)}.{this.RootOperation}"))))))));
 
         return rootType;

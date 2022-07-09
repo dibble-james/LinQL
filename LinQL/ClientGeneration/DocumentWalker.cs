@@ -10,8 +10,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         context.Graph.RootOperations.Add(
             new RootTypeClass(
                 node.Type.Name.Value,
-                node.Operation,
-                new List<FieldDefinitionNode>()));
+                node.Operation));
 
         return base.VisitChildren(node, context);
     }
@@ -26,8 +25,22 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
         else
         {
-            context.Graph.Types.Add(new ComplexTypeClass(node.Name.Value, node.Fields));
+            context.Graph.Types.Add(new ComplexTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value)));
         }
+
+        return base.VisitChildren(node, context);
+    }
+
+    protected override ISyntaxVisitorAction VisitChildren(InterfaceTypeDefinitionNode node, DocumentWalkerContext context)
+    {
+        context.Graph.Types.Add(new InterfaceTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value)));
+
+        return base.VisitChildren(node, context);
+    }
+
+    protected override ISyntaxVisitorAction VisitChildren(EnumTypeDefinitionNode node, DocumentWalkerContext context)
+    {
+        context.Graph.Types.Add(new EnumTypeClass(node.Name.Value, node.Values));
 
         return base.VisitChildren(node, context);
     }

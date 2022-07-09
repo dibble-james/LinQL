@@ -12,4 +12,11 @@ public class ClientGeneratorTests
             Encoding.UTF8.GetString(SDLs.StarWars),
             "StarWarsGraph",
             "StarWars"));
+
+    [Fact]
+    public void ShiftshareClient()
+        => Snapshot.Match(ClientGenerator.Generate(
+            Encoding.UTF8.GetString(SDLs.Shiftshare),
+            "ShiftshareGraph",
+            "Shiftshare.Graph"));
 }

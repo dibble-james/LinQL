@@ -1,5 +1,11 @@
+#nullable enable
 namespace StarWars
 {
+    using LinQL;
+    using LinQL.Description;
+    using LinQL.Translation;
+    using Microsoft.Extensions.Logging;
+
     public partial class StarWarsGraph : Graph
     {
         public StarWarsGraph(ILogger<StarWarsGraph> logger, IGraphQLConnection connection, IQueryTranslator queryTranslator) : base(logger, connection, queryTranslator)
@@ -9,680 +15,685 @@ namespace StarWars
         public Root Root => this.RootType<Root>();
     }
 
-    [OperationTypeAttribute(RootOperationType.Query)]
+    [OperationType(RootOperationType.Query)]
     public partial class Root : RootType<Root>
     {
-        public FilmsConnection AllFilms { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allFilms")]
-        public FilmsConnection ExecuteAllFilms(string after, string before, int first, int last) => AllFilms;
-        public PeopleConnection AllPeople { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allPeople")]
-        public PeopleConnection ExecuteAllPeople(string after, string before, int first, int last) => AllPeople;
-        public PlanetsConnection AllPlanets { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allPlanets")]
-        public PlanetsConnection ExecuteAllPlanets(string after, string before, int first, int last) => AllPlanets;
-        public SpeciesConnection AllSpecies { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allSpecies")]
-        public SpeciesConnection ExecuteAllSpecies(string after, string before, int first, int last) => AllSpecies;
-        public StarshipsConnection AllStarships { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allStarships")]
-        public StarshipsConnection ExecuteAllStarships(string after, string before, int first, int last) => AllStarships;
-        public VehiclesConnection AllVehicles { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allVehicles")]
-        public VehiclesConnection ExecuteAllVehicles(string after, string before, int first, int last) => AllVehicles;
-        public Film Film { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "film")]
-        public Film ExecuteFilm(string filmID, string id) => Film;
-        public Node Node { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "node")]
-        public Node ExecuteNode(string id) => Node;
-        public Person Person { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "person")]
-        public Person ExecutePerson(string id, string personID) => Person;
-        public Planet Planet { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "planet")]
-        public Planet ExecutePlanet(string id, string planetID) => Planet;
-        public Species Species { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "species")]
-        public Species ExecuteSpecies(string id, string speciesID) => Species;
-        public Starship Starship { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "starship")]
-        public Starship ExecuteStarship(string id, string starshipID) => Starship;
-        public Vehicle Vehicle { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "vehicle")]
-        public Vehicle ExecuteVehicle(string id, string vehicleID) => Vehicle;
+        public FilmsConnection? AllFilms { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "allFilms")]
+        public FilmsConnection? ExecuteAllFilms(string? after, string? before, int? first, int? last) => AllFilms;
+        public PeopleConnection? AllPeople { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "allPeople")]
+        public PeopleConnection? ExecuteAllPeople(string? after, string? before, int? first, int? last) => AllPeople;
+        public PlanetsConnection? AllPlanets { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "allPlanets")]
+        public PlanetsConnection? ExecuteAllPlanets(string? after, string? before, int? first, int? last) => AllPlanets;
+        public SpeciesConnection? AllSpecies { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "allSpecies")]
+        public SpeciesConnection? ExecuteAllSpecies(string? after, string? before, int? first, int? last) => AllSpecies;
+        public StarshipsConnection? AllStarships { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "allStarships")]
+        public StarshipsConnection? ExecuteAllStarships(string? after, string? before, int? first, int? last) => AllStarships;
+        public VehiclesConnection? AllVehicles { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "allVehicles")]
+        public VehiclesConnection? ExecuteAllVehicles(string? after, string? before, int? first, int? last) => AllVehicles;
+        public Film? Film { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "film")]
+        public Film? ExecuteFilm(string? filmID, string? id) => Film;
+        public Node? Node { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "node")]
+        public Node? ExecuteNode(string id) => Node;
+        public Person? Person { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "person")]
+        public Person? ExecutePerson(string? id, string? personID) => Person;
+        public Planet? Planet { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "planet")]
+        public Planet? ExecutePlanet(string? id, string? planetID) => Planet;
+        public Species? Species { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "species")]
+        public Species? ExecuteSpecies(string? id, string? speciesID) => Species;
+        public Starship? Starship { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "starship")]
+        public Starship? ExecuteStarship(string? id, string? starshipID) => Starship;
+        public Vehicle? Vehicle { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "vehicle")]
+        public Vehicle? ExecuteVehicle(string? id, string? vehicleID) => Vehicle;
     }
 
-    public partial class Film
+    public partial class Film : Node
     {
-        public string Created { get; set; }
+        public string? Created { get; set; }
 
-        public string Director { get; set; }
+        public string? Director { get; set; }
 
-        public string Edited { get; set; }
+        public string? Edited { get; set; }
 
-        public int EpisodeID { get; set; }
+        public int? EpisodeID { get; set; }
 
         public string Id { get; set; }
 
-        public string OpeningCrawl { get; set; }
+        public string? OpeningCrawl { get; set; }
 
-        public string Producers { get; set; }
+        public string[]? Producers { get; set; }
 
-        public string ReleaseDate { get; set; }
+        public string? ReleaseDate { get; set; }
 
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
-        public FilmCharactersConnection CharacterConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "characterConnection")]
-        public FilmCharactersConnection ExecuteCharacterConnection(string after, string before, int first, int last) => CharacterConnection;
-        public FilmPlanetsConnection PlanetConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "planetConnection")]
-        public FilmPlanetsConnection ExecutePlanetConnection(string after, string before, int first, int last) => PlanetConnection;
-        public FilmSpeciesConnection SpeciesConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "speciesConnection")]
-        public FilmSpeciesConnection ExecuteSpeciesConnection(string after, string before, int first, int last) => SpeciesConnection;
-        public FilmStarshipsConnection StarshipConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "starshipConnection")]
-        public FilmStarshipsConnection ExecuteStarshipConnection(string after, string before, int first, int last) => StarshipConnection;
-        public FilmVehiclesConnection VehicleConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "vehicleConnection")]
-        public FilmVehiclesConnection ExecuteVehicleConnection(string after, string before, int first, int last) => VehicleConnection;
+        public FilmCharactersConnection? CharacterConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "characterConnection")]
+        public FilmCharactersConnection? ExecuteCharacterConnection(string? after, string? before, int? first, int? last) => CharacterConnection;
+        public FilmPlanetsConnection? PlanetConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "planetConnection")]
+        public FilmPlanetsConnection? ExecutePlanetConnection(string? after, string? before, int? first, int? last) => PlanetConnection;
+        public FilmSpeciesConnection? SpeciesConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "speciesConnection")]
+        public FilmSpeciesConnection? ExecuteSpeciesConnection(string? after, string? before, int? first, int? last) => SpeciesConnection;
+        public FilmStarshipsConnection? StarshipConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "starshipConnection")]
+        public FilmStarshipsConnection? ExecuteStarshipConnection(string? after, string? before, int? first, int? last) => StarshipConnection;
+        public FilmVehiclesConnection? VehicleConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "vehicleConnection")]
+        public FilmVehiclesConnection? ExecuteVehicleConnection(string? after, string? before, int? first, int? last) => VehicleConnection;
     }
 
     public partial class FilmCharactersConnection
     {
-        public Person Characters { get; set; }
+        public Person[]? Characters { get; set; }
 
-        public FilmCharactersEdge Edges { get; set; }
+        public FilmCharactersEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class FilmCharactersEdge
     {
         public string Cursor { get; set; }
 
-        public Person Node { get; set; }
+        public Person? Node { get; set; }
     }
 
     public partial class FilmPlanetsConnection
     {
-        public FilmPlanetsEdge Edges { get; set; }
+        public FilmPlanetsEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Planet Planets { get; set; }
+        public Planet[]? Planets { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class FilmPlanetsEdge
     {
         public string Cursor { get; set; }
 
-        public Planet Node { get; set; }
+        public Planet? Node { get; set; }
     }
 
     public partial class FilmSpeciesConnection
     {
-        public FilmSpeciesEdge Edges { get; set; }
+        public FilmSpeciesEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Species Species { get; set; }
+        public Species[]? Species { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class FilmSpeciesEdge
     {
         public string Cursor { get; set; }
 
-        public Species Node { get; set; }
+        public Species? Node { get; set; }
     }
 
     public partial class FilmStarshipsConnection
     {
-        public FilmStarshipsEdge Edges { get; set; }
+        public FilmStarshipsEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Starship Starships { get; set; }
+        public Starship[]? Starships { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class FilmStarshipsEdge
     {
         public string Cursor { get; set; }
 
-        public Starship Node { get; set; }
+        public Starship? Node { get; set; }
     }
 
     public partial class FilmVehiclesConnection
     {
-        public FilmVehiclesEdge Edges { get; set; }
+        public FilmVehiclesEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
 
-        public Vehicle Vehicles { get; set; }
+        public Vehicle[]? Vehicles { get; set; }
     }
 
     public partial class FilmVehiclesEdge
     {
         public string Cursor { get; set; }
 
-        public Vehicle Node { get; set; }
+        public Vehicle? Node { get; set; }
     }
 
     public partial class FilmsConnection
     {
-        public FilmsEdge Edges { get; set; }
+        public FilmsEdge[]? Edges { get; set; }
 
-        public Film Films { get; set; }
+        public Film[]? Films { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class FilmsEdge
     {
         public string Cursor { get; set; }
 
-        public Film Node { get; set; }
+        public Film? Node { get; set; }
+    }
+
+    public partial interface Node
+    {
+        public string Id { get; set; }
     }
 
     public partial class PageInfo
     {
-        public string EndCursor { get; set; }
+        public string? EndCursor { get; set; }
 
         public bool HasNextPage { get; set; }
 
         public bool HasPreviousPage { get; set; }
 
-        public string StartCursor { get; set; }
+        public string? StartCursor { get; set; }
     }
 
     public partial class PeopleConnection
     {
-        public PeopleEdge Edges { get; set; }
+        public PeopleEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Person People { get; set; }
+        public Person[]? People { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class PeopleEdge
     {
         public string Cursor { get; set; }
 
-        public Person Node { get; set; }
+        public Person? Node { get; set; }
     }
 
-    public partial class Person
+    public partial class Person : Node
     {
-        public string BirthYear { get; set; }
+        public string? BirthYear { get; set; }
 
-        public string Created { get; set; }
+        public string? Created { get; set; }
 
-        public string Edited { get; set; }
+        public string? Edited { get; set; }
 
-        public string EyeColor { get; set; }
+        public string? EyeColor { get; set; }
 
-        public string Gender { get; set; }
+        public string? Gender { get; set; }
 
-        public string HairColor { get; set; }
+        public string? HairColor { get; set; }
 
-        public int Height { get; set; }
+        public int? Height { get; set; }
 
-        public Planet Homeworld { get; set; }
+        public Planet? Homeworld { get; set; }
 
         public string Id { get; set; }
 
-        public float Mass { get; set; }
+        public float? Mass { get; set; }
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public string SkinColor { get; set; }
+        public string? SkinColor { get; set; }
 
-        public Species Species { get; set; }
+        public Species? Species { get; set; }
 
-        public PersonFilmsConnection FilmConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "filmConnection")]
-        public PersonFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last) => FilmConnection;
-        public PersonStarshipsConnection StarshipConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "starshipConnection")]
-        public PersonStarshipsConnection ExecuteStarshipConnection(string after, string before, int first, int last) => StarshipConnection;
-        public PersonVehiclesConnection VehicleConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "vehicleConnection")]
-        public PersonVehiclesConnection ExecuteVehicleConnection(string after, string before, int first, int last) => VehicleConnection;
+        public PersonFilmsConnection? FilmConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "filmConnection")]
+        public PersonFilmsConnection? ExecuteFilmConnection(string? after, string? before, int? first, int? last) => FilmConnection;
+        public PersonStarshipsConnection? StarshipConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "starshipConnection")]
+        public PersonStarshipsConnection? ExecuteStarshipConnection(string? after, string? before, int? first, int? last) => StarshipConnection;
+        public PersonVehiclesConnection? VehicleConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "vehicleConnection")]
+        public PersonVehiclesConnection? ExecuteVehicleConnection(string? after, string? before, int? first, int? last) => VehicleConnection;
     }
 
     public partial class PersonFilmsConnection
     {
-        public PersonFilmsEdge Edges { get; set; }
+        public PersonFilmsEdge[]? Edges { get; set; }
 
-        public Film Films { get; set; }
+        public Film[]? Films { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class PersonFilmsEdge
     {
         public string Cursor { get; set; }
 
-        public Film Node { get; set; }
+        public Film? Node { get; set; }
     }
 
     public partial class PersonStarshipsConnection
     {
-        public PersonStarshipsEdge Edges { get; set; }
+        public PersonStarshipsEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Starship Starships { get; set; }
+        public Starship[]? Starships { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class PersonStarshipsEdge
     {
         public string Cursor { get; set; }
 
-        public Starship Node { get; set; }
+        public Starship? Node { get; set; }
     }
 
     public partial class PersonVehiclesConnection
     {
-        public PersonVehiclesEdge Edges { get; set; }
+        public PersonVehiclesEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
 
-        public Vehicle Vehicles { get; set; }
+        public Vehicle[]? Vehicles { get; set; }
     }
 
     public partial class PersonVehiclesEdge
     {
         public string Cursor { get; set; }
 
-        public Vehicle Node { get; set; }
+        public Vehicle? Node { get; set; }
     }
 
-    public partial class Planet
+    public partial class Planet : Node
     {
-        public string Climates { get; set; }
+        public string[]? Climates { get; set; }
 
-        public string Created { get; set; }
+        public string? Created { get; set; }
 
-        public int Diameter { get; set; }
+        public int? Diameter { get; set; }
 
-        public string Edited { get; set; }
+        public string? Edited { get; set; }
 
-        public string Gravity { get; set; }
+        public string? Gravity { get; set; }
 
         public string Id { get; set; }
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public int OrbitalPeriod { get; set; }
+        public int? OrbitalPeriod { get; set; }
 
-        public float Population { get; set; }
+        public float? Population { get; set; }
 
-        public int RotationPeriod { get; set; }
+        public int? RotationPeriod { get; set; }
 
-        public float SurfaceWater { get; set; }
+        public float? SurfaceWater { get; set; }
 
-        public string Terrains { get; set; }
+        public string[]? Terrains { get; set; }
 
-        public PlanetFilmsConnection FilmConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "filmConnection")]
-        public PlanetFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last) => FilmConnection;
-        public PlanetResidentsConnection ResidentConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "residentConnection")]
-        public PlanetResidentsConnection ExecuteResidentConnection(string after, string before, int first, int last) => ResidentConnection;
+        public PlanetFilmsConnection? FilmConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "filmConnection")]
+        public PlanetFilmsConnection? ExecuteFilmConnection(string? after, string? before, int? first, int? last) => FilmConnection;
+        public PlanetResidentsConnection? ResidentConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "residentConnection")]
+        public PlanetResidentsConnection? ExecuteResidentConnection(string? after, string? before, int? first, int? last) => ResidentConnection;
     }
 
     public partial class PlanetFilmsConnection
     {
-        public PlanetFilmsEdge Edges { get; set; }
+        public PlanetFilmsEdge[]? Edges { get; set; }
 
-        public Film Films { get; set; }
+        public Film[]? Films { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class PlanetFilmsEdge
     {
         public string Cursor { get; set; }
 
-        public Film Node { get; set; }
+        public Film? Node { get; set; }
     }
 
     public partial class PlanetResidentsConnection
     {
-        public PlanetResidentsEdge Edges { get; set; }
+        public PlanetResidentsEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Person Residents { get; set; }
+        public Person[]? Residents { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class PlanetResidentsEdge
     {
         public string Cursor { get; set; }
 
-        public Person Node { get; set; }
+        public Person? Node { get; set; }
     }
 
     public partial class PlanetsConnection
     {
-        public PlanetsEdge Edges { get; set; }
+        public PlanetsEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Planet Planets { get; set; }
+        public Planet[]? Planets { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class PlanetsEdge
     {
         public string Cursor { get; set; }
 
-        public Planet Node { get; set; }
+        public Planet? Node { get; set; }
     }
 
-    public partial class Species
+    public partial class Species : Node
     {
-        public float AverageHeight { get; set; }
+        public float? AverageHeight { get; set; }
 
-        public int AverageLifespan { get; set; }
+        public int? AverageLifespan { get; set; }
 
-        public string Classification { get; set; }
+        public string? Classification { get; set; }
 
-        public string Created { get; set; }
+        public string? Created { get; set; }
 
-        public string Designation { get; set; }
+        public string? Designation { get; set; }
 
-        public string Edited { get; set; }
+        public string? Edited { get; set; }
 
-        public string EyeColors { get; set; }
+        public string[]? EyeColors { get; set; }
 
-        public string HairColors { get; set; }
+        public string[]? HairColors { get; set; }
 
-        public Planet Homeworld { get; set; }
+        public Planet? Homeworld { get; set; }
 
         public string Id { get; set; }
 
-        public string Language { get; set; }
+        public string? Language { get; set; }
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public string SkinColors { get; set; }
+        public string[]? SkinColors { get; set; }
 
-        public SpeciesFilmsConnection FilmConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "filmConnection")]
-        public SpeciesFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last) => FilmConnection;
-        public SpeciesPeopleConnection PersonConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "personConnection")]
-        public SpeciesPeopleConnection ExecutePersonConnection(string after, string before, int first, int last) => PersonConnection;
+        public SpeciesFilmsConnection? FilmConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "filmConnection")]
+        public SpeciesFilmsConnection? ExecuteFilmConnection(string? after, string? before, int? first, int? last) => FilmConnection;
+        public SpeciesPeopleConnection? PersonConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "personConnection")]
+        public SpeciesPeopleConnection? ExecutePersonConnection(string? after, string? before, int? first, int? last) => PersonConnection;
     }
 
     public partial class SpeciesConnection
     {
-        public SpeciesEdge Edges { get; set; }
+        public SpeciesEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Species Species { get; set; }
+        public Species[]? Species { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class SpeciesEdge
     {
         public string Cursor { get; set; }
 
-        public Species Node { get; set; }
+        public Species? Node { get; set; }
     }
 
     public partial class SpeciesFilmsConnection
     {
-        public SpeciesFilmsEdge Edges { get; set; }
+        public SpeciesFilmsEdge[]? Edges { get; set; }
 
-        public Film Films { get; set; }
+        public Film[]? Films { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class SpeciesFilmsEdge
     {
         public string Cursor { get; set; }
 
-        public Film Node { get; set; }
+        public Film? Node { get; set; }
     }
 
     public partial class SpeciesPeopleConnection
     {
-        public SpeciesPeopleEdge Edges { get; set; }
+        public SpeciesPeopleEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Person People { get; set; }
+        public Person[]? People { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class SpeciesPeopleEdge
     {
         public string Cursor { get; set; }
 
-        public Person Node { get; set; }
+        public Person? Node { get; set; }
     }
 
-    public partial class Starship
+    public partial class Starship : Node
     {
-        public int Mglt { get; set; }
+        public int? Mglt { get; set; }
 
-        public float CargoCapacity { get; set; }
+        public float? CargoCapacity { get; set; }
 
-        public string Consumables { get; set; }
+        public string? Consumables { get; set; }
 
-        public float CostInCredits { get; set; }
+        public float? CostInCredits { get; set; }
 
-        public string Created { get; set; }
+        public string? Created { get; set; }
 
-        public string Crew { get; set; }
+        public string? Crew { get; set; }
 
-        public string Edited { get; set; }
+        public string? Edited { get; set; }
 
-        public float HyperdriveRating { get; set; }
+        public float? HyperdriveRating { get; set; }
 
         public string Id { get; set; }
 
-        public float Length { get; set; }
+        public float? Length { get; set; }
 
-        public string Manufacturers { get; set; }
+        public string[]? Manufacturers { get; set; }
 
-        public int MaxAtmospheringSpeed { get; set; }
+        public int? MaxAtmospheringSpeed { get; set; }
 
-        public string Model { get; set; }
+        public string? Model { get; set; }
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public string Passengers { get; set; }
+        public string? Passengers { get; set; }
 
-        public string StarshipClass { get; set; }
+        public string? StarshipClass { get; set; }
 
-        public StarshipFilmsConnection FilmConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "filmConnection")]
-        public StarshipFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last) => FilmConnection;
-        public StarshipPilotsConnection PilotConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "pilotConnection")]
-        public StarshipPilotsConnection ExecutePilotConnection(string after, string before, int first, int last) => PilotConnection;
+        public StarshipFilmsConnection? FilmConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "filmConnection")]
+        public StarshipFilmsConnection? ExecuteFilmConnection(string? after, string? before, int? first, int? last) => FilmConnection;
+        public StarshipPilotsConnection? PilotConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "pilotConnection")]
+        public StarshipPilotsConnection? ExecutePilotConnection(string? after, string? before, int? first, int? last) => PilotConnection;
     }
 
     public partial class StarshipFilmsConnection
     {
-        public StarshipFilmsEdge Edges { get; set; }
+        public StarshipFilmsEdge[]? Edges { get; set; }
 
-        public Film Films { get; set; }
+        public Film[]? Films { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class StarshipFilmsEdge
     {
         public string Cursor { get; set; }
 
-        public Film Node { get; set; }
+        public Film? Node { get; set; }
     }
 
     public partial class StarshipPilotsConnection
     {
-        public StarshipPilotsEdge Edges { get; set; }
+        public StarshipPilotsEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Person Pilots { get; set; }
+        public Person[]? Pilots { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class StarshipPilotsEdge
     {
         public string Cursor { get; set; }
 
-        public Person Node { get; set; }
+        public Person? Node { get; set; }
     }
 
     public partial class StarshipsConnection
     {
-        public StarshipsEdge Edges { get; set; }
+        public StarshipsEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Starship Starships { get; set; }
+        public Starship[]? Starships { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class StarshipsEdge
     {
         public string Cursor { get; set; }
 
-        public Starship Node { get; set; }
+        public Starship? Node { get; set; }
     }
 
-    public partial class Vehicle
+    public partial class Vehicle : Node
     {
-        public float CargoCapacity { get; set; }
+        public float? CargoCapacity { get; set; }
 
-        public string Consumables { get; set; }
+        public string? Consumables { get; set; }
 
-        public float CostInCredits { get; set; }
+        public float? CostInCredits { get; set; }
 
-        public string Created { get; set; }
+        public string? Created { get; set; }
 
-        public string Crew { get; set; }
+        public string? Crew { get; set; }
 
-        public string Edited { get; set; }
+        public string? Edited { get; set; }
 
         public string Id { get; set; }
 
-        public float Length { get; set; }
+        public float? Length { get; set; }
 
-        public string Manufacturers { get; set; }
+        public string[]? Manufacturers { get; set; }
 
-        public int MaxAtmospheringSpeed { get; set; }
+        public int? MaxAtmospheringSpeed { get; set; }
 
-        public string Model { get; set; }
+        public string? Model { get; set; }
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public string Passengers { get; set; }
+        public string? Passengers { get; set; }
 
-        public string VehicleClass { get; set; }
+        public string? VehicleClass { get; set; }
 
-        public VehicleFilmsConnection FilmConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "filmConnection")]
-        public VehicleFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last) => FilmConnection;
-        public VehiclePilotsConnection PilotConnection { get; set; } = null !;
-        [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "pilotConnection")]
-        public VehiclePilotsConnection ExecutePilotConnection(string after, string before, int first, int last) => PilotConnection;
+        public VehicleFilmsConnection? FilmConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "filmConnection")]
+        public VehicleFilmsConnection? ExecuteFilmConnection(string? after, string? before, int? first, int? last) => FilmConnection;
+        public VehiclePilotsConnection? PilotConnection { get; set; } = null !;
+        [GraphQLOperation, GraphQLField(Name = "pilotConnection")]
+        public VehiclePilotsConnection? ExecutePilotConnection(string? after, string? before, int? first, int? last) => PilotConnection;
     }
 
     public partial class VehicleFilmsConnection
     {
-        public VehicleFilmsEdge Edges { get; set; }
+        public VehicleFilmsEdge[]? Edges { get; set; }
 
-        public Film Films { get; set; }
+        public Film[]? Films { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class VehicleFilmsEdge
     {
         public string Cursor { get; set; }
 
-        public Film Node { get; set; }
+        public Film? Node { get; set; }
     }
 
     public partial class VehiclePilotsConnection
     {
-        public VehiclePilotsEdge Edges { get; set; }
+        public VehiclePilotsEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public Person Pilots { get; set; }
+        public Person[]? Pilots { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     public partial class VehiclePilotsEdge
     {
         public string Cursor { get; set; }
 
-        public Person Node { get; set; }
+        public Person? Node { get; set; }
     }
 
     public partial class VehiclesConnection
     {
-        public VehiclesEdge Edges { get; set; }
+        public VehiclesEdge[]? Edges { get; set; }
 
         public PageInfo PageInfo { get; set; }
 
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
 
-        public Vehicle Vehicles { get; set; }
+        public Vehicle[]? Vehicles { get; set; }
     }
 
     public partial class VehiclesEdge
     {
         public string Cursor { get; set; }
 
-        public Vehicle Node { get; set; }
+        public Vehicle? Node { get; set; }
     }
 }

@@ -20,11 +20,17 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
     public override string ToString()
     {
         var ns = NamespaceDeclaration(IdentifierName(this.graphNamespace))
+            .AddUsings(
+                UsingDirective(IdentifierName("LinQL")),
+                UsingDirective(IdentifierName("LinQL.Description")),
+                UsingDirective(IdentifierName("LinQL.Translation")),
+                UsingDirective(IdentifierName("Microsoft.Extensions.Logging")))
             .AddMembers(this.Graph.Create())
             .AddMembers(this.Graph.RootOperations.Select(x => x.Create()).ToArray())
             .AddMembers(this.Graph.Types.Select(x => x.Create()).ToArray());
 
         using var clientContent = new StringWriter();
+        clientContent.WriteLine("#nullable enable");
         ns.NormalizeWhitespace().WriteTo(clientContent);
 
         return clientContent.ToString();
