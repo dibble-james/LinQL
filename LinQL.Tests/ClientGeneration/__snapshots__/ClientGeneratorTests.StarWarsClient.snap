@@ -14,94 +14,43 @@ namespace StarWars
     {
         public FilmsConnection AllFilms { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allFilms")]
-        public FilmsConnection ExecuteAllFilms(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public FilmsConnection ExecuteAllFilms(string after, string before, int first, int last) => AllFilms;
         public PeopleConnection AllPeople { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allPeople")]
-        public PeopleConnection ExecuteAllPeople(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public PeopleConnection ExecuteAllPeople(string after, string before, int first, int last) => AllPeople;
         public PlanetsConnection AllPlanets { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allPlanets")]
-        public PlanetsConnection ExecuteAllPlanets(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public PlanetsConnection ExecuteAllPlanets(string after, string before, int first, int last) => AllPlanets;
         public SpeciesConnection AllSpecies { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allSpecies")]
-        public SpeciesConnection ExecuteAllSpecies(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public SpeciesConnection ExecuteAllSpecies(string after, string before, int first, int last) => AllSpecies;
         public StarshipsConnection AllStarships { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allStarships")]
-        public StarshipsConnection ExecuteAllStarships(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public StarshipsConnection ExecuteAllStarships(string after, string before, int first, int last) => AllStarships;
         public VehiclesConnection AllVehicles { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "allVehicles")]
-        public VehiclesConnection ExecuteAllVehicles(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public VehiclesConnection ExecuteAllVehicles(string after, string before, int first, int last) => AllVehicles;
         public Film Film { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "film")]
-        public Film ExecuteFilm(string filmID, string id)
-        {
-            return default !;
-        }
-
+        public Film ExecuteFilm(string filmID, string id) => Film;
         public Node Node { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "node")]
-        public Node ExecuteNode(string id)
-        {
-            return default !;
-        }
-
+        public Node ExecuteNode(string id) => Node;
         public Person Person { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "person")]
-        public Person ExecutePerson(string id, string personID)
-        {
-            return default !;
-        }
-
+        public Person ExecutePerson(string id, string personID) => Person;
         public Planet Planet { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "planet")]
-        public Planet ExecutePlanet(string id, string planetID)
-        {
-            return default !;
-        }
-
+        public Planet ExecutePlanet(string id, string planetID) => Planet;
         public Species Species { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "species")]
-        public Species ExecuteSpecies(string id, string speciesID)
-        {
-            return default !;
-        }
-
+        public Species ExecuteSpecies(string id, string speciesID) => Species;
         public Starship Starship { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "starship")]
-        public Starship ExecuteStarship(string id, string starshipID)
-        {
-            return default !;
-        }
-
+        public Starship ExecuteStarship(string id, string starshipID) => Starship;
         public Vehicle Vehicle { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "vehicle")]
-        public Vehicle ExecuteVehicle(string id, string vehicleID)
-        {
-            return default !;
-        }
+        public Vehicle ExecuteVehicle(string id, string vehicleID) => Vehicle;
     }
 
     public partial class Film
@@ -126,38 +75,19 @@ namespace StarWars
 
         public FilmCharactersConnection CharacterConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "characterConnection")]
-        public FilmCharactersConnection ExecuteCharacterConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public FilmCharactersConnection ExecuteCharacterConnection(string after, string before, int first, int last) => CharacterConnection;
         public FilmPlanetsConnection PlanetConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "planetConnection")]
-        public FilmPlanetsConnection ExecutePlanetConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public FilmPlanetsConnection ExecutePlanetConnection(string after, string before, int first, int last) => PlanetConnection;
         public FilmSpeciesConnection SpeciesConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "speciesConnection")]
-        public FilmSpeciesConnection ExecuteSpeciesConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public FilmSpeciesConnection ExecuteSpeciesConnection(string after, string before, int first, int last) => SpeciesConnection;
         public FilmStarshipsConnection StarshipConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "starshipConnection")]
-        public FilmStarshipsConnection ExecuteStarshipConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public FilmStarshipsConnection ExecuteStarshipConnection(string after, string before, int first, int last) => StarshipConnection;
         public FilmVehiclesConnection VehicleConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "vehicleConnection")]
-        public FilmVehiclesConnection ExecuteVehicleConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
+        public FilmVehiclesConnection ExecuteVehicleConnection(string after, string before, int first, int last) => VehicleConnection;
     }
 
     public partial class FilmCharactersConnection
@@ -327,24 +257,13 @@ namespace StarWars
 
         public PersonFilmsConnection FilmConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "filmConnection")]
-        public PersonFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public PersonFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last) => FilmConnection;
         public PersonStarshipsConnection StarshipConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "starshipConnection")]
-        public PersonStarshipsConnection ExecuteStarshipConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public PersonStarshipsConnection ExecuteStarshipConnection(string after, string before, int first, int last) => StarshipConnection;
         public PersonVehiclesConnection VehicleConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "vehicleConnection")]
-        public PersonVehiclesConnection ExecuteVehicleConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
+        public PersonVehiclesConnection ExecuteVehicleConnection(string after, string before, int first, int last) => VehicleConnection;
     }
 
     public partial class PersonFilmsConnection
@@ -429,17 +348,10 @@ namespace StarWars
 
         public PlanetFilmsConnection FilmConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "filmConnection")]
-        public PlanetFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public PlanetFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last) => FilmConnection;
         public PlanetResidentsConnection ResidentConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "residentConnection")]
-        public PlanetResidentsConnection ExecuteResidentConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
+        public PlanetResidentsConnection ExecuteResidentConnection(string after, string before, int first, int last) => ResidentConnection;
     }
 
     public partial class PlanetFilmsConnection
@@ -526,17 +438,10 @@ namespace StarWars
 
         public SpeciesFilmsConnection FilmConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "filmConnection")]
-        public SpeciesFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public SpeciesFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last) => FilmConnection;
         public SpeciesPeopleConnection PersonConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "personConnection")]
-        public SpeciesPeopleConnection ExecutePersonConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
+        public SpeciesPeopleConnection ExecutePersonConnection(string after, string before, int first, int last) => PersonConnection;
     }
 
     public partial class SpeciesConnection
@@ -629,17 +534,10 @@ namespace StarWars
 
         public StarshipFilmsConnection FilmConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "filmConnection")]
-        public StarshipFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public StarshipFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last) => FilmConnection;
         public StarshipPilotsConnection PilotConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "pilotConnection")]
-        public StarshipPilotsConnection ExecutePilotConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
+        public StarshipPilotsConnection ExecutePilotConnection(string after, string before, int first, int last) => PilotConnection;
     }
 
     public partial class StarshipFilmsConnection
@@ -728,17 +626,10 @@ namespace StarWars
 
         public VehicleFilmsConnection FilmConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "filmConnection")]
-        public VehicleFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
-
+        public VehicleFilmsConnection ExecuteFilmConnection(string after, string before, int first, int last) => FilmConnection;
         public VehiclePilotsConnection PilotConnection { get; set; } = null !;
         [GraphQLOperationAttribute, GraphQLFieldAttribute(Name = "pilotConnection")]
-        public VehiclePilotsConnection ExecutePilotConnection(string after, string before, int first, int last)
-        {
-            return default !;
-        }
+        public VehiclePilotsConnection ExecutePilotConnection(string after, string before, int first, int last) => PilotConnection;
     }
 
     public partial class VehicleFilmsConnection

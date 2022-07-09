@@ -74,6 +74,7 @@ internal class ComplexTypeClass : IClassFactory
                     })))
                     .AddParameterListParameters(
                         f.Arguments.Select(p => Parameter(Identifier(p.Name.Value)).WithType(ParseTypeName(TypeName(p.Type.NamedType().Name.Value)))).ToArray())
-                    .WithBody(Block(ParseStatement("return default!;"))),
+                    .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(f.Name.Value))))
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
         };
 }
