@@ -7,9 +7,13 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 {
     protected override ISyntaxVisitorAction VisitChildren(OperationTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        context.Graph.RootOperations.Add(new RootTypeClass(node.Type.Name.Value));
+        context.Graph.RootOperations.Add(
+            new RootTypeClass(
+                node.Type.Name.Value,
+                node.Operation,
+                new List<FieldDefinitionNode>()));
 
-        return base.VisitChildren(node.Type, context);
+        return base.VisitChildren(node, context);
     }
 
     protected override ISyntaxVisitorAction VisitChildren(ObjectTypeDefinitionNode node, DocumentWalkerContext context)

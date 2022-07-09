@@ -1,20 +1,25 @@
 namespace LinQL.ClientGeneration;
 
-using Microsoft.CodeAnalysis.CSharp;
+using HotChocolate.Language;
+using LinQL.Description;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-internal class RootTypeClass : IClassFactory
+internal class RootTypeClass : ComplexTypeClass
 {
-    public RootTypeClass(string name) => this.Name = name;
+    public RootTypeClass(string name, OperationType rootOperationType, IReadOnlyList<FieldDefinitionNode> fields)
+        : base(name, fields) => this.RootOperation = rootOperationType;
 
-    public string Name { get; }
+    public OperationType RootOperation { get; }
 
-    public MemberDeclarationSyntax Create()
+    public override MemberDeclarationSyntax Create()
     {
-        var rootType = ClassDeclaration(Identifier(this.Name))
-            .AddModifiers(Token(SyntaxKind.PublicKeyword))
-            .AddBaseListTypes(SimpleBaseType(IdentifierName($"{nameof(RootType<object>)}<{this.Name}>")));
+        var rootType = (base.Create() as ClassDeclarationSyntax)!
+            .AddBaseListTypes(SimpleBaseType(IdentifierName($"{nameof(RootType<object>)}<{this.Name}>")))
+            .AddAttributeLists(AttributeList(SingletonSeparatedList(
+                Attribute(
+                    IdentifierName(nameof(OperationTypeAttribute)),
+                    AttributeArgumentList(SingletonSeparatedList(AttributeArgument(IdentifierName($"{nameof(RootOperationType)}.{this.RootOperation}"))))))));
 
         return rootType;
     }

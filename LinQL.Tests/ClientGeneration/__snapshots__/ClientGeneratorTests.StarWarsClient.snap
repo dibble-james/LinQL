@@ -1,1408 +1,771 @@
-﻿schema {
-  query: Root
-}
+namespace StarWars
+{
+    public partial class StarWarsGraph : Graph
+    {
+        public StarWarsGraph(ILogger<StarWarsGraph> logger, IGraphQLConnection connection, IQueryTranslator queryTranslator) : base(logger, connection, queryTranslator)
+        {
+        }
 
-"""
-A single film.
-"""
-type Film implements Node {
-  characterConnection(after: String before: String first: Int last: Int): FilmCharactersConnection
-  """
-  The ISO 8601 date format of the time that this resource was created.
-  """
-  created: String
-  """
-  The name of the director of this film.
-  """
-  director: String
-  """
-  The ISO 8601 date format of the time that this resource was edited.
-  """
-  edited: String
-  """
-  The episode number of this film.
-  """
-  episodeID: Int
-  """
-  The ID of an object
-  """
-  id: ID!
-  """
-  The opening paragraphs at the beginning of this film.
-  """
-  openingCrawl: String
-  planetConnection(after: String before: String first: Int last: Int): FilmPlanetsConnection
-  """
-  The name(s) of the producer(s) of this film.
-  """
-  producers: [String]
-  """
-  The ISO 8601 date format of film release at original creator country.
-  """
-  releaseDate: String
-  speciesConnection(after: String before: String first: Int last: Int): FilmSpeciesConnection
-  starshipConnection(after: String before: String first: Int last: Int): FilmStarshipsConnection
-  """
-  The title of this film.
-  """
-  title: String
-  vehicleConnection(after: String before: String first: Int last: Int): FilmVehiclesConnection
-}
+        public Root Root => this.RootType<Root>() ; }
 
-"""
-A connection to a list of items.
-"""
-type FilmCharactersConnection {
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  characters: [Person]
-  """
-  A list of edges.
-  """
-  edges: [FilmCharactersEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+    [OperationTypeAttribute(RootOperationType.Query)]
+    public partial class Root : RootType<Root>
+    {
+    }
 
-"""
-An edge in a connection.
-"""
-type FilmCharactersEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Person
-}
+    public partial class Film
+    {
+        public string Created { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type FilmPlanetsConnection {
-  """
-  A list of edges.
-  """
-  edges: [FilmPlanetsEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  planets: [Planet]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public string Director { get; set; }
 
-"""
-An edge in a connection.
-"""
-type FilmPlanetsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Planet
-}
+        public string Edited { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type FilmSpeciesConnection {
-  """
-  A list of edges.
-  """
-  edges: [FilmSpeciesEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  species: [Species]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public int EpisodeID { get; set; }
 
-"""
-An edge in a connection.
-"""
-type FilmSpeciesEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Species
-}
+        public string Id { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type FilmStarshipsConnection {
-  """
-  A list of edges.
-  """
-  edges: [FilmStarshipsEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  starships: [Starship]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public string OpeningCrawl { get; set; }
 
-"""
-An edge in a connection.
-"""
-type FilmStarshipsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Starship
-}
+        public string Producers { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type FilmVehiclesConnection {
-  """
-  A list of edges.
-  """
-  edges: [FilmVehiclesEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  vehicles: [Vehicle]
-}
+        public string ReleaseDate { get; set; }
 
-"""
-An edge in a connection.
-"""
-type FilmVehiclesEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Vehicle
-}
+        public string Title { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type FilmsConnection {
-  """
-  A list of edges.
-  """
-  edges: [FilmsEdge]
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  films: [Film]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        [GraphQLOperationAttribute]
+        public FilmCharactersConnection CharacterConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
 
-"""
-An edge in a connection.
-"""
-type FilmsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Film
-}
+        [GraphQLOperationAttribute]
+        public FilmPlanetsConnection PlanetConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
 
-"""
-An object with an ID
-"""
-interface Node {
-  """
-  The id of the object.
-  """
-  id: ID!
-}
+        [GraphQLOperationAttribute]
+        public FilmSpeciesConnection SpeciesConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
 
-"""
-Information about pagination in a connection.
-"""
-type PageInfo {
-  """
-  When paginating forwards, the cursor to continue.
-  """
-  endCursor: String
-  """
-  When paginating forwards, are there more items?
-  """
-  hasNextPage: Boolean!
-  """
-  When paginating backwards, are there more items?
-  """
-  hasPreviousPage: Boolean!
-  """
-  When paginating backwards, the cursor to continue.
-  """
-  startCursor: String
-}
+        [GraphQLOperationAttribute]
+        public FilmStarshipsConnection StarshipConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
 
-"""
-A connection to a list of items.
-"""
-type PeopleConnection {
-  """
-  A list of edges.
-  """
-  edges: [PeopleEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  people: [Person]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        [GraphQLOperationAttribute]
+        public FilmVehiclesConnection VehicleConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+    }
 
-"""
-An edge in a connection.
-"""
-type PeopleEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Person
-}
+    public partial class FilmCharactersConnection
+    {
+        public Person Characters { get; set; }
 
-"""
-An individual person or character within the Star Wars universe.
-"""
-type Person implements Node {
-  """
-  The birth year of the person, using the in-universe standard of BBY or ABY -
-  Before the Battle of Yavin or After the Battle of Yavin. The Battle of Yavin is
-  a battle that occurs at the end of Star Wars episode IV: A New Hope.
-  """
-  birthYear: String
-  """
-  The ISO 8601 date format of the time that this resource was created.
-  """
-  created: String
-  """
-  The ISO 8601 date format of the time that this resource was edited.
-  """
-  edited: String
-  """
-  The eye color of this person. Will be "unknown" if not known or "n/a" if the
-  person does not have an eye.
-  """
-  eyeColor: String
-  filmConnection(after: String before: String first: Int last: Int): PersonFilmsConnection
-  """
-  The gender of this person. Either "Male", "Female" or "unknown",
-  "n/a" if the person does not have a gender.
-  """
-  gender: String
-  """
-  The hair color of this person. Will be "unknown" if not known or "n/a" if the
-  person does not have hair.
-  """
-  hairColor: String
-  """
-  The height of the person in centimeters.
-  """
-  height: Int
-  """
-  A planet that this person was born on or inhabits.
-  """
-  homeworld: Planet
-  """
-  The ID of an object
-  """
-  id: ID!
-  """
-  The mass of the person in kilograms.
-  """
-  mass: Float
-  """
-  The name of this person.
-  """
-  name: String
-  """
-  The skin color of this person.
-  """
-  skinColor: String
-  """
-  The species that this person belongs to, or null if unknown.
-  """
-  species: Species
-  starshipConnection(after: String before: String first: Int last: Int): PersonStarshipsConnection
-  vehicleConnection(after: String before: String first: Int last: Int): PersonVehiclesConnection
-}
+        public FilmCharactersEdge Edges { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type PersonFilmsConnection {
-  """
-  A list of edges.
-  """
-  edges: [PersonFilmsEdge]
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  films: [Film]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public PageInfo PageInfo { get; set; }
 
-"""
-An edge in a connection.
-"""
-type PersonFilmsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Film
-}
+        public int TotalCount { get; set; }
+    }
 
-"""
-A connection to a list of items.
-"""
-type PersonStarshipsConnection {
-  """
-  A list of edges.
-  """
-  edges: [PersonStarshipsEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  starships: [Starship]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+    public partial class FilmCharactersEdge
+    {
+        public string Cursor { get; set; }
 
-"""
-An edge in a connection.
-"""
-type PersonStarshipsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Starship
-}
+        public Person Node { get; set; }
+    }
 
-"""
-A connection to a list of items.
-"""
-type PersonVehiclesConnection {
-  """
-  A list of edges.
-  """
-  edges: [PersonVehiclesEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  vehicles: [Vehicle]
-}
+    public partial class FilmPlanetsConnection
+    {
+        public FilmPlanetsEdge Edges { get; set; }
 
-"""
-An edge in a connection.
-"""
-type PersonVehiclesEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Vehicle
-}
+        public PageInfo PageInfo { get; set; }
 
-"""
-A large mass, planet or planetoid in the Star Wars Universe, at the time of
-0 ABY.
-"""
-type Planet implements Node {
-  """
-  The climates of this planet.
-  """
-  climates: [String]
-  """
-  The ISO 8601 date format of the time that this resource was created.
-  """
-  created: String
-  """
-  The diameter of this planet in kilometers.
-  """
-  diameter: Int
-  """
-  The ISO 8601 date format of the time that this resource was edited.
-  """
-  edited: String
-  filmConnection(after: String before: String first: Int last: Int): PlanetFilmsConnection
-  """
-  A number denoting the gravity of this planet, where "1" is normal or 1 standard
-  G. "2" is twice or 2 standard Gs. "0.5" is half or 0.5 standard Gs.
-  """
-  gravity: String
-  """
-  The ID of an object
-  """
-  id: ID!
-  """
-  The name of this planet.
-  """
-  name: String
-  """
-  The number of standard days it takes for this planet to complete a single orbit
-  of its local star.
-  """
-  orbitalPeriod: Int
-  """
-  The average population of sentient beings inhabiting this planet.
-  """
-  population: Float
-  residentConnection(after: String before: String first: Int last: Int): PlanetResidentsConnection
-  """
-  The number of standard hours it takes for this planet to complete a single
-  rotation on its axis.
-  """
-  rotationPeriod: Int
-  """
-  The percentage of the planet surface that is naturally occuring water or bodies
-  of water.
-  """
-  surfaceWater: Float
-  """
-  The terrains of this planet.
-  """
-  terrains: [String]
-}
+        public Planet Planets { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type PlanetFilmsConnection {
-  """
-  A list of edges.
-  """
-  edges: [PlanetFilmsEdge]
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  films: [Film]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public int TotalCount { get; set; }
+    }
 
-"""
-An edge in a connection.
-"""
-type PlanetFilmsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Film
-}
+    public partial class FilmPlanetsEdge
+    {
+        public string Cursor { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type PlanetResidentsConnection {
-  """
-  A list of edges.
-  """
-  edges: [PlanetResidentsEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  residents: [Person]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public Planet Node { get; set; }
+    }
 
-"""
-An edge in a connection.
-"""
-type PlanetResidentsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Person
-}
+    public partial class FilmSpeciesConnection
+    {
+        public FilmSpeciesEdge Edges { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type PlanetsConnection {
-  """
-  A list of edges.
-  """
-  edges: [PlanetsEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  planets: [Planet]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public PageInfo PageInfo { get; set; }
 
-"""
-An edge in a connection.
-"""
-type PlanetsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Planet
-}
+        public Species Species { get; set; }
 
-type Root {
-  allFilms(after: String before: String first: Int last: Int): FilmsConnection
-  allPeople(after: String before: String first: Int last: Int): PeopleConnection
-  allPlanets(after: String before: String first: Int last: Int): PlanetsConnection
-  allSpecies(after: String before: String first: Int last: Int): SpeciesConnection
-  allStarships(after: String before: String first: Int last: Int): StarshipsConnection
-  allVehicles(after: String before: String first: Int last: Int): VehiclesConnection
-  film(filmID: ID id: ID): Film
-  """
-  Fetches an object given its ID
-  """
-  node("""
-  The ID of an object
-  """ id: ID!): Node
-  person(id: ID personID: ID): Person
-  planet(id: ID planetID: ID): Planet
-  species(id: ID speciesID: ID): Species
-  starship(id: ID starshipID: ID): Starship
-  vehicle(id: ID vehicleID: ID): Vehicle
-}
+        public int TotalCount { get; set; }
+    }
 
-"""
-A type of person or character within the Star Wars Universe.
-"""
-type Species implements Node {
-  """
-  The average height of this species in centimeters.
-  """
-  averageHeight: Float
-  """
-  The average lifespan of this species in years, null if unknown.
-  """
-  averageLifespan: Int
-  """
-  The classification of this species, such as "mammal" or "reptile".
-  """
-  classification: String
-  """
-  The ISO 8601 date format of the time that this resource was created.
-  """
-  created: String
-  """
-  The designation of this species, such as "sentient".
-  """
-  designation: String
-  """
-  The ISO 8601 date format of the time that this resource was edited.
-  """
-  edited: String
-  """
-  Common eye colors for this species, null if this species does not typically
-  have eyes.
-  """
-  eyeColors: [String]
-  filmConnection(after: String before: String first: Int last: Int): SpeciesFilmsConnection
-  """
-  Common hair colors for this species, null if this species does not typically
-  have hair.
-  """
-  hairColors: [String]
-  """
-  A planet that this species originates from.
-  """
-  homeworld: Planet
-  """
-  The ID of an object
-  """
-  id: ID!
-  """
-  The language commonly spoken by this species.
-  """
-  language: String
-  """
-  The name of this species.
-  """
-  name: String
-  personConnection(after: String before: String first: Int last: Int): SpeciesPeopleConnection
-  """
-  Common skin colors for this species, null if this species does not typically
-  have skin.
-  """
-  skinColors: [String]
-}
+    public partial class FilmSpeciesEdge
+    {
+        public string Cursor { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type SpeciesConnection {
-  """
-  A list of edges.
-  """
-  edges: [SpeciesEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  species: [Species]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public Species Node { get; set; }
+    }
 
-"""
-An edge in a connection.
-"""
-type SpeciesEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Species
-}
+    public partial class FilmStarshipsConnection
+    {
+        public FilmStarshipsEdge Edges { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type SpeciesFilmsConnection {
-  """
-  A list of edges.
-  """
-  edges: [SpeciesFilmsEdge]
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  films: [Film]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public PageInfo PageInfo { get; set; }
 
-"""
-An edge in a connection.
-"""
-type SpeciesFilmsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Film
-}
+        public Starship Starships { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type SpeciesPeopleConnection {
-  """
-  A list of edges.
-  """
-  edges: [SpeciesPeopleEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  people: [Person]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public int TotalCount { get; set; }
+    }
 
-"""
-An edge in a connection.
-"""
-type SpeciesPeopleEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Person
-}
+    public partial class FilmStarshipsEdge
+    {
+        public string Cursor { get; set; }
 
-"""
-A single transport craft that has hyperdrive capability.
-"""
-type Starship implements Node {
-  """
-  The Maximum number of Megalights this starship can travel in a standard hour.
-  A "Megalight" is a standard unit of distance and has never been defined before
-  within the Star Wars universe. This figure is only really useful for measuring
-  the difference in speed of starships. We can assume it is similar to AU, the
-  distance between our Sun (Sol) and Earth.
-  """
-  MGLT: Int
-  """
-  The maximum number of kilograms that this starship can transport.
-  """
-  cargoCapacity: Float
-  """
-  The maximum length of time that this starship can provide consumables for its
-  entire crew without having to resupply.
-  """
-  consumables: String
-  """
-  The cost of this starship new, in galactic credits.
-  """
-  costInCredits: Float
-  """
-  The ISO 8601 date format of the time that this resource was created.
-  """
-  created: String
-  """
-  The number of personnel needed to run or pilot this starship.
-  """
-  crew: String
-  """
-  The ISO 8601 date format of the time that this resource was edited.
-  """
-  edited: String
-  filmConnection(after: String before: String first: Int last: Int): StarshipFilmsConnection
-  """
-  The class of this starships hyperdrive.
-  """
-  hyperdriveRating: Float
-  """
-  The ID of an object
-  """
-  id: ID!
-  """
-  The length of this starship in meters.
-  """
-  length: Float
-  """
-  The manufacturers of this starship.
-  """
-  manufacturers: [String]
-  """
-  The maximum speed of this starship in atmosphere. null if this starship is
-  incapable of atmosphering flight.
-  """
-  maxAtmospheringSpeed: Int
-  """
-  The model or official name of this starship. Such as "T-65 X-wing" or "DS-1
-  Orbital Battle Station".
-  """
-  model: String
-  """
-  The name of this starship. The common name, such as "Death Star".
-  """
-  name: String
-  """
-  The number of non-essential people this starship can transport.
-  """
-  passengers: String
-  pilotConnection(after: String before: String first: Int last: Int): StarshipPilotsConnection
-  """
-  The class of this starship, such as "Starfighter" or "Deep Space Mobile
-  Battlestation"
-  """
-  starshipClass: String
-}
+        public Starship Node { get; set; }
+    }
 
-"""
-A connection to a list of items.
-"""
-type StarshipFilmsConnection {
-  """
-  A list of edges.
-  """
-  edges: [StarshipFilmsEdge]
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  films: [Film]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+    public partial class FilmVehiclesConnection
+    {
+        public FilmVehiclesEdge Edges { get; set; }
 
-"""
-An edge in a connection.
-"""
-type StarshipFilmsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Film
-}
+        public PageInfo PageInfo { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type StarshipPilotsConnection {
-  """
-  A list of edges.
-  """
-  edges: [StarshipPilotsEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  pilots: [Person]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public int TotalCount { get; set; }
 
-"""
-An edge in a connection.
-"""
-type StarshipPilotsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Person
-}
+        public Vehicle Vehicles { get; set; }
+    }
 
-"""
-A connection to a list of items.
-"""
-type StarshipsConnection {
-  """
-  A list of edges.
-  """
-  edges: [StarshipsEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  starships: [Starship]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+    public partial class FilmVehiclesEdge
+    {
+        public string Cursor { get; set; }
 
-"""
-An edge in a connection.
-"""
-type StarshipsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Starship
-}
+        public Vehicle Node { get; set; }
+    }
 
-"""
-A single transport craft that does not have hyperdrive capability
-"""
-type Vehicle implements Node {
-  """
-  The maximum number of kilograms that this vehicle can transport.
-  """
-  cargoCapacity: Float
-  """
-  The maximum length of time that this vehicle can provide consumables for its
-  entire crew without having to resupply.
-  """
-  consumables: String
-  """
-  The cost of this vehicle new, in Galactic Credits.
-  """
-  costInCredits: Float
-  """
-  The ISO 8601 date format of the time that this resource was created.
-  """
-  created: String
-  """
-  The number of personnel needed to run or pilot this vehicle.
-  """
-  crew: String
-  """
-  The ISO 8601 date format of the time that this resource was edited.
-  """
-  edited: String
-  filmConnection(after: String before: String first: Int last: Int): VehicleFilmsConnection
-  """
-  The ID of an object
-  """
-  id: ID!
-  """
-  The length of this vehicle in meters.
-  """
-  length: Float
-  """
-  The manufacturers of this vehicle.
-  """
-  manufacturers: [String]
-  """
-  The maximum speed of this vehicle in atmosphere.
-  """
-  maxAtmospheringSpeed: Int
-  """
-  The model or official name of this vehicle. Such as "All-Terrain Attack
-  Transport".
-  """
-  model: String
-  """
-  The name of this vehicle. The common name, such as "Sand Crawler" or "Speeder
-  bike".
-  """
-  name: String
-  """
-  The number of non-essential people this vehicle can transport.
-  """
-  passengers: String
-  pilotConnection(after: String before: String first: Int last: Int): VehiclePilotsConnection
-  """
-  The class of this vehicle, such as "Wheeled" or "Repulsorcraft".
-  """
-  vehicleClass: String
-}
+    public partial class FilmsConnection
+    {
+        public FilmsEdge Edges { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type VehicleFilmsConnection {
-  """
-  A list of edges.
-  """
-  edges: [VehicleFilmsEdge]
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  films: [Film]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public Film Films { get; set; }
 
-"""
-An edge in a connection.
-"""
-type VehicleFilmsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Film
-}
+        public PageInfo PageInfo { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type VehiclePilotsConnection {
-  """
-  A list of edges.
-  """
-  edges: [VehiclePilotsEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  pilots: [Person]
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-}
+        public int TotalCount { get; set; }
+    }
 
-"""
-An edge in a connection.
-"""
-type VehiclePilotsEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Person
-}
+    public partial class FilmsEdge
+    {
+        public string Cursor { get; set; }
 
-"""
-A connection to a list of items.
-"""
-type VehiclesConnection {
-  """
-  A list of edges.
-  """
-  edges: [VehiclesEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  A count of the total number of objects in this connection, ignoring pagination.
-  This allows a client to fetch the first five objects by passing "5" as the
-  argument to "first", then fetch the total count so it could display "5 of 83",
-  for example.
-  """
-  totalCount: Int
-  """
-  A list of all of the objects returned in the connection. This is a convenience
-  field provided for quickly exploring the API; rather than querying for
-  "{ edges { node } }" when no edge data is needed, this field can be be used
-  instead. Note that when clients like Relay need to fetch the "cursor" field on
-  the edge to enable efficient pagination, this shortcut cannot be used, and the
-  full "{ edges { node } }" version should be used instead.
-  """
-  vehicles: [Vehicle]
-}
+        public Film Node { get; set; }
+    }
 
-"""
-An edge in a connection.
-"""
-type VehiclesEdge {
-  """
-  A cursor for use in pagination
-  """
-  cursor: String!
-  """
-  The item at the end of the edge
-  """
-  node: Vehicle
+    public partial class PageInfo
+    {
+        public string EndCursor { get; set; }
+
+        public bool HasNextPage { get; set; }
+
+        public bool HasPreviousPage { get; set; }
+
+        public string StartCursor { get; set; }
+    }
+
+    public partial class PeopleConnection
+    {
+        public PeopleEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public Person People { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class PeopleEdge
+    {
+        public string Cursor { get; set; }
+
+        public Person Node { get; set; }
+    }
+
+    public partial class Person
+    {
+        public string BirthYear { get; set; }
+
+        public string Created { get; set; }
+
+        public string Edited { get; set; }
+
+        public string EyeColor { get; set; }
+
+        public string Gender { get; set; }
+
+        public string HairColor { get; set; }
+
+        public int Height { get; set; }
+
+        public Planet Homeworld { get; set; }
+
+        public string Id { get; set; }
+
+        public float Mass { get; set; }
+
+        public string Name { get; set; }
+
+        public string SkinColor { get; set; }
+
+        public Species Species { get; set; }
+
+        [GraphQLOperationAttribute]
+        public PersonFilmsConnection FilmConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public PersonStarshipsConnection StarshipConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public PersonVehiclesConnection VehicleConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+    }
+
+    public partial class PersonFilmsConnection
+    {
+        public PersonFilmsEdge Edges { get; set; }
+
+        public Film Films { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class PersonFilmsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Film Node { get; set; }
+    }
+
+    public partial class PersonStarshipsConnection
+    {
+        public PersonStarshipsEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public Starship Starships { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class PersonStarshipsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Starship Node { get; set; }
+    }
+
+    public partial class PersonVehiclesConnection
+    {
+        public PersonVehiclesEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public int TotalCount { get; set; }
+
+        public Vehicle Vehicles { get; set; }
+    }
+
+    public partial class PersonVehiclesEdge
+    {
+        public string Cursor { get; set; }
+
+        public Vehicle Node { get; set; }
+    }
+
+    public partial class Planet
+    {
+        public string Climates { get; set; }
+
+        public string Created { get; set; }
+
+        public int Diameter { get; set; }
+
+        public string Edited { get; set; }
+
+        public string Gravity { get; set; }
+
+        public string Id { get; set; }
+
+        public string Name { get; set; }
+
+        public int OrbitalPeriod { get; set; }
+
+        public float Population { get; set; }
+
+        public int RotationPeriod { get; set; }
+
+        public float SurfaceWater { get; set; }
+
+        public string Terrains { get; set; }
+
+        [GraphQLOperationAttribute]
+        public PlanetFilmsConnection FilmConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public PlanetResidentsConnection ResidentConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+    }
+
+    public partial class PlanetFilmsConnection
+    {
+        public PlanetFilmsEdge Edges { get; set; }
+
+        public Film Films { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class PlanetFilmsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Film Node { get; set; }
+    }
+
+    public partial class PlanetResidentsConnection
+    {
+        public PlanetResidentsEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public Person Residents { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class PlanetResidentsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Person Node { get; set; }
+    }
+
+    public partial class PlanetsConnection
+    {
+        public PlanetsEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public Planet Planets { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class PlanetsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Planet Node { get; set; }
+    }
+
+    public partial class Root
+    {
+        [GraphQLOperationAttribute]
+        public FilmsConnection AllFilms(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public PeopleConnection AllPeople(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public PlanetsConnection AllPlanets(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public SpeciesConnection AllSpecies(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public StarshipsConnection AllStarships(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public VehiclesConnection AllVehicles(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public Film Film(string filmID, string id)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public Node Node(string id)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public Person Person(string id, string personID)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public Planet Planet(string id, string planetID)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public Species Species(string id, string speciesID)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public Starship Starship(string id, string starshipID)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public Vehicle Vehicle(string id, string vehicleID)
+        {
+            return default !;
+        }
+    }
+
+    public partial class Species
+    {
+        public float AverageHeight { get; set; }
+
+        public int AverageLifespan { get; set; }
+
+        public string Classification { get; set; }
+
+        public string Created { get; set; }
+
+        public string Designation { get; set; }
+
+        public string Edited { get; set; }
+
+        public string EyeColors { get; set; }
+
+        public string HairColors { get; set; }
+
+        public Planet Homeworld { get; set; }
+
+        public string Id { get; set; }
+
+        public string Language { get; set; }
+
+        public string Name { get; set; }
+
+        public string SkinColors { get; set; }
+
+        [GraphQLOperationAttribute]
+        public SpeciesFilmsConnection FilmConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public SpeciesPeopleConnection PersonConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+    }
+
+    public partial class SpeciesConnection
+    {
+        public SpeciesEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public Species Species { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class SpeciesEdge
+    {
+        public string Cursor { get; set; }
+
+        public Species Node { get; set; }
+    }
+
+    public partial class SpeciesFilmsConnection
+    {
+        public SpeciesFilmsEdge Edges { get; set; }
+
+        public Film Films { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class SpeciesFilmsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Film Node { get; set; }
+    }
+
+    public partial class SpeciesPeopleConnection
+    {
+        public SpeciesPeopleEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public Person People { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class SpeciesPeopleEdge
+    {
+        public string Cursor { get; set; }
+
+        public Person Node { get; set; }
+    }
+
+    public partial class Starship
+    {
+        public int Mglt { get; set; }
+
+        public float CargoCapacity { get; set; }
+
+        public string Consumables { get; set; }
+
+        public float CostInCredits { get; set; }
+
+        public string Created { get; set; }
+
+        public string Crew { get; set; }
+
+        public string Edited { get; set; }
+
+        public float HyperdriveRating { get; set; }
+
+        public string Id { get; set; }
+
+        public float Length { get; set; }
+
+        public string Manufacturers { get; set; }
+
+        public int MaxAtmospheringSpeed { get; set; }
+
+        public string Model { get; set; }
+
+        public string Name { get; set; }
+
+        public string Passengers { get; set; }
+
+        public string StarshipClass { get; set; }
+
+        [GraphQLOperationAttribute]
+        public StarshipFilmsConnection FilmConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public StarshipPilotsConnection PilotConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+    }
+
+    public partial class StarshipFilmsConnection
+    {
+        public StarshipFilmsEdge Edges { get; set; }
+
+        public Film Films { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class StarshipFilmsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Film Node { get; set; }
+    }
+
+    public partial class StarshipPilotsConnection
+    {
+        public StarshipPilotsEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public Person Pilots { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class StarshipPilotsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Person Node { get; set; }
+    }
+
+    public partial class StarshipsConnection
+    {
+        public StarshipsEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public Starship Starships { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class StarshipsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Starship Node { get; set; }
+    }
+
+    public partial class Vehicle
+    {
+        public float CargoCapacity { get; set; }
+
+        public string Consumables { get; set; }
+
+        public float CostInCredits { get; set; }
+
+        public string Created { get; set; }
+
+        public string Crew { get; set; }
+
+        public string Edited { get; set; }
+
+        public string Id { get; set; }
+
+        public float Length { get; set; }
+
+        public string Manufacturers { get; set; }
+
+        public int MaxAtmospheringSpeed { get; set; }
+
+        public string Model { get; set; }
+
+        public string Name { get; set; }
+
+        public string Passengers { get; set; }
+
+        public string VehicleClass { get; set; }
+
+        [GraphQLOperationAttribute]
+        public VehicleFilmsConnection FilmConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+
+        [GraphQLOperationAttribute]
+        public VehiclePilotsConnection PilotConnection(string after, string before, int first, int last)
+        {
+            return default !;
+        }
+    }
+
+    public partial class VehicleFilmsConnection
+    {
+        public VehicleFilmsEdge Edges { get; set; }
+
+        public Film Films { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class VehicleFilmsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Film Node { get; set; }
+    }
+
+    public partial class VehiclePilotsConnection
+    {
+        public VehiclePilotsEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public Person Pilots { get; set; }
+
+        public int TotalCount { get; set; }
+    }
+
+    public partial class VehiclePilotsEdge
+    {
+        public string Cursor { get; set; }
+
+        public Person Node { get; set; }
+    }
+
+    public partial class VehiclesConnection
+    {
+        public VehiclesEdge Edges { get; set; }
+
+        public PageInfo PageInfo { get; set; }
+
+        public int TotalCount { get; set; }
+
+        public Vehicle Vehicles { get; set; }
+    }
+
+    public partial class VehiclesEdge
+    {
+        public string Cursor { get; set; }
+
+        public Vehicle Node { get; set; }
+    }
 }
