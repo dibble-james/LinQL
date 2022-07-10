@@ -136,7 +136,10 @@ public class ExpressionTranslator : ExpressionVisitor
     {
         var field = this.TraverseMember(member.Arguments[0]);
 
-        var type = typeof(IEnumerable<>).IsAssignableFromGenericInterface(field.Type)
+        var type =
+            field.Type.IsArray
+            ? field.Type.GetElementType() :
+            typeof(IEnumerable<>).IsAssignableFromGenericInterface(field.Type)
             ? field.Type.GetGenericArguments()[0]
             : field.Type;
 
