@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <OutputType>exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="SDLs\StarWars.graphql" />
+    <None Remove="SDLs\Shiftshare.graphql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="SDLs\StarWars.graphql" LinQLClientNamespace="StarWars.Client" LinQLClientName="StarWarsGraph" />
+    <AdditionalFiles Include="SDLs\Shiftshare.graphql" LinQLClientNamespace="Shiftshare.Client" LinQLClientName="ShiftshareGraph" LinQLExtraNamespaces="NodaTime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LinQL\LinQL.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+  </ItemGroup>
+  <!-- Manually reference the generator props because we locally reference the generator. When added via NuGet this happens automatically -->
+  <Import Project="..\LinQL\LinQL.props" />
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.*" />
+    <PackageReference Include="NodaTime" Version="*" />
+  </ItemGroup>
+</Project>

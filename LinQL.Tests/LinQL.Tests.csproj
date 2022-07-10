@@ -33,12 +33,21 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>JsonFiles.resx</DependentUpon>
     </Compile>
+    <Compile Update="SDLs.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SDLs.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="JsonFiles.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>JsonFiles.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="SDLs.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SDLs.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 
