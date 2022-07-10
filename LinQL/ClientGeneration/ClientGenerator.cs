@@ -13,9 +13,9 @@ public class ClientGenerator : ISourceGenerator
     private static readonly DiagnosticDescriptor InvalidXmlWarning = new(
         id: "LINQLGEN01",
         title: "Starting code generation",
-        messageFormat: "Starting code generation",
+        messageFormat: "Starting code generation for file {0}",
         category: "LinQLClientGenerator",
-        defaultSeverity: DiagnosticSeverity.Warning,
+        defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true);
 
     /// <summary>
@@ -39,12 +39,12 @@ public class ClientGenerator : ISourceGenerator
     /// <inheritdoc/>
     public void Execute(GeneratorExecutionContext context)
     {
-        context.ReportDiagnostic(Diagnostic.Create(InvalidXmlWarning, Location.None));
 
         foreach (var schema in context.AdditionalFiles.Where(x => x.Path.EndsWith(".graphql")))
         {
+            context.ReportDiagnostic(Diagnostic.Create(InvalidXmlWarning, Location.None, schema.Path));
             var content = schema.GetText(context.CancellationToken)!.ToString();
-            var schemaName = Path.GetFileName(schema.Path);
+            var schemaName = Path.GetFileName(schema.Path).Replace(".graphql", string.Empty);
 
             context.AddSource(
                 $"{schemaName}.g.cs",
