@@ -12,9 +12,9 @@
 - [x] Input Types
 - [x] Arguments
 - [x] Interfaces/Unions
+- [x] Auto-generating client via introspection
 #### Coming soon
 - [ ] Subscriptions
-- [ ] Auto-generating client via introspection
 - [ ] Custom Scalars
 
 ### Getting Started
@@ -25,52 +25,27 @@
 dotnet add package LinQL
 ```
 
-2. Create a `Graph` and a `RootType`
+2. Reference a `.graphql` SDL in your csproj
 
-```csharp
-public class StarWarsGraph : Graph
-{
-    public StarWarsGraph(IGraphQLConnection connection, IQueryTranslator queryTranslator)
-        : base(connection, queryTranslator)
-    {
-    }
+```xml
+<ItemGroup>
+    <None Remove="StarWars.graphql" />
+  </ItemGroup>
 
-    public StarWarsQueries Query => this.RootType<StarWarsQueries>();
-}
-
-[OperationType]
-public class StarWarsQueries : RootType<StarWarsQueries>
-{
-    public Film Film { get; set; }
-
-    [GraphQLOperation, GraphQLField(Name = "film")]
-    public Film GetFilm(string id) => this.Film;
-}
-
-public class Film
-{
-    [GraphQLField(Name = "ID")]
-    public string? Id { get; set; }
-
-    [GraphQLField(Name = "episodeID")]
-    public int EpisodeId { get; set; }
-
-    public string? Title { get; set; }
-}
+  <ItemGroup>
+    <AdditionalFiles Include="StarWars.graphql" LinQLClientNamespace="StarWars.Client" LinQLClientName="StarWarsGraph" />
+  </ItemGroup>
 ```
 
-3. Add a graph client to DI
+3. Add the graph client to DI
 
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddGraphQLClient<StarWarsGraph>()
-            .WithHttpConnection(c => c.BaseAddress = new Uri("https://swapi-graphql.netlify.app/.netlify/functions/index"))
+    services.AddStarWarsGraph().WithHttpConnection(new Uri("https://swapi-graphql.netlify.app/.netlify/functions/index"));
 }
 
 ```
-
-Underneath, `WithHttpConnection` is just setting up `IHttpClientFactory` so anything you can configure with that, you can configure here; authentication headers, middleware etc.
 
 4. Write queries!
 

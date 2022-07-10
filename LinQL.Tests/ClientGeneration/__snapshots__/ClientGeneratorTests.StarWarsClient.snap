@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 namespace StarWars
 {
     using LinQL;
@@ -9,10 +9,7 @@ namespace StarWars
 
     public static class ServiceCollectionExtensions
     {
-        public static GraphBuilder<StarWarsGraph> AddStarWarsGraph(this IServiceCollection services, System.Uri endpoint)
-        {
-            return services.AddGraphQLClient<StarWarsGraph>().WithHttpConnection(c => c.BaseAddress = endpoint);
-        }
+        public static GraphBuilder<StarWarsGraph> AddStarWarsGraph(this IServiceCollection services) => services.AddGraphQLClient<StarWarsGraph>();
     }
 
     public partial class StarWarsGraph : Graph

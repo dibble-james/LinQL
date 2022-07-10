@@ -1,5 +1,6 @@
 namespace LinQL.ClientGeneration;
 
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
@@ -18,8 +19,9 @@ internal class ServiceCollectionExtenionsClass : IClassFactory
                 Identifier($"Add{this.graphName}"))
                 .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
                 .AddParameterListParameters(
-                    Parameter(Identifier("services")).WithType(IdentifierName("this IServiceCollection")),
-                    Parameter(Identifier("endpoint")).WithType(IdentifierName("System.Uri")))
-                .WithBody(Block(ParseStatement($"return services.AddGraphQLClient<{this.graphName}>().WithHttpConnection(c => c.BaseAddress = endpoint);")))
+                    Parameter(Identifier("services")).WithType(IdentifierName("this IServiceCollection")))
+                .WithExpressionBody(ArrowExpressionClause(ParseExpression($"services.AddGraphQLClient<{this.graphName}>()")))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                .WithTrailingTrivia(Whitespace("\n"))
             );
 }
