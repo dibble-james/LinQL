@@ -13,3 +13,6 @@ foreach (var film in films)
 {
     Console.WriteLine(film.Title);
 }
+
+var firstFilm = await client.Root.Select(x => x.ExecuteFilm(null, films.First().Id)).ToResult();
+Console.WriteLine(firstFilm.Data.OpeningCrawl);
