@@ -24,7 +24,9 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
                 UsingDirective(IdentifierName("LinQL")),
                 UsingDirective(IdentifierName("LinQL.Description")),
                 UsingDirective(IdentifierName("LinQL.Translation")),
-                UsingDirective(IdentifierName("Microsoft.Extensions.Logging")))
+                UsingDirective(IdentifierName("Microsoft.Extensions.Logging")),
+                UsingDirective(IdentifierName("Microsoft.Extensions.DependencyInjection")))
+            .AddMembers(new ServiceCollectionExtenionsClass(this.Graph.Name).Create())
             .AddMembers(this.Graph.Create())
             .AddMembers(this.Graph.RootOperations.Select(x => x.Create()).ToArray())
             .AddMembers(this.Graph.Types.Select(x => x.Create()).ToArray());

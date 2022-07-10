@@ -1,10 +1,19 @@
-#nullable enable
+﻿#nullable enable
 namespace Shiftshare.Graph
 {
     using LinQL;
     using LinQL.Description;
     using LinQL.Translation;
     using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.DependencyInjection;
+
+    public static class ServiceCollectionExtensions
+    {
+        public static GraphBuilder<ShiftshareGraph> AddShiftshareGraph(this IServiceCollection services, System.Uri endpoint)
+        {
+            return services.AddGraphQLClient<ShiftshareGraph>().WithHttpConnection(c => c.BaseAddress = endpoint);
+        }
+    }
 
     public partial class ShiftshareGraph : Graph
     {

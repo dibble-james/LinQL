@@ -8,9 +8,10 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 internal class GraphClass : IClassFactory
 {
-    private readonly string name;
 
-    public GraphClass(string name) => this.name = name;
+    public GraphClass(string name) => this.Name = name;
+
+    public string Name { get; }
 
     public List<RootTypeClass> RootOperations { get; } = new();
 
@@ -18,10 +19,10 @@ internal class GraphClass : IClassFactory
 
     public MemberDeclarationSyntax Create()
     {
-        var constructor = ConstructorDeclaration(Identifier(this.name))
+        var constructor = ConstructorDeclaration(Identifier(this.Name))
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .AddParameterListParameters(
-                Parameter(Identifier("logger")).WithType(ParseTypeName($"ILogger<{this.name}>")),
+                Parameter(Identifier("logger")).WithType(ParseTypeName($"ILogger<{this.Name}>")),
                 Parameter(Identifier("connection")).WithType(ParseTypeName(nameof(IGraphQLConnection))),
                 Parameter(Identifier("queryTranslator")).WithType(ParseTypeName(nameof(IQueryTranslator))))
             .WithInitializer(
@@ -32,7 +33,7 @@ internal class GraphClass : IClassFactory
                     Argument(IdentifierName("queryTranslator"))))
             .WithBody(Block());
 
-        var graph = ClassDeclaration(Identifier(this.name))
+        var graph = ClassDeclaration(Identifier(this.Name))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
             .AddBaseListTypes(SimpleBaseType(IdentifierName(nameof(Graph))))
             .AddMembers(constructor)
