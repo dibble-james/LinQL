@@ -1,5 +1,6 @@
 namespace LinQL.ClientGeneration;
 
+using System.Diagnostics;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -40,12 +41,13 @@ public class ClientGenerator : ISourceGenerator
     /// <param name="sdl">The SDL</param>
     /// <param name="graphName">The name of the <see cref="Graph"/>.</param>
     /// <param name="graphNamespace">The namespace to put the <see cref="Graph"/>.</param>
+    /// <param name="extraUsings">Extra required namespaces required for the client to compile.</param>
     /// <returns>The generated <see cref="Graph"/></returns>
-    public static string Generate(string sdl, string graphName, string graphNamespace)
+    public static string Generate(string sdl, string graphName, string graphNamespace, string[] extraUsings)
     {
         var document = HotChocolate.Language.Utf8GraphQLParser.Parse(sdl);
 
-        var clientContext = new DocumentWalkerContext(graphName, graphNamespace);
+        var clientContext = new DocumentWalkerContext(graphName, graphNamespace, extraUsings);
 
         new DocumentWalker().Visit(document, clientContext);
 
@@ -74,13 +76,17 @@ public class ClientGenerator : ISourceGenerator
                 continue;
             }
 
+            context.AnalyzerConfigOptions.GetOptions(schema).TryGetValue("build_metadata.additionalfiles.LinQLExtraNamespaces", out var extraNamespaces);
+
+            var extraUsings = extraNamespaces?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+
             var content = schema.GetText(context.CancellationToken)!.ToString();
             var schemaName = Path.GetFileName(schema.Path).Replace(".graphql", string.Empty);
 
             context.AddSource(
                 $"{schemaName}.g.cs",
                 SourceText.From(
-                    Generate(content, clientName, ns),
+                    Generate(content, clientName, ns, extraUsings),
                     Encoding.UTF8)
                 );
         }

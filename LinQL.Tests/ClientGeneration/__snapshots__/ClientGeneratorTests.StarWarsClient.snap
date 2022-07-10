@@ -1,4 +1,5 @@
 #nullable enable
+#pragma warning disable CS8618
 namespace StarWars
 {
     using LinQL;

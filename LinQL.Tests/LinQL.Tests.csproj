@@ -51,8 +51,4 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="ClientGeneration\__snapshots__\" />
-  </ItemGroup>
-
 </Project>

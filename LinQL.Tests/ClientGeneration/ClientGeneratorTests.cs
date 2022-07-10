@@ -11,12 +11,14 @@ public class ClientGeneratorTests
         => Snapshot.Match(ClientGenerator.Generate(
             Encoding.UTF8.GetString(SDLs.StarWars),
             "StarWarsGraph",
-            "StarWars"));
+            "StarWars",
+            Array.Empty<string>()));
 
     [Fact]
     public void ShiftshareClient()
         => Snapshot.Match(ClientGenerator.Generate(
             Encoding.UTF8.GetString(SDLs.Shiftshare),
             "ShiftshareGraph",
-            "Shiftshare.Graph"));
+            "Shiftshare.Graph",
+            new[] { "NodaTime" }));
 }

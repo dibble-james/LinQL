@@ -44,4 +44,13 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
         return base.VisitChildren(node, context);
     }
+
+    protected override ISyntaxVisitorAction VisitChildren(InputObjectTypeDefinitionNode node, DocumentWalkerContext context)
+    {
+        var fields = node.Fields.Select(x => new FieldDefinitionNode(x.Location, x.Name, x.Description, new List<InputValueDefinitionNode>(), x.Type, x.Directives));
+
+        context.Graph.Types.Add(new ComplexTypeClass(node.Name.Value, fields, Enumerable.Empty<string>()));
+
+        return base.VisitChildren(node, context);
+    }
 }

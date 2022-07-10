@@ -1,4 +1,5 @@
 #nullable enable
+#pragma warning disable CS8618
 namespace Shiftshare.Graph
 {
     using LinQL;
@@ -6,6 +7,7 @@ namespace Shiftshare.Graph
     using LinQL.Translation;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.DependencyInjection;
+    using NodaTime;
 
     public static class ServiceCollectionExtensions
     {
@@ -146,6 +148,24 @@ namespace Shiftshare.Graph
         public Duration Duration { get; set; }
     }
 
+    public partial class CreateCalendarInput
+    {
+        public System.Guid Id { get; set; }
+
+        public string Name { get; set; }
+    }
+
+    public partial class ShiftTypeInput
+    {
+        public System.Guid Id { get; set; }
+
+        public string Name { get; set; }
+
+        public OffsetTime Starts { get; set; }
+
+        public Duration Duration { get; set; }
+    }
+
     public partial interface ICalendarEvent
     {
         public System.Guid Id { get; set; }
@@ -186,6 +206,54 @@ namespace Shiftshare.Graph
     }
 
     public partial class EventCancelled : ICalendarEvent
+    {
+        public System.Guid Id { get; set; }
+
+        public OffsetDateTime Raised { get; set; }
+
+        public System.Guid Calendar { get; set; }
+
+        public System.Guid EventId { get; set; }
+    }
+
+    public partial class CalendarEventInput
+    {
+        public ShiftScheduledInput? ShiftScheduled { get; set; }
+
+        public ShiftRescheduledInput? ShiftRescheduled { get; set; }
+
+        public EventCancelledInput? EventCancelled { get; set; }
+    }
+
+    public partial class ShiftScheduledInput
+    {
+        public System.Guid ShiftType { get; set; }
+
+        public OffsetDate Date { get; set; }
+
+        public System.Guid Id { get; set; }
+
+        public OffsetDateTime Raised { get; set; }
+
+        public System.Guid Calendar { get; set; }
+
+        public System.Guid EventId { get; set; }
+    }
+
+    public partial class ShiftRescheduledInput
+    {
+        public OffsetDate Date { get; set; }
+
+        public System.Guid Id { get; set; }
+
+        public OffsetDateTime Raised { get; set; }
+
+        public System.Guid Calendar { get; set; }
+
+        public System.Guid EventId { get; set; }
+    }
+
+    public partial class EventCancelledInput
     {
         public System.Guid Id { get; set; }
 
