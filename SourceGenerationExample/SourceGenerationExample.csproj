@@ -12,12 +12,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="SDLs\StarWars.graphql" />
+    <AdditionalFiles Include="SDLs\StarWars.graphql" LinQLClientNamespace="StarWars.Client" LinQLClientName="StarWarsGraphQL" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LinQL\LinQL.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
   </ItemGroup>
+  <!-- Manually reference the generator props because we locally reference the generator. When added via NuGet this happens automatically -->
+  <Import Project="..\LinQL\LinQL.props" />
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.*" />
