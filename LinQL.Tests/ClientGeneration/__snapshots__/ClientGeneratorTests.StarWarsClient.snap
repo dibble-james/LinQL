@@ -10,12 +10,12 @@ namespace StarWars
 
     public static class ServiceCollectionExtensions
     {
-        public static GraphBuilder<StarWarsGraph> AddStarWarsGraph(this IServiceCollection services) => services.AddGraphQLClient<StarWarsGraph>();
+        public static GraphOptionsBuilder<StarWarsGraph> AddStarWarsGraph(this IServiceCollection services) => services.AddGraphQLClient<StarWarsGraph>();
     }
 
     public partial class StarWarsGraph : Graph
     {
-        public StarWarsGraph(ILogger<StarWarsGraph> logger, IGraphQLConnection connection, IQueryTranslator queryTranslator) : base(logger, connection, queryTranslator)
+        public StarWarsGraph(ILogger<StarWarsGraph> logger, GraphOptions<StarWarsGraph> options, IQueryTranslator queryTranslator) : base(logger, options, queryTranslator)
         {
         }
 

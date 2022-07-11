@@ -11,7 +11,7 @@ public class GraphTests
     public GraphTests()
     {
         this.connection = Substitute.For<IGraphQLConnection>();
-        this.target = new StubGraph(this.connection);
+        this.target = new StubGraph(new GraphOptions { Connection = () => this.connection });
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class GraphTests
 
     private class StubGraph : Graph
     {
-        public StubGraph(IGraphQLConnection connection) : base(Substitute.For<ILogger<Graph>>(), connection, null!)
+        public StubGraph(GraphOptions connection) : base(Substitute.For<ILogger<Graph>>(), connection, null!)
         {
         }
     }

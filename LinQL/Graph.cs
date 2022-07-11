@@ -20,16 +20,16 @@ public abstract class Graph
         "GrapQL response contains errors: {Errors}");
 
     private readonly ILogger<Graph> logger;
-    private readonly IGraphQLConnection connection;
+    private readonly GraphOptions options;
 
     /// <summary>
     /// Create a new Graph.
     /// </summary>
     /// <param name="logger">Access to a logger.</param>
-    /// <param name="connection">How to query the server.</param>
+    /// <param name="options">The graph configuration.</param>
     /// <param name="queryTranslator">Expression converter.</param>
-    protected Graph(ILogger<Graph> logger, IGraphQLConnection connection, IQueryTranslator queryTranslator)
-        => (this.logger, this.connection, this.QueryTranslator) = (logger, connection, queryTranslator);
+    protected Graph(ILogger<Graph> logger, GraphOptions options, IQueryTranslator queryTranslator)
+        => (this.logger, this.options, this.QueryTranslator) = (logger, options, queryTranslator);
 
     /// <summary>
     /// Gets the <see cref="IQueryTranslator"/> used by this graph.
@@ -99,7 +99,7 @@ public abstract class Graph
     {
         SendingGraphQLRequest(this.logger, query, null);
 
-        var response = await this.connection.SendRequest<TData>(new GraphQLRequest(this, query, variables), cancellationToken).ConfigureAwait(false);
+        var response = await this.options.Connection!.Invoke().SendRequest<TData>(new GraphQLRequest(this, query, variables), cancellationToken).ConfigureAwait(false);
 
         if (response.Errors?.Any() == true)
         {

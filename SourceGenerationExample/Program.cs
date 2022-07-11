@@ -3,8 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using StarWars.Client;
 
 var client = new ServiceCollection()
+            .AddLogging()
             .AddStarWarsGraph()
-            .WithHttpConnection(c => c.BaseAddress = new Uri("https://swapi-graphql.netlify.app/.netlify/functions/index"))
+            //.WithHttpConnection(c => c.BaseAddress = new Uri("https://swapi-graphql.netlify.app/.netlify/functions/index"))
             .Services.BuildServiceProvider()
             .GetRequiredService<StarWarsGraph>();
 

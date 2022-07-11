@@ -17,7 +17,7 @@ public class TranslationProviderTests
         this.target = new TranslationProvider();
         this.fakeGraph = Substitute.For<Graph>(
             Substitute.For<ILogger<Graph>>(),
-            Substitute.For<IGraphQLConnection>(),
+            Substitute.For<GraphOptions>(),
             this.target);
         this.fakeGraph.QueryTranslator.Returns(this.target);
     }
