@@ -45,7 +45,7 @@ public abstract class Graph
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The server data response.</returns>
     public async Task<TData> Execute<T, TData>(GraphQLExpression<T, TData> query, CancellationToken cancellationToken = default)
-        => UnwrapResult(await this.FromRawGraphQLToResult<T>(this.QueryTranslator.ToQueryString(query), null, cancellationToken).ConfigureAwait(false), query);
+        => UnwrapResult((await this.FromRawGraphQLToResult<T>(this.QueryTranslator.ToQueryString(query), null, cancellationToken).ConfigureAwait(false)).Data, query);
 
     /// <summary>
     /// Run a <see cref="GraphQLExpression{TRoot, TResult}"/> and return the server response.
@@ -59,7 +59,7 @@ public abstract class Graph
     {
         var result = await this.FromRawGraphQLToResult<T>(this.QueryTranslator.ToQueryString(query), null, cancellationToken).ConfigureAwait(false);
 
-        return new GraphQLResponse<TData>(UnwrapResult(result, query), result.Errors) { Request = result.Request };
+        return new GraphQLResponse<TData>(UnwrapResult(result.Data, query), result.Errors) { Request = result.Request };
     }
 
     /// <summary>
@@ -97,9 +97,11 @@ public abstract class Graph
     /// <returns>The query result.</returns>
     public async Task<GraphQLResponse<TData>> FromRawGraphQLToResult<TData>(string query, IReadOnlyDictionary<string, object>? variables = null, CancellationToken cancellationToken = default)
     {
+        var connection = this.options.Connection ?? throw new InvalidOperationException("The graph has not been configured with a subscription connection.");
+
         SendingGraphQLRequest(this.logger, query, null);
 
-        var response = await this.options.Connection!.Invoke().SendRequest<TData>(new GraphQLRequest(this, query, variables), cancellationToken).ConfigureAwait(false);
+        var response = await this.options.Connection().SendRequest<TData>(new GraphQLRequest(this, query, variables), cancellationToken).ConfigureAwait(false);
 
         if (response.Errors?.Any() == true)
         {
@@ -110,6 +112,30 @@ public abstract class Graph
     }
 
     /// <summary>
+    /// Start a subscription connection.
+    /// </summary>
+    /// <typeparam name="TRoot">The root query type.</typeparam>
+    /// <typeparam name="TData">The expected result.</typeparam>
+    /// <param name="query">The query to subscribe too.</param>
+    /// <param name="handler">The subscriber.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>A handle on the subscription.</returns>
+    public async Task<IDisposable> Subscribe<TRoot, TData>(GraphQLExpression<TRoot, TData> query, OnSubscriptionMessage<TData> handler, CancellationToken cancellationToken = default)
+    {
+        var connection = this.options.SubscriptionConnection ?? throw new InvalidOperationException("The graph has not been configured with a subscription connection.");
+
+        if (query.RootOperation != Description.RootOperation.Subscription)
+        {
+            throw new InvalidOperationException("You can only subscribe to subscriptions");
+        }
+
+        return await this.options.SubscriptionConnection().Subscribe(
+            new GraphQLRequest(this, this.QueryTranslator.ToQueryString(query)),
+            (TRoot response, CancellationToken ct) => handler(UnwrapResult(response, query), ct),
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Build a <see cref="RootType{T}"/> for use on this graph.
     /// </summary>
     /// <typeparam name="T">The root type type.</typeparam>
@@ -117,6 +143,6 @@ public abstract class Graph
     protected T RootType<T>()
         where T : RootType<T>, new() => new() { Graph = this };
 
-    private static TData UnwrapResult<TRoot, TData>(GraphQLResponse<TRoot> response, GraphQLExpression<TRoot, TData> expression)
-        => expression.OriginalQuery.CompileFast()(response.Data);
+    private static TData UnwrapResult<TRoot, TData>(TRoot response, GraphQLExpression<TRoot, TData> expression)
+        => expression.OriginalQuery.CompileFast()(response);
 }

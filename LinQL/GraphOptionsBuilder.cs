@@ -89,7 +89,7 @@ public class GraphOptionsBuilder<TGraph>
             {
                 var client = new ClientWebSocket();
                 configure(client);
-                return new WebsocketSubscrptionConnection(new Websocket.Client.WebsocketClient(uri, () => client));
+                return new WebsocketSubscrptionConnection(new Websocket.Client.WebsocketClient(uri, () => client), opt.Serializer);
             });
 
         return this;
