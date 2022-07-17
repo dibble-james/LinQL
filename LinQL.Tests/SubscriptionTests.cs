@@ -39,18 +39,27 @@ public class SubscriptionTests : IDisposable
            .GetRequiredService<SubscriptionGraph>();
 
         var cts = new CancellationTokenSource();
+        cts.CancelAfter(5000);
+
+        var ranToCompletion = false;
 
         var handle = await client.Subscription.Select(x => x.GetNumbers().SelectAll())
             .Subscribe(async (number, _) =>
             {
                 await Task.Yield();
-                if (number.Number < 5)
+                if (number.Number > 5)
                 {
-                    cts.Cancel();
+                    ranToCompletion = true;
+                    cts.Cancel(false);
                 }
-            }, cts.Token);
+            });
 
-        await Task.Delay(-1, cts.Token);
+        while (!cts.IsCancellationRequested)
+        {
+            await Task.Delay(500);
+        }
+
+        ranToCompletion.Should().BeTrue();
     }
 
     public class SimpleStartup
@@ -95,20 +104,21 @@ public class SubscriptionTests : IDisposable
 
     public class TestSubscriptionType
     {
-        public async IAsyncEnumerable<int> Numbers()
+        [SubscribeAndResolve]
+        public async IAsyncEnumerable<TestSubscription.NumberResult> Numbers()
         {
             var i = 0;
 
             while (true)
             {
-                await Task.Delay(1000);
-                yield return i++;
+                await Task.Delay(100);
+                yield return new TestSubscription.NumberResult { Number = i++ };
             }
         }
     }
 
     [OperationType(RootOperationType.Subscription)]
-    private class TestSubscription : RootType<TestSubscription>
+    public class TestSubscription : RootType<TestSubscription>
     {
         public NumberResult Numbers { get; set; }
 

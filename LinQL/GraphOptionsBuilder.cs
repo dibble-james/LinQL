@@ -3,6 +3,7 @@ namespace LinQL;
 using System.Net.WebSockets;
 using System.Text.Json;
 using LinQL.Translation;
+using LinQL.Websockets;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
