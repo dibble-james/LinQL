@@ -17,6 +17,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="LinQL.Tests" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
@@ -33,6 +37,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3">
       <PrivateAssets>all</PrivateAssets>

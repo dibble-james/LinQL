@@ -3,6 +3,7 @@ namespace LinQL;
 using System.Net.WebSockets;
 using System.Text.Json;
 using LinQL.Translation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -80,16 +81,20 @@ public class GraphOptionsBuilder<TGraph>
     /// Use a <see cref="ClientWebSocket"/> to handle supscrption requests.
     /// </summary>
     /// <param name="uri">The subscription server.</param>
-    /// <param name="configure">Any required configuration for the <see cref="ClientWebSocket"/>.</param>
+    /// <param name="connectionFactory">Any required configuration for the <see cref="ClientWebSocket"/>.</param>
     /// <returns>This builder.</returns>
-    public GraphOptionsBuilder<TGraph> WithWebSocketConnection(Uri uri, Action<ClientWebSocket> configure)
+    public GraphOptionsBuilder<TGraph> WithWebSocketConnection(
+        Uri uri,
+        Func<Action<HttpRequest>, Func<Uri, CancellationToken, Task<WebSocket>>> connectionFactory)
     {
         this.options.Configure(
             opt => opt.SubscriptionConnection = () =>
             {
-                var client = new ClientWebSocket();
-                configure(client);
-                return new WebsocketSubscrptionConnection(new Websocket.Client.WebsocketClient(uri, () => client), opt.Serializer);
+                var client = new Websocket.Client.WebsocketClient(
+                    uri,
+                    connectionFactory(r => r.Headers.Add("Sec-WebSocket-Protocol", "graphql-ws")));
+
+                return new WebsocketSubscrptionConnection(client, opt.Serializer);
             });
 
         return this;

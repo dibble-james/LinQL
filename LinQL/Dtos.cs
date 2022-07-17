@@ -3,10 +3,9 @@ namespace LinQL;
 /// <summary>
 /// Details of a request to a GraphQL server.
 /// </summary>
-/// <param name="Graph">The parent graph.</param>
 /// <param name="Query">The query string.</param>
 /// <param name="Variables">Any query variables.</param>
-public record GraphQLRequest(Graph Graph, string Query, IReadOnlyDictionary<string, object>? Variables = null);
+public record GraphQLRequest(string Query, IReadOnlyDictionary<string, object>? Variables = null);
 
 /// <summary>
 /// Details of a response from a GraphQL server.

@@ -60,4 +60,17 @@ public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
 
         return result;
     }
+
+    /// <summary>
+    /// Start a subscription connection.
+    /// </summary>
+    /// <param name="handler">The subscriber.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>A handle on the subscription.</returns>
+    public async Task<IDisposable> Subscribe(OnSubscriptionMessage<TResult> handler, CancellationToken cancellationToken = default)
+    {
+        var result = await this.graph.Subscribe<TRoot, TResult>(this, handler, cancellationToken).ConfigureAwait(false);
+
+        return result;
+    }
 }

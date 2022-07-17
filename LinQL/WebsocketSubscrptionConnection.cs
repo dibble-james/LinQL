@@ -15,7 +15,7 @@ internal class WebsocketSubscrptionConnection : IGraphQLSubscriptionConnection
     {
         await this.client.StartOrFail();
 
-        await this.client.SendInstant(request.Query);
+        await this.client.SendInstant(JsonSerializer.Serialize(request, this.serializerOptions));
 
         return this.client.MessageReceived.Subscribe(this.OnMessage(handler, cancellationToken));
     }

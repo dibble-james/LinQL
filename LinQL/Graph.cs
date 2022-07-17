@@ -101,7 +101,7 @@ public abstract class Graph
 
         SendingGraphQLRequest(this.logger, query, null);
 
-        var response = await this.options.Connection().SendRequest<TData>(new GraphQLRequest(this, query, variables), cancellationToken).ConfigureAwait(false);
+        var response = await this.options.Connection().SendRequest<TData>(new GraphQLRequest(query, variables), cancellationToken).ConfigureAwait(false);
 
         if (response.Errors?.Any() == true)
         {
@@ -130,7 +130,7 @@ public abstract class Graph
         }
 
         return await this.options.SubscriptionConnection().Subscribe(
-            new GraphQLRequest(this, this.QueryTranslator.ToQueryString(query)),
+            new GraphQLRequest(this.QueryTranslator.ToQueryString(query)),
             (TRoot response, CancellationToken ct) => handler(UnwrapResult(response, query), ct),
             cancellationToken);
     }
