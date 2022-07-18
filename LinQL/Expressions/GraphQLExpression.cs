@@ -2,6 +2,7 @@ namespace LinQL.Expressions;
 
 using System.Linq.Expressions;
 using LinQL.Description;
+using OneOf;
 
 /// <summary>
 /// An <see cref="Expression"/> representation of a GraphQL query.
@@ -59,6 +60,18 @@ public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
         var result = await this.graph.ExecuteToResult(this, cancellationToken).ConfigureAwait(false);
 
         return result;
+    }
+
+    /// <summary>
+    /// Execute the query and get the server response.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>The server response.</returns>
+    public async Task<OneOf<IEnumerable<GraphQLError>, TResult>> ToResultOrErrors(CancellationToken cancellationToken = default)
+    {
+        var result = await this.graph.ExecuteToResult(this, cancellationToken).ConfigureAwait(false);
+
+        return result.HasErrors();
     }
 
     /// <summary>

@@ -12,5 +12,5 @@ public interface IGraphQLConnection
     /// <param name="request">The request to send.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The server response.</returns>
-    Task<GraphQLResponse<T?>> SendRequest<T>(GraphQLRequest request, CancellationToken cancellationToken);
+    Task<GraphQLResponse<T>> SendRequest<T>(GraphQLRequest request, CancellationToken cancellationToken);
 }

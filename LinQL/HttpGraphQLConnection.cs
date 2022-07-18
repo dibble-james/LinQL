@@ -13,7 +13,7 @@ internal class HttpGraphQLConnection : IGraphQLConnection
     public HttpGraphQLConnection(HttpClient httpClient, JsonSerializerOptions serializerOptions)
         => (this.httpClient, this.serializerOptions) = (httpClient, serializerOptions);
 
-    public async Task<GraphQLResponse<T?>> SendRequest<T>(GraphQLRequest request, CancellationToken cancellationToken)
+    public async Task<GraphQLResponse<T>> SendRequest<T>(GraphQLRequest request, CancellationToken cancellationToken)
     {
         var httpRequest = new HttpRequestMessage
         {
@@ -23,7 +23,7 @@ internal class HttpGraphQLConnection : IGraphQLConnection
 
         var httpResponse = await this.httpClient.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
 
-        var response = await httpResponse.Content.ReadFromJsonAsync<GraphQLResponse<T?>>(this.serializerOptions, cancellationToken).ConfigureAwait(false);
+        var response = await httpResponse.Content.ReadFromJsonAsync<GraphQLResponse<T>>(this.serializerOptions, cancellationToken).ConfigureAwait(false);
 
         if (response is null)
         {
