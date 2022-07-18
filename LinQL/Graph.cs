@@ -44,8 +44,8 @@ public abstract class Graph
     /// <param name="query">The query to execute on the server.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The server data response.</returns>
-    public async Task<TData> Execute<T, TData>(GraphQLExpression<T, TData> query, CancellationToken cancellationToken = default)
-        => UnwrapResult((await this.FromRawGraphQLToResult<T>(this.QueryTranslator.ToQueryString(query), null, cancellationToken).ConfigureAwait(false)).Data, query);
+    public async Task<TData?> Execute<T, TData>(GraphQLExpression<T?, TData> query, CancellationToken cancellationToken = default)
+        => (await this.ExecuteToResult(query, cancellationToken).ConfigureAwait(false)).Data;
 
     /// <summary>
     /// Run a <see cref="GraphQLExpression{TRoot, TResult}"/> and return the server response.
@@ -55,11 +55,11 @@ public abstract class Graph
     /// <param name="query">The query to execute on the server.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The server response.</returns>
-    public async Task<GraphQLResponse<TData>> ExecuteToResult<T, TData>(GraphQLExpression<T, TData> query, CancellationToken cancellationToken = default)
+    public async Task<GraphQLResponse<TData?>> ExecuteToResult<T, TData>(GraphQLExpression<T?, TData> query, CancellationToken cancellationToken = default)
     {
         var result = await this.FromRawGraphQLToResult<T>(this.QueryTranslator.ToQueryString(query), null, cancellationToken).ConfigureAwait(false);
 
-        return new GraphQLResponse<TData>(UnwrapResult(result.Data, query), result.Errors) { Request = result.Request };
+        return new GraphQLResponse<TData?>(UnwrapResult(result.Data, query), result.Errors) { Request = result.Request };
     }
 
     /// <summary>
@@ -69,8 +69,8 @@ public abstract class Graph
     /// <param name="query">The raw GQL to send to the server.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The query result.</returns>
-    public Task<TData> FromRawGraphQL<TData>(string query, CancellationToken cancellationToken = default)
-        => this.FromRawGraphQL<TData>(query, null, cancellationToken);
+    public Task<TData?> FromRawGraphQL<TData>(string query, CancellationToken cancellationToken = default)
+        => this.FromRawGraphQL<TData?>(query, null, cancellationToken);
 
     /// <summary>
     /// Send a manually created query to the server. Your query result must be deserializable to <typeparamref name="TData"/>.
@@ -80,9 +80,9 @@ public abstract class Graph
     /// <param name="variables">Any variables required by the query.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The query result.</returns>
-    public async Task<TData> FromRawGraphQL<TData>(string query, IReadOnlyDictionary<string, object>? variables = null, CancellationToken cancellationToken = default)
+    public async Task<TData?> FromRawGraphQL<TData>(string query, IReadOnlyDictionary<string, object>? variables = null, CancellationToken cancellationToken = default)
     {
-        var response = await this.FromRawGraphQLToResult<TData>(query, variables, cancellationToken).ConfigureAwait(false);
+        var response = await this.FromRawGraphQLToResult<TData?>(query, variables, cancellationToken).ConfigureAwait(false);
 
         return response.Data;
     }
@@ -95,7 +95,7 @@ public abstract class Graph
     /// <param name="variables">Any variables required by the query.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The query result.</returns>
-    public async Task<GraphQLResponse<TData>> FromRawGraphQLToResult<TData>(string query, IReadOnlyDictionary<string, object>? variables = null, CancellationToken cancellationToken = default)
+    public async Task<GraphQLResponse<TData?>> FromRawGraphQLToResult<TData>(string query, IReadOnlyDictionary<string, object>? variables = null, CancellationToken cancellationToken = default)
     {
         var connection = this.options.Connection ?? throw new InvalidOperationException("The graph has not been configured with a subscription connection.");
 
@@ -120,7 +120,7 @@ public abstract class Graph
     /// <param name="handler">The subscriber.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>A handle on the subscription.</returns>
-    public async Task<IDisposable> Subscribe<TRoot, TData>(GraphQLExpression<TRoot, TData> query, OnSubscriptionMessage<TData> handler, CancellationToken cancellationToken = default)
+    public async Task<IDisposable> Subscribe<TRoot, TData>(GraphQLExpression<TRoot?, TData> query, OnSubscriptionMessage<TData> handler, CancellationToken cancellationToken = default)
     {
         var connection = this.options.SubscriptionConnection ?? throw new InvalidOperationException("The graph has not been configured with a subscription connection.");
 
@@ -129,9 +129,11 @@ public abstract class Graph
             throw new InvalidOperationException("You can only subscribe to subscriptions");
         }
 
+        var request = new GraphQLRequest(this.QueryTranslator.ToQueryString(query));
+
         return await this.options.SubscriptionConnection().Subscribe(
-            new GraphQLRequest(this.QueryTranslator.ToQueryString(query)),
-            (TRoot response, CancellationToken ct) => handler(UnwrapResult(response, query), ct),
+            request,
+            HandleSubscription(query, request, handler),
             cancellationToken);
     }
 
@@ -143,6 +145,17 @@ public abstract class Graph
     protected T RootType<T>()
         where T : RootType<T>, new() => new() { Graph = this };
 
-    private static TData UnwrapResult<TRoot, TData>(TRoot response, GraphQLExpression<TRoot, TData> expression)
-        => expression.OriginalQuery.CompileFast()(response);
+    private static TData? UnwrapResult<TRoot, TData>(TRoot response, GraphQLExpression<TRoot, TData> expression)
+        => response is null ? default : expression.OriginalQuery.CompileFast()(response);
+
+    private static OnSubscriptionMessage<TRoot> HandleSubscription<TRoot, TData>(GraphQLExpression<TRoot?, TData> query, GraphQLRequest request, OnSubscriptionMessage<TData> handler) =>
+        (GraphQLResponse<TRoot?> response, CancellationToken ct) =>
+        {
+            var unwrappedResponse = new GraphQLResponse<TData?>(UnwrapResult(response.Data, query), response.Errors)
+            {
+                Request = request,
+            };
+
+            return handler(unwrappedResponse, ct);
+        };
 }

@@ -7,7 +7,7 @@ namespace LinQL;
 /// <param name="message">The data from the server.</param>
 /// <param name="cancellationToken">A cancellation token.</param>
 /// <returns></returns>
-public delegate Task OnSubscriptionMessage<T>(T message, CancellationToken cancellationToken);
+public delegate Task OnSubscriptionMessage<T>(GraphQLResponse<T?> message, CancellationToken cancellationToken);
 
 /// <summary>
 /// A transport that supports subscription requests.

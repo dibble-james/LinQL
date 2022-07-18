@@ -15,7 +15,7 @@ public record SubscriptionResponse(string Type, object? Payload)
         /// <summary>
         /// Response with expected data.
         /// </summary>
-        public const string Next = "data";
+        public const string Data = "data";
     }
 }
 

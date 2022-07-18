@@ -11,13 +11,11 @@
   <ItemGroup>
     <None Remove="SDLs\StarWars.graphql" />
     <None Remove="SDLs\Shiftshare.graphql" />
-    <None Remove="SDLs\Github.graphql" />
   </ItemGroup>
 
   <ItemGroup>
     <AdditionalFiles Include="SDLs\StarWars.graphql" LinQLClientNamespace="StarWars.Client" LinQLClientName="StarWarsGraph" />
     <AdditionalFiles Include="SDLs\Shiftshare.graphql" LinQLClientNamespace="Shiftshare.Client" LinQLClientName="ShiftshareGraph" LinQLExtraNamespaces="NodaTime" />
-    <AdditionalFiles Include="SDLs\Github.graphql" LinQLClientNamespace="Github.Client" LinQLClientName="Github" />
   </ItemGroup>
 
   <ItemGroup>

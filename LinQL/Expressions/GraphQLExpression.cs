@@ -42,7 +42,7 @@ public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
     /// </summary>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The server data response.</returns>
-    public async Task<TResult> Execute(CancellationToken cancellationToken = default)
+    public async Task<TResult?> Execute(CancellationToken cancellationToken = default)
     {
         var result = await this.graph.Execute(this, cancellationToken).ConfigureAwait(false);
 
@@ -54,7 +54,7 @@ public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
     /// </summary>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The server response.</returns>
-    public async Task<GraphQLResponse<TResult>> ToResult(CancellationToken cancellationToken = default)
+    public async Task<GraphQLResponse<TResult?>> ToResult(CancellationToken cancellationToken = default)
     {
         var result = await this.graph.ExecuteToResult(this, cancellationToken).ConfigureAwait(false);
 

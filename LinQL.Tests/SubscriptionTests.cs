@@ -44,10 +44,10 @@ public class SubscriptionTests : IDisposable
         var ranToCompletion = false;
 
         var handle = await client.Subscription.Select(x => x.GetNumbers().SelectAll())
-            .Subscribe(async (number, _) =>
+            .Subscribe(async (resp, _) =>
             {
                 await Task.Yield();
-                if (number.Number > 5)
+                if (resp.Data?.Number > 5)
                 {
                     ranToCompletion = true;
                     cts.Cancel(false);

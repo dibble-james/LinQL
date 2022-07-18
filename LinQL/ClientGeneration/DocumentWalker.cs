@@ -38,6 +38,13 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         return base.VisitChildren(node, context);
     }
 
+    protected override ISyntaxVisitorAction VisitChildren(UnionTypeDefinitionNode node, DocumentWalkerContext context)
+    {
+        context.Graph.Types.Add(new InterfaceTypeClass(node.Name.Value, Enumerable.Empty<FieldDefinitionNode>(), Enumerable.Empty<string>()));
+
+        return base.VisitChildren(node, context);
+    }
+
     protected override ISyntaxVisitorAction VisitChildren(EnumTypeDefinitionNode node, DocumentWalkerContext context)
     {
         context.Graph.Types.Add(new EnumTypeClass(node.Name.Value, node.Values));

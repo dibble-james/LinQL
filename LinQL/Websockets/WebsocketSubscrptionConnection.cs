@@ -15,7 +15,10 @@ internal class WebsocketSubscrptionConnection : IGraphQLSubscriptionConnection
     {
         await this.client.StartOrFail();
 
-        await this.client.SendInstant(JsonSerializer.Serialize(new SubscriptionRequest(SubscriptionRequest.Types.Init, null), this.serializerOptions));
+        await this.client.SendInstant(
+            JsonSerializer.Serialize(
+                new SubscriptionRequest(SubscriptionRequest.Types.Init, null),
+                this.serializerOptions));
 
         await this.client.SendInstant(
             JsonSerializer.Serialize(
@@ -29,20 +32,20 @@ internal class WebsocketSubscrptionConnection : IGraphQLSubscriptionConnection
     {
         var response = JsonSerializer.Deserialize<SubscriptionResponse>(result.Text, this.serializerOptions);
 
-        if (response?.Type != SubscriptionResponse.Types.Next)
+        if (response?.Type != SubscriptionResponse.Types.Data)
         {
             // Ignore other messages for now.
             return;
         }
 
-        var data = JsonSerializer.Deserialize<SubscriptionResponse<TResult>>(result.Text, this.serializerOptions);
+        var data = JsonSerializer.Deserialize<SubscriptionResponse<TResult?>>(result.Text, this.serializerOptions);
 
-        if (data is null || data.Payload is null)
+        if (data?.Payload is null)
         {
             return;
         }
 
-        await handler(data.Payload.Data, cancellationToken);
+        await handler(data.Payload, cancellationToken);
     };
 
 
