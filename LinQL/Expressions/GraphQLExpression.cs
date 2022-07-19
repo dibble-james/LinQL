@@ -2,7 +2,7 @@ namespace LinQL.Expressions;
 
 using System.Linq.Expressions;
 using LinQL.Description;
-using OneOf;
+using LinQL.Translation;
 
 /// <summary>
 /// An <see cref="Expression"/> representation of a GraphQL query.
@@ -11,14 +11,11 @@ using OneOf;
 /// <typeparam name="TResult">The query result type.</typeparam>
 public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
 {
-    private readonly Graph graph;
-
-    /// <param name="graph">The graph to execute the query against.</param>
     /// <param name="rootOperation">The root operation to query against.</param>
     /// <param name="originalQuery">The expression this will be based on.</param>
-    public GraphQLExpression(Graph graph, RootOperation rootOperation, Expression<Func<TRoot, TResult>> originalQuery)
+    public GraphQLExpression(RootOperation rootOperation, Expression<Func<TRoot, TResult>> originalQuery)
         : base(rootOperation.Name, typeof(TResult), typeof(TRoot))
-        => (this.graph, this.RootOperation, this.OriginalQuery) = (graph, rootOperation, originalQuery);
+        => (this.RootOperation, this.OriginalQuery) = (rootOperation, originalQuery);
 
     /// <summary>
     /// Gets the root operation.
@@ -36,67 +33,5 @@ public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
     /// <param name="include">The field to include.</param>
     /// <returns>The translated expression.</returns>
     public GraphQLExpression<TRoot, TResult> Include(Expression<Func<TRoot, object>> include)
-        => this.graph.QueryTranslator.Include(this, include);
-
-    /// <summary>
-    /// Run the query against the graph.
-    /// </summary>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>The server data response.</returns>
-    public async Task<TResult?> Execute(CancellationToken cancellationToken = default)
-    {
-        var result = await this.graph.Execute(this, cancellationToken).ConfigureAwait(false);
-
-        return result;
-    }
-
-    /// <summary>
-    /// Execute the query and get the server response.
-    /// </summary>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>The server response.</returns>
-    public async Task<GraphQLResponse<TResult?>> ToResult(CancellationToken cancellationToken = default)
-    {
-        var result = await this.graph.ExecuteToResult(this, cancellationToken).ConfigureAwait(false);
-
-        return result;
-    }
-
-    /// <summary>
-    /// Execute the query and get the server response.
-    /// </summary>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>The server response.</returns>
-    public async Task<OneOf<IEnumerable<GraphQLError>, TResult>> ToResultOrErrors(CancellationToken cancellationToken = default)
-    {
-        var result = await this.graph.ExecuteToResult(this, cancellationToken).ConfigureAwait(false);
-
-        return result.HasErrors();
-    }
-
-    /// <summary>
-    /// Start a subscription connection.
-    /// </summary>
-    /// <param name="handler">The subscriber.</param>
-    /// <param name="onComplete">A callback when the subscription ends.</param>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>A handle on the subscription.</returns>
-    public async Task<IDisposable> Subscribe(OnSubscriptionMessage<TResult> handler, Func<CancellationToken, Task>? onComplete = default, CancellationToken cancellationToken = default)
-    {
-        var result = await this.graph.Subscribe<TRoot, TResult>(this, handler, onComplete, cancellationToken).ConfigureAwait(false);
-
-        return result;
-    }
-
-    /// <summary>
-    /// Start a subscription connection.
-    /// </summary>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>A handle on the subscription.</returns>
-    public IAsyncEnumerable<GraphQLResponse<TResult?>> Subscribe(CancellationToken cancellationToken = default)
-    {
-        var result = this.graph.Subscribe<TRoot, TResult>(this, cancellationToken);
-
-        return result;
-    }
+        => ExpressionTranslator.Include(this, include);
 }

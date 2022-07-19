@@ -21,16 +21,15 @@ public class ExpressionTranslator : ExpressionVisitor
     /// </summary>
     /// <typeparam name="TRoot">The root operation type.</typeparam>
     /// <typeparam name="TData">The query result.</typeparam>
-    /// <param name="graph">The graph to execute the query against.</param>
     /// <param name="query">The query to translate.</param>
     /// <returns>The translated expression.</returns>
     /// <exception cref="InvalidOperationException">No <see cref="OperationTypeAttribute"/> is defined on <typeparamref name="TRoot"/></exception>
-    public static GraphQLExpression<TRoot, TData> Translate<TRoot, TData>(Graph graph, Expression<Func<TRoot, TData>> query)
+    public static GraphQLExpression<TRoot, TData> Translate<TRoot, TData>(Expression<Func<TRoot, TData>> query)
     {
         var operationType = typeof(TRoot).GetCustomAttribute<OperationTypeAttribute>()?.Operation
             ?? throw new InvalidOperationException($"{typeof(TRoot)} does not have an {nameof(OperationTypeAttribute)} defined");
 
-        var root = new GraphQLExpression<TRoot, TData>(graph, operationType, query);
+        var root = new GraphQLExpression<TRoot, TData>(operationType, query);
         var translator = new ExpressionTranslator(root);
         translator.Visit(query.Body);
         return root;

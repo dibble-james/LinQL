@@ -2,26 +2,18 @@ namespace LinQL.Translation;
 
 using System;
 using System.Linq.Expressions;
-using LinQL.Expressions;
 
 /// <summary>
-/// Default implementation of <see cref="IQueryTranslator"/>.
+/// 
 /// </summary>
-public class TranslationProvider : IQueryTranslator
+public static class TranslationProvider
 {
-    /// <inheritdoc/>
-    public GraphQLExpression<TRoot, TData> ToExpression<TRoot, TData>(Graph graph, Expression<Func<TRoot, TData>> query)
-        => ExpressionTranslator.Translate(graph, query);
-
-    /// <inheritdoc/>
-    public GraphQLExpression<TRoot, TData> Include<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, Expression<Func<TRoot, object>> include)
-        => ExpressionTranslator.Include(expression, include);
-
-    /// <inheritdoc/>
-    public string ToQueryString<TRoot, TData>(GraphQLExpression<TRoot, TData> query)
+    public static GraphQLExpressionRequest<TRoot, TData> ToGraphQLRequest<TRoot, TData>(this Expression<Func<TRoot, TData>> query, Graph graph)
     {
-        var expressionTranslator = new GraphQLExpressionTranslator<TRoot, TData>();
+        var expression = ExpressionTranslator.Translate(query);
 
-        return expressionTranslator.Translate(query);
+        var request = GraphQLExpressionTranslator.Translate(expression, graph);
+
+        return request;
     }
 }

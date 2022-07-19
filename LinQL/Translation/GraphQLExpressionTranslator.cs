@@ -5,6 +5,22 @@ using System.Text;
 using System.Text.Json;
 using LinQL.Expressions;
 
+/// <summary>
+/// Translates <see cref="GraphQLExpression{TRoot, TResult}"/>s.
+/// </summary>
+public static class GraphQLExpressionTranslator
+{
+    /// <summary>
+    /// Extract a <see cref="GraphQLRequest"/> from the given <paramref name="expression"/>.
+    /// </summary>
+    /// <typeparam name="TRoot">The root operation type.</typeparam>
+    /// <typeparam name="TData">The result type.</typeparam>
+    /// <param name="expression">The expression to translate.</param>
+    /// <returns>The request.</returns>
+    public static GraphQLExpressionRequest<TRoot, TData> Translate<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, Graph graph)
+        => new(expression, graph) { Query = new GraphQLExpressionTranslator<TRoot, TData>().Translate(expression) };
+}
+
 internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()

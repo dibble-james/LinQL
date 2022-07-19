@@ -2,7 +2,7 @@ namespace LinQL;
 
 using System.Linq.Expressions;
 using System.Text.Json.Serialization;
-using LinQL.Expressions;
+using LinQL.Translation;
 
 /// <summary>
 /// LINQ acess to a root GraphQL type.
@@ -24,13 +24,13 @@ public abstract class RootType<T>
     /// <param name="operation">The expression to query.</param>
     /// <returns>The translated expression.</returns>
     /// <exception cref="InvalidOperationException">Graph was not set.</exception>
-    public GraphQLExpression<T, TResult> Select<TResult>(Expression<Func<T, TResult>> operation)
+    public GraphQLExpressionRequest<T, TResult> Select<TResult>(Expression<Func<T, TResult>> operation)
     {
         if (this.Graph is null)
         {
             throw new InvalidOperationException("Attempt to use a RootType not created by a Graph");
         }
 
-        return this.Graph!.QueryTranslator.ToExpression(this.Graph, operation);
+        return operation.ToGraphQLRequest(this.Graph);
     }
 }
