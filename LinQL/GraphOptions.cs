@@ -22,6 +22,12 @@ public class GraphOptions
     /// Gets or sets the subscription connection to use.
     /// </summary>
     public Func<IGraphQLSubscriptionConnection>? SubscriptionConnection { get; set; }
+
+    /// <summary>
+    /// Gets or sets the subscription connection to use if configured.
+    /// </summary>
+    public IGraphQLSubscriptionConnection GetSubscriptionConnection()
+        => (this.SubscriptionConnection ?? throw new InvalidOperationException("No subscription connection configured"))();
 }
 
 /// <summary>

@@ -16,6 +16,11 @@ public record SubscriptionResponse(string Type, object? Payload)
         /// Response with expected data.
         /// </summary>
         public const string Data = "data";
+
+        /// <summary>
+        /// Server ends the stream.
+        /// </summary>
+        public const string Complete = "complete";
     }
 }
 

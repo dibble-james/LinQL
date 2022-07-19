@@ -112,22 +112,34 @@ public abstract class Graph
     /// <typeparam name="TData">The expected result.</typeparam>
     /// <param name="query">The query to subscribe too.</param>
     /// <param name="handler">The subscriber.</param>
+    /// <param name="onComplete">A callback for when the subscription ends.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>A handle on the subscription.</returns>
-    public async Task<IDisposable> Subscribe<TRoot, TData>(GraphQLExpression<TRoot?, TData> query, OnSubscriptionMessage<TData> handler, CancellationToken cancellationToken = default)
+    public async Task<IDisposable> Subscribe<TRoot, TData>(GraphQLExpression<TRoot?, TData> query, OnSubscriptionMessage<TData> handler, Func<CancellationToken, Task>? onComplete = default, CancellationToken cancellationToken = default)
     {
-        var connection = this.options.SubscriptionConnection ?? throw new InvalidOperationException("The graph has not been configured with a subscription connection.");
+        var request = this.TranslateSubscriptionRequest(query);
 
-        if (query.RootOperation != Description.RootOperation.Subscription)
-        {
-            throw new InvalidOperationException("You can only subscribe to subscriptions");
-        }
-
-        var request = new GraphQLRequest(this.QueryTranslator.ToQueryString(query));
-
-        return await this.options.SubscriptionConnection().Subscribe(
+        return await this.options.GetSubscriptionConnection().Subscribe(
             request,
             HandleSubscription(query, request, handler),
+            onComplete,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Start a subscription connection.
+    /// </summary>
+    /// <typeparam name="TRoot">The root query type.</typeparam>
+    /// <typeparam name="TData">The expected result.</typeparam>
+    /// <param name="query">The query to subscribe too.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>A handle on the subscription.</returns>
+    public IAsyncEnumerable<GraphQLResponse<TData?>> Subscribe<TRoot, TData>(GraphQLExpression<TRoot?, TData> query, CancellationToken cancellationToken = default)
+    {
+        var request = this.TranslateSubscriptionRequest(query);
+
+        return this.options.GetSubscriptionConnection().Subscribe<TData>(
+            request,
             cancellationToken);
     }
 
@@ -152,4 +164,15 @@ public abstract class Graph
 
             return handler(unwrappedResponse, ct);
         };
+
+    private GraphQLRequest TranslateSubscriptionRequest<TRoot, TData>(GraphQLExpression<TRoot, TData> query)
+    {
+        if (query.RootOperation != Description.RootOperation.Subscription)
+        {
+            throw new InvalidOperationException("You can only subscribe to subscriptions");
+        }
+
+        var request = new GraphQLRequest(this.QueryTranslator.ToQueryString(query));
+        return request;
+    }
 }

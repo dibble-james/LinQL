@@ -43,20 +43,20 @@ public class SubscriptionTests : IDisposable
 
         var ranToCompletion = false;
 
-        var handle = await client.Subscription.Select(x => x.GetNumbers().SelectAll())
-            .Subscribe(async (resp, _) =>
-            {
-                await Task.Yield();
-                if (resp.Data?.Number > 5)
-                {
-                    ranToCompletion = true;
-                    cts.Cancel(false);
-                }
-            });
+        var numbers = client.Subscription.Select(x => x.GetNumbers().SelectAll())
+            .Subscribe();
 
-        while (!cts.IsCancellationRequested)
+        var lastNumer = -1;
+
+        await foreach (var number in numbers)
         {
-            await Task.Delay(500);
+            number.Data.Number.Should().Be(lastNumer + 1, "Numbers should arrive in sync");
+
+            if (number.Data.Number > 5)
+            {
+                ranToCompletion = true;
+                break;
+            }
         }
 
         ranToCompletion.Should().BeTrue();

@@ -78,11 +78,24 @@ public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
     /// Start a subscription connection.
     /// </summary>
     /// <param name="handler">The subscriber.</param>
+    /// <param name="onComplete">A callback when the subscription ends.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>A handle on the subscription.</returns>
-    public async Task<IDisposable> Subscribe(OnSubscriptionMessage<TResult> handler, CancellationToken cancellationToken = default)
+    public async Task<IDisposable> Subscribe(OnSubscriptionMessage<TResult> handler, Func<CancellationToken, Task>? onComplete = default, CancellationToken cancellationToken = default)
     {
-        var result = await this.graph.Subscribe<TRoot, TResult>(this, handler, cancellationToken).ConfigureAwait(false);
+        var result = await this.graph.Subscribe<TRoot, TResult>(this, handler, onComplete, cancellationToken).ConfigureAwait(false);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Start a subscription connection.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>A handle on the subscription.</returns>
+    public IAsyncEnumerable<GraphQLResponse<TResult?>> Subscribe(CancellationToken cancellationToken = default)
+    {
+        var result = this.graph.Subscribe<TRoot, TResult>(this, cancellationToken);
 
         return result;
     }
