@@ -23,13 +23,13 @@ internal class GraphClass : IClassFactory
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .AddParameterListParameters(
                 Parameter(Identifier("logger")).WithType(ParseTypeName($"ILogger<{this.Name}>")),
-                Parameter(Identifier("connection")).WithType(ParseTypeName(nameof(IGraphQLConnection))),
+                Parameter(Identifier("options")).WithType(ParseTypeName($"{nameof(GraphOptions)}<{this.Name}>")),
                 Parameter(Identifier("queryTranslator")).WithType(ParseTypeName(nameof(IQueryTranslator))))
             .WithInitializer(
                 ConstructorInitializer(SyntaxKind.BaseConstructorInitializer)
                 .AddArgumentListArguments(
                     Argument(IdentifierName("logger")),
-                    Argument(IdentifierName("connection")),
+                    Argument(IdentifierName("options")),
                     Argument(IdentifierName("queryTranslator"))))
             .WithBody(Block());
 

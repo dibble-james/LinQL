@@ -15,7 +15,7 @@ internal class ServiceCollectionExtenionsClass : IClassFactory
         => ClassDeclaration(Identifier("ServiceCollectionExtensions"))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
             .AddMembers(MethodDeclaration(
-                IdentifierName($"GraphBuilder<{this.graphName}>"),
+                IdentifierName($"{nameof(GraphOptionsBuilder<Graph>)}<{this.graphName}>"),
                 Identifier($"Add{this.graphName}"))
                 .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
                 .AddParameterListParameters(

@@ -13,6 +13,6 @@ public static class ServiceCollectionExtensions
     /// <typeparam name="TGraph">The type of the graph.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>Graph client configuration builder.</returns>
-    public static GraphBuilder<TGraph> AddGraphQLClient<TGraph>(this IServiceCollection services)
+    public static GraphOptionsBuilder<TGraph> AddGraphQLClient<TGraph>(this IServiceCollection services)
         where TGraph : Graph => new(services);
 }

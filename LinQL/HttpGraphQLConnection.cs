@@ -18,7 +18,7 @@ internal class HttpGraphQLConnection : IGraphQLConnection
         var httpRequest = new HttpRequestMessage
         {
             Method = HttpMethod.Post,
-            Content = JsonContent.Create(request)
+            Content = JsonContent.Create(request, null, this.serializerOptions)
         };
 
         var httpResponse = await this.httpClient.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);

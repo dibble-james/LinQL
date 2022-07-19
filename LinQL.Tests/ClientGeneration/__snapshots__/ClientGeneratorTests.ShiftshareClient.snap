@@ -11,12 +11,12 @@ namespace Shiftshare.Graph
 
     public static class ServiceCollectionExtensions
     {
-        public static GraphBuilder<ShiftshareGraph> AddShiftshareGraph(this IServiceCollection services) => services.AddGraphQLClient<ShiftshareGraph>();
+        public static GraphOptionsBuilder<ShiftshareGraph> AddShiftshareGraph(this IServiceCollection services) => services.AddGraphQLClient<ShiftshareGraph>();
     }
 
     public partial class ShiftshareGraph : Graph
     {
-        public ShiftshareGraph(ILogger<ShiftshareGraph> logger, IGraphQLConnection connection, IQueryTranslator queryTranslator) : base(logger, connection, queryTranslator)
+        public ShiftshareGraph(ILogger<ShiftshareGraph> logger, GraphOptions<ShiftshareGraph> options, IQueryTranslator queryTranslator) : base(logger, options, queryTranslator)
         {
         }
 
