@@ -17,8 +17,8 @@ public static class GraphQLExpressionTranslator
     /// <typeparam name="TData">The result type.</typeparam>
     /// <param name="expression">The expression to translate.</param>
     /// <returns>The request.</returns>
-    public static GraphQLExpressionRequest<TRoot, TData> Translate<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, Graph graph)
-        => new(expression, graph) { Query = new GraphQLExpressionTranslator<TRoot, TData>().Translate(expression) };
+    public static GraphQLExpressionRequest<TRoot, TData> Translate<TRoot, TData>(GraphQLExpression<TRoot, TData> expression)
+        => new(expression) { Query = new GraphQLExpressionTranslator<TRoot, TData>().Translate(expression) };
 }
 
 internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor

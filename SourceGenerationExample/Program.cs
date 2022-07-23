@@ -1,21 +1,17 @@
+using GraphQL.Client.Http;
+using GraphQL.Client.Serializer.SystemTextJson;
 using LinQL;
-using Microsoft.Extensions.DependencyInjection;
-using StarWars.Client;
 
-var client = new ServiceCollection()
-            .AddLogging()
-            .AddStarWarsGraph()
-            .WithHttpConnection(c => c.BaseAddress = new Uri("https://swapi-graphql.netlify.app/.netlify/functions/index"))
-            .Services.BuildServiceProvider()
-            .GetRequiredService<StarWarsGraph>();
+var client = new GraphQLHttpClient("https://swapi-graphql.netlify.app/.netlify/functions/index", new SystemTextJsonSerializer());
 
-var films = await client.Root.Select(x => x.ExecuteAllFilms(null, null, 10, null)!.Films!.Select(x => x.SelectAll()))
-    .Execute();
+var films = await client.SendAsync((StarWars.Client.Root x) => x.ExecuteAllFilms(null, null, 10, null)!.Films!.Select(x => x.SelectAll()));
 
-Console.WriteLine("Film Names");
-films!.ToList().ForEach(f => Console.WriteLine(f.Title));
+Console.WriteLine("Film Names\n=========");
+Console.WriteLine("Query: {0}", films.Expression);
+films!.Data.ToList().ForEach(f => Console.WriteLine(f.Title));
 
-Console.WriteLine("\nOpening Crawl");
+var firstFilm = await client.SendAsync((StarWars.Client.Root x) => x.ExecuteFilm(null, films!.Data.First().Id));
 
-var firstFilm = await client.Root.Select(x => x.ExecuteFilm(null, films!.First().Id)).ToResult();
-Console.WriteLine(firstFilm.Request.Query);
+Console.WriteLine("\nOpening Crawl\n============");
+Console.WriteLine("Query: {0}", firstFilm.Expression);
+Console.WriteLine(firstFilm.Data!.OpeningCrawl);

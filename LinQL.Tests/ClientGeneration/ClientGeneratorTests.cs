@@ -10,7 +10,6 @@ public class ClientGeneratorTests
     public void StarWarsClient()
         => Snapshot.Match(ClientGenerator.Generate(
             Encoding.UTF8.GetString(SDLs.StarWars),
-            "StarWarsGraph",
             "StarWars",
             Array.Empty<string>()));
 
@@ -18,7 +17,6 @@ public class ClientGeneratorTests
     public void ShiftshareClient()
         => Snapshot.Match(ClientGenerator.Generate(
             Encoding.UTF8.GetString(SDLs.Shiftshare),
-            "ShiftshareGraph",
             "Shiftshare.Graph",
             new[] { "NodaTime" }));
 }

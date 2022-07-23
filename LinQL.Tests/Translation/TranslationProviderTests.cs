@@ -9,19 +9,6 @@ using Xunit;
 
 public class TranslationProviderTests
 {
-    private readonly TranslationProvider target;
-    private readonly Graph fakeGraph;
-
-    public TranslationProviderTests()
-    {
-        this.target = new TranslationProvider();
-        this.fakeGraph = Substitute.For<Graph>(
-            Substitute.For<ILogger<Graph>>(),
-            Substitute.For<GraphOptions>(),
-            this.target);
-        this.fakeGraph.QueryTranslator.Returns(this.target);
-    }
-
     [Fact]
     public void Simple()
         => this.Test<SimpleScalarType, object>(x => new { x.Number, x.Text });
@@ -184,17 +171,16 @@ public class TranslationProviderTests
 
     private void TestInclude<TRoot, TData>(Expression<Func<TRoot, TData>> expression, Action<GraphQLExpression<TRoot, TData>> includes)
     {
-        var graphExpression = this.target.ToExpression(this.fakeGraph, expression);
+        var graphExpression = ExpressionTranslator.Translate(expression);
         includes(graphExpression);
 
-        Snapshot.Match(this.target.ToQueryString(graphExpression));
+        var request = graphExpression.ToRequest();
+
+        Snapshot.Match(request.Query);
     }
 
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
-    {
-        var graphExpression = this.target.ToExpression(this.fakeGraph, expression);
-        Snapshot.Match(this.target.ToQueryString(graphExpression));
-    }
+        => this.TestInclude(expression, _ => { });
 
     [OperationType]
     private class SimpleScalarType : ISimpleType
