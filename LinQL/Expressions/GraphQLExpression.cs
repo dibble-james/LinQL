@@ -46,13 +46,6 @@ public class GraphQLExpression<TRoot, TData> : TypeFieldExpression
         return ExpressionTranslator.Include(this, include);
     }
 
-    /// <summary>
-    /// Convert to a <see cref="GraphQLRequest"/>.
-    /// </summary>
-    /// <returns>The request.</returns>
-    public GraphQLExpressionRequest<TRoot, TData> ToRequest()
-        => new(this) { Query = this.queryValue.Value };
-
     /// <inheritdoc/>
     public override string ToString() => this.queryValue.Value;
 

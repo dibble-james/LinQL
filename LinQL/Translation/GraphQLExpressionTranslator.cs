@@ -11,14 +11,14 @@ using LinQL.Expressions;
 public static class GraphQLExpressionTranslator
 {
     /// <summary>
-    /// Extract a <see cref="GraphQLRequest"/> from the given <paramref name="expression"/>.
+    /// Extract a <see cref="LinqQLRequest{TRoot, TData}"/> from the given <paramref name="expression"/>.
     /// </summary>
     /// <typeparam name="TRoot">The root operation type.</typeparam>
     /// <typeparam name="TData">The result type.</typeparam>
     /// <param name="expression">The expression to translate.</param>
     /// <returns>The request.</returns>
-    public static GraphQLExpressionRequest<TRoot, TData> Translate<TRoot, TData>(GraphQLExpression<TRoot, TData> expression)
-        => new(expression) { Query = new GraphQLExpressionTranslator<TRoot, TData>().Translate(expression) };
+    public static LinqQLRequest<TRoot, TData> Translate<TRoot, TData>(GraphQLExpression<TRoot, TData> expression)
+        => new(expression, new GraphQLExpressionTranslator<TRoot, TData>().Translate(expression));
 }
 
 internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor

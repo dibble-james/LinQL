@@ -9,10 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="6.7.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="*" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="12.12.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
-    <PackageReference Include="NSubstitute" Version="4.3.0" />
-    <PackageReference Include="Snapshooter.Xunit" Version="0.7.1" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
@@ -26,31 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LinQL\LinQL.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="JsonFiles.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>JsonFiles.resx</DependentUpon>
-    </Compile>
-    <Compile Update="SDLs.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>SDLs.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="JsonFiles.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>JsonFiles.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="SDLs.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>SDLs.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <ProjectReference Include="..\LinQL.GraphQL.Client\LinQL.GraphQL.Client.csproj" />
   </ItemGroup>
 
 </Project>

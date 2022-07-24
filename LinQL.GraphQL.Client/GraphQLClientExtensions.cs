@@ -1,3 +1,4 @@
+
 namespace GraphQL.Client.Abstractions;
 
 using System.Linq.Expressions;
@@ -7,6 +8,7 @@ using FastExpressionCompiler;
 using LinQL;
 using LinQL.Description;
 using LinQL.Expressions;
+using LinQL.GraphQL.Client;
 using LinQL.Translation;
 
 /// <summary>
@@ -29,8 +31,7 @@ public static class GraphQLClientExtensions
         CancellationToken cancellationToken = default)
         where TRoot : RootType<TRoot>
     {
-        var requestExpression = request.ToGraphQLRequest();
-        includes?.Invoke(requestExpression.Expression);
+        var requestExpression = request.ToRequest(includes).ToGraphQLClientRequest();
 
         var response = await (requestExpression.Expression.RootOperation switch
         {
@@ -59,8 +60,7 @@ public static class GraphQLClientExtensions
         Action<GraphQLExpression<TRoot, TData>>? includes = null)
         where TRoot : RootType<TRoot>
     {
-        var requestExpression = request.ToGraphQLRequest();
-        includes?.Invoke(requestExpression.Expression);
+        var requestExpression = request.ToRequest(includes).ToGraphQLClientRequest();
 
         var subscription = requestExpression.Expression.RootOperation switch
         {

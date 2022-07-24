@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LinQL\LinQL.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="..\LinQL.GraphQL.Client\LinQL.GraphQL.Client.csproj" />
   </ItemGroup>
   <!-- Manually reference the generator props because we locally reference the generator. When added via NuGet this happens automatically -->
   <Import Project="..\LinQL\LinQL.props" />

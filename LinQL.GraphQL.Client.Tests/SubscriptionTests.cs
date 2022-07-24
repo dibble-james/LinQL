@@ -1,15 +1,15 @@
-namespace LinQL.Tests;
+namespace LinQL.GraphQL.Client.Tests;
+
 using System;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using GraphQL.Client.Abstractions;
-using GraphQL.Client.Http;
-using GraphQL.Client.Serializer.SystemTextJson;
+using global::GraphQL.Client.Abstractions;
+using global::GraphQL.Client.Http;
+using global::GraphQL.Client.Serializer.SystemTextJson;
 using LinQL.Description;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 public class SubscriptionTests : IDisposable
 {

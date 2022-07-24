@@ -4,7 +4,6 @@ using System.Linq.Expressions;
 using LinQL.Description;
 using LinQL.Expressions;
 using LinQL.Translation;
-using Microsoft.Extensions.Logging;
 using Xunit;
 
 public class TranslationProviderTests
@@ -171,10 +170,7 @@ public class TranslationProviderTests
 
     private void TestInclude<TRoot, TData>(Expression<Func<TRoot, TData>> expression, Action<GraphQLExpression<TRoot, TData>> includes)
     {
-        var graphExpression = ExpressionTranslator.Translate(expression);
-        includes(graphExpression);
-
-        var request = graphExpression.ToRequest();
+        var request = TranslationProvider.ToRequest(expression, includes);
 
         Snapshot.Match(request.Query);
     }
