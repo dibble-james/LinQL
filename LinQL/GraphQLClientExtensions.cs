@@ -1,10 +1,10 @@
-namespace LinQL;
+namespace GraphQL.Client.Abstractions;
 
 using System.Linq.Expressions;
 using System.Net.WebSockets;
 using System.Reactive.Linq;
 using FastExpressionCompiler;
-using GraphQL.Client.Abstractions;
+using LinQL;
 using LinQL.Description;
 using LinQL.Expressions;
 using LinQL.Translation;

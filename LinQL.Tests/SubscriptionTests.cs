@@ -2,6 +2,7 @@ namespace LinQL.Tests;
 using System;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.SystemTextJson;
 using LinQL.Description;
@@ -39,7 +40,7 @@ public class SubscriptionTests : IDisposable
     [Fact]
     public async Task TestSubscriptions()
     {
-        var client = new GraphQLHttpClient(
+        IGraphQLClient client = new GraphQLHttpClient(
             opt =>
             {
                 opt.EndPoint = new UriBuilder(HostUrl) { Path = "graphql" }.Uri;
@@ -53,8 +54,7 @@ public class SubscriptionTests : IDisposable
 
         var lastNumber = -1;
 
-        //await foreach (var number in numbers.TakeUntil(Observable.Timer(TimeSpan.FromSeconds(5))).ToAsyncEnumerable())
-        await foreach (var number in numbers.ToAsyncEnumerable())
+        await foreach (var number in numbers.TakeUntil(Observable.Timer(TimeSpan.FromSeconds(5))).ToAsyncEnumerable())
         {
             number.Data.Number.Should().Be(lastNumber + 1, "Numbers should arrive in sync");
             lastNumber = number.Data.Number;
