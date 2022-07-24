@@ -10,11 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="SDLs\StarWars.graphql" />
-    <None Remove="SDLs\Shiftshare.graphql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <AdditionalFiles Include="SDLs\StarWars.graphql" LinQLClientNamespace="StarWars.Client" />
     <AdditionalFiles Include="SDLs\Shiftshare.graphql" LinQLClientNamespace="Shiftshare.Client" LinQLExtraNamespaces="NodaTime" />
   </ItemGroup>
