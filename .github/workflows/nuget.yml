@@ -36,4 +36,4 @@ jobs:
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
           VERSION: ${{ steps.tag.outputs.VERSION }}
-        run: dotnet nuget push "**/LinQL.$VERSION.nupkg" -s https://api.nuget.org/v3/index.json -k "$NUGET_API_KEY"
+        run: dotnet nuget push "**/LinQL.*.$VERSION.nupkg" -s https://api.nuget.org/v3/index.json -k "$NUGET_API_KEY"
