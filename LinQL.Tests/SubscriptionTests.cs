@@ -5,46 +5,59 @@ using System.Threading.Tasks;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.SystemTextJson;
 using LinQL.Description;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 public class SubscriptionTests : IDisposable
 {
-    private readonly TestServer server;
+    private const string HostUrl = "http://localhost:5000";
+    private readonly WebApplication server;
 
-    public SubscriptionTests() => this.server = new TestServerApplicationFactory<SimpleStartup>().Server;
+    public SubscriptionTests()
+    {
+        var hostBuilder = new WebHostBuilder()
+            .Configure(app =>
+            {
+                app.UseRouting();
+                app.UseWebSockets();
+                app.UseEndpoints(e => e.MapGraphQL());
+            });
 
-    [Fact(Skip = "GraphQL Client doesn't like test server")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "xUnit1004:Test methods should not be skipped", Justification = "Ignore for now")]
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddRouting()
+                .AddGraphQLServer()
+                .AddQueryType<TestQuery>()
+                .AddSubscriptionType<TestSubscriptionType>();
+
+        this.server = builder.Build();
+        this.server.UseRouting().UseWebSockets().UseEndpoints(e => e.MapGraphQL());
+        Task.Run(() => this.server.Run(HostUrl));
+    }
+
+    [Fact]
     public async Task TestSubscriptions()
     {
-        this.server.CreateClient();
-
         var client = new GraphQLHttpClient(
             opt =>
             {
-                opt.HttpMessageHandler = this.server.CreateHandler();
-                opt.EndPoint = new Uri(this.server.BaseAddress, "/graphql");
+                opt.EndPoint = new UriBuilder(HostUrl) { Path = "graphql" }.Uri;
+                opt.WebSocketEndPoint = new UriBuilder(HostUrl) { Scheme = "ws", Path = "graphql" }.Uri;
             },
             new SystemTextJsonSerializer());
-
-        var cts = new CancellationTokenSource();
-        cts.CancelAfter(5000);
 
         var ranToCompletion = false;
 
         var numbers = client.CreateSubscriptionStream((TestSubscription x) => x.GetNumbers().SelectAll());
 
-        var lastNumer = -1;
+        var lastNumber = -1;
 
+        //await foreach (var number in numbers.TakeUntil(Observable.Timer(TimeSpan.FromSeconds(5))).ToAsyncEnumerable())
         await foreach (var number in numbers.ToAsyncEnumerable())
         {
-            number.Data.Number.Should().Be(lastNumer + 1, "Numbers should arrive in sync");
+            number.Data.Number.Should().Be(lastNumber + 1, "Numbers should arrive in sync");
+            lastNumber = number.Data.Number;
 
             if (number.Data.Number > 5)
             {
@@ -54,31 +67,6 @@ public class SubscriptionTests : IDisposable
         }
 
         ranToCompletion.Should().BeTrue();
-    }
-
-    public class SimpleStartup
-    {
-        public void ConfigureServices(IServiceCollection services)
-            => services.AddGraphQLServer().AddQueryType<TestQuery>().AddSubscriptionType<TestSubscriptionType>();
-
-        public void Configure(IApplicationBuilder app)
-        {
-            app.UseRouting();
-            app.UseWebSockets();
-            app.UseEndpoints(e => e.MapGraphQL());
-        }
-    }
-
-    public class TestServerApplicationFactory<TStartup> : WebApplicationFactory<TStartup>
-        where TStartup : class
-    {
-        protected override TestServer CreateServer(IWebHostBuilder builder) =>
-            base.CreateServer(
-                builder.UseSolutionRelativeContentRoot(""));
-
-        protected override IWebHostBuilder CreateWebHostBuilder() =>
-            WebHost.CreateDefaultBuilder()
-                .UseStartup<TStartup>();
     }
 
     public class TestQuery
@@ -118,6 +106,6 @@ public class SubscriptionTests : IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        this.server.Dispose();
+        this.server.StopAsync();
     }
 }
