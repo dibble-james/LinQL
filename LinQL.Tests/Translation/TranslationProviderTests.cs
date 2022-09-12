@@ -9,6 +9,10 @@ using Xunit;
 public class TranslationProviderTests
 {
     [Fact]
+    public void ScalarOnRoot()
+        => this.Test<ScarlarOnRootType, object>(x => x.GetNumber());
+
+    [Fact]
     public void Simple()
         => this.Test<SimpleScalarType, object>(x => new { x.Number, x.Text });
 
@@ -284,5 +288,14 @@ public class TranslationProviderTests
         public ISimpleType SimpleType { get; set; }
 
         public IEnumerable<ISimpleType> ArrayOfInterfaces { get; set; } = Enumerable.Empty<ISimpleType>();
+    }
+
+    [OperationType(RootOperationType.Query)]
+    public class ScarlarOnRootType : RootType<ScarlarOnRootType>
+    {
+        public int Number { get; set; }
+
+        [GraphQLOperation, GraphQLField(Name = "number")]
+        public int GetNumber() => this.Number;
     }
 }

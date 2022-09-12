@@ -30,6 +30,7 @@ internal static class Extensions
     {
         PropertyInfo prop when prop.PropertyType.IsScalar() => new ScalarFieldExpression(member.GetFieldName(), prop.PropertyType, member.DeclaringType!),
         FieldInfo field when field.FieldType.IsScalar() => new ScalarFieldExpression(member.GetFieldName(), field.FieldType, member.DeclaringType!),
+        MethodInfo method when method.ReturnType.IsScalar() && !method.GetParameters().Any() => new ScalarFieldExpression(method.GetFieldName(), method.ReturnType, member.DeclaringType!),
         MethodInfo method when method.IsOperation() => new TypeFieldExpression(member.GetFieldName(), method.ReturnType, member.DeclaringType!),
         PropertyInfo prop => new TypeFieldExpression(prop.GetFieldName(), prop.PropertyType, member.DeclaringType!),
         FieldInfo field => new TypeFieldExpression(field.GetFieldName(), field.FieldType, member.DeclaringType!),
@@ -43,6 +44,8 @@ internal static class Extensions
         => member.GetCustomAttribute<GraphQLFieldAttribute>()?.Name ?? member.Name.ToCamelCase();
 
     public static bool IsOperation(this MethodInfo method) => method.GetCustomAttribute<GraphQLOperationAttribute>() is not null;
+
+    public static bool IsRootOperation(this Type type) => type.GetCustomAttribute<OperationTypeAttribute>() is not null;
 
     public static LambdaExpression? UnwrapLambdaFromQuote(this Expression expression)
         => (expression is UnaryExpression unary && expression.NodeType == ExpressionType.Quote

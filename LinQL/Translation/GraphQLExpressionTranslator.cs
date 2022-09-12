@@ -48,7 +48,24 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
     {
         this.query.Append(field.FieldName.ToCamelCase());
 
-        if (field.Type.IsScalar())
+        if (field.Type.IsScalar() && !field.Arguments.Any() && field.DeclaringType.IsRootOperation())
+        {
+            this.query.AppendLine(" {");
+
+            var indent = this.query.Indent();
+
+            try
+            {
+                return base.VisitExtension(field);
+            }
+            finally
+            {
+                indent.Dispose();
+                this.query.AppendLine("}");
+            }
+        }
+
+        if (field.Type.IsScalar() && !field.Arguments.Any())
         {
             this.query.AppendLine();
             return base.VisitExtension(field);

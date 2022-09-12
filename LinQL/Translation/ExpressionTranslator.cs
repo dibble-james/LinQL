@@ -64,6 +64,7 @@ public class ExpressionTranslator : ExpressionVisitor
     protected override Expression VisitMethodCall(MethodCallExpression node) => node switch
     {
         var m when m.IsOn() => this.TraverseOn(node),
+        { Method: var method } when method.IsOperation() && method.ReturnType.IsScalar() && !method.GetParameters().Any() => this.expression.WithField(node.Method.ToField()),
         { Object: object, Method: var method } when method.IsOperation() => this.TraverseMember(node.Object).WithField(VisitFieldWithArguments(node)),
         { Method: var method } when method.IsOperation() => this.expression.WithField(VisitFieldWithArguments(node)),
         { Method.Name: nameof(Enumerable.OfType) } => this.TraverseExtensionMethodCall(node).WithField(new SpreadExpression(node.Method.GetGenericArguments()[0])),
