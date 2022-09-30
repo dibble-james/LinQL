@@ -38,11 +38,9 @@ jobs:
           VERSION: ${{ steps.tag.outputs.VERSION }}
         run: dotnet nuget push "**/LinQL*.$VERSION.nupkg" -s https://api.nuget.org/v3/index.json -k "$NUGET_API_KEY"
       - name: Sync Wiki
-        uses: joeizzard/action-wiki-sync@master
-        with:
-          username: dibble-james
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-          wiki_folder: docs
-          commit_username: 'auto-sync'
-          commit_email: 'example@users.noreply.github.com'
-          commit_message: 'action: wiki sync'
+        uses: Andrew-Chen-Wang/github-wiki-action@v3
+        env:
+          WIKI_DIR: docs/
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_MAIL: 11923585+dibble-james@users.noreply.github.com
+          GH_NAME: ${{ github.repository_owner }}
