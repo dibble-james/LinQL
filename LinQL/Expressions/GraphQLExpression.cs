@@ -2,22 +2,28 @@ namespace LinQL.Expressions;
 
 using System.Linq.Expressions;
 using LinQL.Description;
+using LinQL.Translation;
 
 /// <summary>
 /// An <see cref="Expression"/> representation of a GraphQL query.
 /// </summary>
 /// <typeparam name="TRoot">The root query type.</typeparam>
-/// <typeparam name="TResult">The query result type.</typeparam>
-public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
+/// <typeparam name="TData">The query result type.</typeparam>
+public class GraphQLExpression<TRoot, TData> : TypeFieldExpression
 {
-    private readonly Graph graph;
+    private Lazy<string> queryValue;
 
-    /// <param name="graph">The graph to execute the query against.</param>
+    /// <summary>
+    /// Creates a new GraphQL Expression.
+    /// </summary>
     /// <param name="rootOperation">The root operation to query against.</param>
     /// <param name="originalQuery">The expression this will be based on.</param>
-    public GraphQLExpression(Graph graph, RootOperation rootOperation, Expression<Func<TRoot, TResult>> originalQuery)
-        : base(rootOperation.Name, typeof(TResult), typeof(TRoot))
-        => (this.graph, this.RootOperation, this.OriginalQuery) = (graph, rootOperation, originalQuery);
+    public GraphQLExpression(RootOperation rootOperation, Expression<Func<TRoot, TData>> originalQuery)
+        : base(rootOperation.Name, typeof(TData), typeof(TRoot))
+    {
+        (this.RootOperation, this.OriginalQuery) = (rootOperation, originalQuery);
+        this.queryValue = this.ToStringInternal();
+    }
 
     /// <summary>
     /// Gets the root operation.
@@ -27,37 +33,22 @@ public class GraphQLExpression<TRoot, TResult> : TypeFieldExpression
     /// <summary>
     /// Gets the expressions this expression was built from.
     /// </summary>
-    public Expression<Func<TRoot, TResult>> OriginalQuery { get; }
+    public Expression<Func<TRoot, TData>> OriginalQuery { get; }
 
     /// <summary>
     /// Add an extra field to the selection.
     /// </summary>
     /// <param name="include">The field to include.</param>
     /// <returns>The translated expression.</returns>
-    public GraphQLExpression<TRoot, TResult> Include(Expression<Func<TRoot, object>> include)
-        => this.graph.QueryTranslator.Include(this, include);
-
-    /// <summary>
-    /// Run the query against the graph.
-    /// </summary>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>The server data response.</returns>
-    public async Task<TResult> Execute(CancellationToken cancellationToken = default)
+    public GraphQLExpression<TRoot, TData> Include(Expression<Func<TRoot, object>> include)
     {
-        var result = await this.graph.Execute(this, cancellationToken).ConfigureAwait(false);
-
-        return result;
+        this.queryValue = this.ToStringInternal();
+        return ExpressionTranslator.Include(this, include);
     }
 
-    /// <summary>
-    /// Execute the query and get the server response.
-    /// </summary>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>The server response.</returns>
-    public async Task<GraphQLResponse<TResult>> ToResult(CancellationToken cancellationToken = default)
-    {
-        var result = await this.graph.ExecuteToResult(this, cancellationToken).ConfigureAwait(false);
+    /// <inheritdoc/>
+    public override string ToString() => this.queryValue.Value;
 
-        return result;
-    }
+    private Lazy<string> ToStringInternal()
+        => new(() => new GraphQLExpressionTranslator<TRoot, TData>().Translate(this));
 }

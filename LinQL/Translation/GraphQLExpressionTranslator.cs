@@ -5,6 +5,22 @@ using System.Text;
 using System.Text.Json;
 using LinQL.Expressions;
 
+/// <summary>
+/// Translates <see cref="GraphQLExpression{TRoot, TResult}"/>s.
+/// </summary>
+public static class GraphQLExpressionTranslator
+{
+    /// <summary>
+    /// Extract a <see cref="LinqQLRequest{TRoot, TData}"/> from the given <paramref name="expression"/>.
+    /// </summary>
+    /// <typeparam name="TRoot">The root operation type.</typeparam>
+    /// <typeparam name="TData">The result type.</typeparam>
+    /// <param name="expression">The expression to translate.</param>
+    /// <returns>The request.</returns>
+    public static LinqQLRequest<TRoot, TData> Translate<TRoot, TData>(GraphQLExpression<TRoot, TData> expression)
+        => new(expression, new GraphQLExpressionTranslator<TRoot, TData>().Translate(expression));
+}
+
 internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -32,7 +48,24 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
     {
         this.query.Append(field.FieldName.ToCamelCase());
 
-        if (field.Type.IsScalar())
+        if (field.Type.IsScalar() && !field.Arguments.Any() && field.DeclaringType.IsRootOperation())
+        {
+            this.query.AppendLine(" {");
+
+            var indent = this.query.Indent();
+
+            try
+            {
+                return base.VisitExtension(field);
+            }
+            finally
+            {
+                indent.Dispose();
+                this.query.AppendLine("}");
+            }
+        }
+
+        if (field.Type.IsScalar() && !field.Arguments.Any())
         {
             this.query.AppendLine();
             return base.VisitExtension(field);

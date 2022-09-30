@@ -5,23 +5,27 @@ using System.Linq.Expressions;
 using LinQL.Expressions;
 
 /// <summary>
-/// Default implementation of <see cref="IQueryTranslator"/>.
+/// Convert an <see cref="Expression"/> to a <see cref="LinqQLRequest{TRoot, TData}"/>.
 /// </summary>
-public class TranslationProvider : IQueryTranslator
+public static class TranslationProvider
 {
-    /// <inheritdoc/>
-    public GraphQLExpression<TRoot, TData> ToExpression<TRoot, TData>(Graph graph, Expression<Func<TRoot, TData>> query)
-        => ExpressionTranslator.Translate(graph, query);
-
-    /// <inheritdoc/>
-    public GraphQLExpression<TRoot, TData> Include<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, Expression<Func<TRoot, object>> include)
-        => ExpressionTranslator.Include(expression, include);
-
-    /// <inheritdoc/>
-    public string ToQueryString<TRoot, TData>(GraphQLExpression<TRoot, TData> query)
+    /// <summary>   
+    /// Convert an <see cref="Expression"/> to a <see cref="LinqQLRequest{TRoot, TData}"/>.
+    /// </summary>
+    /// <typeparam name="TRoot">The root data type.</typeparam>
+    /// <typeparam name="TData">The requested data type.</typeparam>
+    /// <param name="query">The expression to be sent to the server.</param>
+    /// <param name="includes">Any extra fields required.</param>
+    /// <returns>The request to execute.</returns>
+    public static LinqQLRequest<TRoot, TData> ToRequest<TRoot, TData>(
+        this Expression<Func<TRoot, TData>> query,
+        Action<GraphQLExpression<TRoot, TData>>? includes = null)
     {
-        var expressionTranslator = new GraphQLExpressionTranslator<TRoot, TData>();
+        var expression = ExpressionTranslator.Translate(query);
+        includes?.Invoke(expression);
 
-        return expressionTranslator.Translate(query);
+        var request = GraphQLExpressionTranslator.Translate(expression);
+
+        return request;
     }
 }

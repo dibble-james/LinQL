@@ -10,14 +10,15 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
     private readonly string graphNamespace;
     private readonly string[] extraUsings;
 
-    public DocumentWalkerContext(string graphName, string graphNamespace, string[] extraUsings)
+    public DocumentWalkerContext(string graphNamespace, string[] extraUsings)
     {
-        this.Graph = new GraphClass(graphName);
         this.graphNamespace = graphNamespace;
         this.extraUsings = extraUsings;
     }
 
-    public GraphClass Graph { get; }
+    public List<RootTypeClass> RootOperations { get; } = new();
+
+    public List<IClassFactory> Types { get; } = new();
 
     public override string ToString()
     {
@@ -34,10 +35,8 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
             ns = ns.AddUsings(this.extraUsings.Select(x => UsingDirective(IdentifierName(x))).ToArray());
         }
 
-        ns = ns.AddMembers(new ServiceCollectionExtenionsClass(this.Graph.Name).Create())
-          .AddMembers(this.Graph.Create())
-          .AddMembers(this.Graph.RootOperations.Select(x => x.Create()).ToArray())
-          .AddMembers(this.Graph.Types.Select(x => x.Create()).ToArray());
+        ns = ns.AddMembers(this.RootOperations.Select(x => x.Create()).ToArray())
+          .AddMembers(this.Types.Select(x => x.Create()).ToArray());
 
         using var clientContent = new StringWriter();
         clientContent.WriteLine("#nullable enable");

@@ -1,7 +1,6 @@
 <Project>
     <ItemGroup>
         <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="LinQLClientNamespace" />
-        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="LinQLClientName" />
         <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="LinQLExtraNamespaces" />
     </ItemGroup>
 </Project>

@@ -1,15 +1,13 @@
 # Writing Queries
 
-All queries start from a `RootType`, which you then `Select` from.  You can then
-project a result from it using a C# `Expression` which has it's limitations, much
-like with Entity Framework, but still very powerful.  This library is fairly new,
-and if you've ever looked into Expression Trees, hopefully you'll understand that
-it will take time to cover all the bases.  A range of expressions can be converted 
-as demonstrated by [the `TranslationProviderTests`](https://github.com/dibble-james/LinQL/blob/interface-support/LinQL.Tests/Translation/TranslationProviderTests.cs).  If you come accross something that 
-doesn't work, please raise an issue or a pull request with a supporting test.
-
-`Select` will produce a `GraphQLExpression` which you can then call `Execute` upon
-to send it to the server and get back the result.
+All queries start from a `RootType<T>` which the source generator will create for
+you.  You can then project a result from it using a C# `Expression` which has it's
+limitations, much like with Entity Framework, but still very powerful.  This library
+is fairly new, and if you've ever looked into Expression Trees, hopefully you'll 
+understand that it will take time to cover all the bases.  A range of expressions 
+can be converted as demonstrated by [the `TranslationProviderTests`](https://github.com/dibble-james/LinQL/blob/interface-support/LinQL.Tests/Translation/TranslationProviderTests.cs).  If you come
+accross something that doesn't work, please raise an issue or a pull request with 
+a supporting test.
 
 ### Field selection
 By default, if an expression terminates on a type, it will get all the scalar fields
@@ -37,7 +35,7 @@ public class ExampleType
 ```
 If you were to query:
 ```csharp
-graph.Query.Select(x => x.ExampleType);
+(Root x) => x.ExampleType;
 ```
 would produce:
 ```graphql
@@ -51,7 +49,7 @@ query {
 And if you query:
 If you were to query:
 ```csharp
-graph.Query.Select(x => x.ExampleType.Nested);
+(Root x) => x.ExampleType.Nested;
 ```
 would produce:
 ```graphql
@@ -64,11 +62,16 @@ query {
     }
 }
 ```
+The lambda synax we're using here might look a little odd, we're used to having the compiler
+infer the parameter type IE `x => x` but here we're doing `(Root x) => x`.  This is mearly a
+suggestion as it gives a hint to the compiler what generic types are in play instead of having
+to do `Query<Root, int>(x => x.Number)` which is ever so slightly verbose.  Any suggestions on
+how to improve this are welcome!
 
 If you would like to explicitly request all fields there is a helper method `SelectAll`
 so you could do
 ```csharp
-graph.Query.Select(x => x.ExampleType.SelectAll().Nested);
+(Root x) => x.ExampleType.SelectAll().Nested;
 ```
 which would produce:
 ```graphql
@@ -84,17 +87,16 @@ query {
 }
 ```
 
-Can also of course project to get specific results:
+You can also of course project to get specific results:
 ```csharp
-graph.Query.Select(x => new { x.ExampleType.Number, x.ExampleType.Nested.Text, IsAvailable = x.ExampleType.IsTrue() });
+(Root x) => new { x.ExampleType.Number, x.ExampleType.Nested.Text, IsAvailable = x.ExampleType.IsTrue() };
 ```
 Or if you suppose an array of ExampleTypes you can use the native LINQ `Select` on arrays too:
 ```csharp
-graph.Query.Select(x => x.ExampleTypes.Select(y => new { y.Number, y.Text, IsAvailable = y.IsTrue() });
+(Root x) => x.ExampleTypes.Select(y => new { y.Number, y.Text, IsAvailable = y.IsTrue() });
 ```
 You can then of course do whatever you like with the results
 ```csharp
-(await graph.Query.Select(x => x.ExampleTypes.Select(y => new { y.Number, y.Text, IsAvailable = y.IsTrue() })
-    .Execute())
+(await Query((Root x) => x.ExampleTypes.Select(y => new { y.Number, y.Text, IsAvailable = y.IsTrue() })))
     .Where(x => x.IsAvailable).ToList();
 ```

@@ -3,9 +3,7 @@
 Interfaces types must be regisered in the Graph so that they can be deserialised correctly, not require large reflection calls and improve security (some known exploits exist with unconstrained deserialization).
 
 ```csharp
-services.AddGraphQLClient<StarWarsGraph>()
-    .AddInterfaceType<IAmInterface>(typeof(ConcreateA), typeof(ConcreteB))
-    ...;
+new JsonSerializerOptions().RegisterInterface<IAmInterface>(typeof(ConcreateA), typeof(ConcreteB));
 ```
 
 You can then use the concrete types in your queries in a number of ways:

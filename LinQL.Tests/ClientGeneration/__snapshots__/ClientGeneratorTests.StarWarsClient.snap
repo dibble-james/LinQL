@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 #pragma warning disable CS8618
 namespace StarWars
 {
@@ -7,20 +7,6 @@ namespace StarWars
     using LinQL.Translation;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.DependencyInjection;
-
-    public static class ServiceCollectionExtensions
-    {
-        public static GraphBuilder<StarWarsGraph> AddStarWarsGraph(this IServiceCollection services) => services.AddGraphQLClient<StarWarsGraph>();
-    }
-
-    public partial class StarWarsGraph : Graph
-    {
-        public StarWarsGraph(ILogger<StarWarsGraph> logger, IGraphQLConnection connection, IQueryTranslator queryTranslator) : base(logger, connection, queryTranslator)
-        {
-        }
-
-        public Root Root => this.RootType<Root>();
-    }
 
     [OperationType(RootOperationType.Query)]
     public partial class Root : RootType<Root>

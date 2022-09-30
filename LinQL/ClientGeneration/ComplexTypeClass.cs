@@ -51,7 +51,7 @@ internal class ComplexTypeClass : IClassFactory
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken))))
                 .ToArray())
-            .AddMembers(this.Methods.SelectMany(CreateOperation).ToArray());
+            .AddMembers(this.Methods.SelectMany(this.CreateOperation).ToArray());
 
         if (this.interfaces.Any())
         {
@@ -67,7 +67,7 @@ internal class ComplexTypeClass : IClassFactory
     private IEnumerable<FieldDefinitionNode> Methods
         => this.fields.Where(x => x.Arguments.Any());
 
-    private static string TypeName(ITypeNode type)
+    protected static string TypeName(ITypeNode type)
     {
         var typeName = TypeMapping.TryGetValue(type.NamedType().Name.Value, out var mapped)
             ? mapped : type.NamedType().Name.Value;
@@ -77,10 +77,10 @@ internal class ComplexTypeClass : IClassFactory
         return type.IsNonNullType() ? typeName : typeName + "?";
     }
 
-    private static string FieldName(string field)
+    protected static string FieldName(string field)
         => char.ToUpperInvariant(field.First()) + field.ToCamelCase().Substring(1);
 
-    private static IEnumerable<MemberDeclarationSyntax> CreateOperation(FieldDefinitionNode f)
+    protected virtual IEnumerable<MemberDeclarationSyntax> CreateOperation(FieldDefinitionNode f)
         => new MemberDeclarationSyntax[]
         {
             PropertyDeclaration(ParseTypeName(TypeName(f.Type)), Identifier(FieldName(f.Name.Value)))

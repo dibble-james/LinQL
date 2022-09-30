@@ -4,23 +4,13 @@ using System.Linq.Expressions;
 using LinQL.Description;
 using LinQL.Expressions;
 using LinQL.Translation;
-using Microsoft.Extensions.Logging;
 using Xunit;
 
 public class TranslationProviderTests
 {
-    private readonly TranslationProvider target;
-    private readonly Graph fakeGraph;
-
-    public TranslationProviderTests()
-    {
-        this.target = new TranslationProvider();
-        this.fakeGraph = Substitute.For<Graph>(
-            Substitute.For<ILogger<Graph>>(),
-            Substitute.For<IGraphQLConnection>(),
-            this.target);
-        this.fakeGraph.QueryTranslator.Returns(this.target);
-    }
+    [Fact]
+    public void ScalarOnRoot()
+        => this.Test<ScarlarOnRootType, object>(x => x.GetNumber());
 
     [Fact]
     public void Simple()
@@ -184,30 +174,26 @@ public class TranslationProviderTests
 
     private void TestInclude<TRoot, TData>(Expression<Func<TRoot, TData>> expression, Action<GraphQLExpression<TRoot, TData>> includes)
     {
-        var graphExpression = this.target.ToExpression(this.fakeGraph, expression);
-        includes(graphExpression);
+        var request = TranslationProvider.ToRequest(expression, includes);
 
-        Snapshot.Match(this.target.ToQueryString(graphExpression));
+        Snapshot.Match(request.Query);
     }
 
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
-    {
-        var graphExpression = this.target.ToExpression(this.fakeGraph, expression);
-        Snapshot.Match(this.target.ToQueryString(graphExpression));
-    }
+        => this.TestInclude(expression, _ => { });
 
     [OperationType]
     private class SimpleScalarType : ISimpleType
     {
         public int Number { get; set; }
 
-        public string? Text { get; set; }
+        public string Text { get; set; }
     }
 
     [OperationType]
     private class NestedClassType
     {
-        public SimpleScalarType? Nested { get; set; }
+        public SimpleScalarType Nested { get; set; }
 
         public float Float { get; set; }
     }
@@ -280,14 +266,14 @@ public class TranslationProviderTests
 
     private interface ISimpleType
     {
-        string? Text { get; }
+        string Text { get; }
 
         int Number { get; }
     }
 
     private class SomeOtherSimpleType : ISimpleType
     {
-        public string? Text { get; }
+        public string Text { get; }
 
         public int Number { get; }
 
@@ -299,8 +285,17 @@ public class TranslationProviderTests
     [OperationType]
     private class InterfaceRootType
     {
-        public ISimpleType? SimpleType { get; set; }
+        public ISimpleType SimpleType { get; set; }
 
         public IEnumerable<ISimpleType> ArrayOfInterfaces { get; set; } = Enumerable.Empty<ISimpleType>();
+    }
+
+    [OperationType(RootOperationType.Query)]
+    public class ScarlarOnRootType : RootType<ScarlarOnRootType>
+    {
+        public int Number { get; set; }
+
+        [GraphQLOperation, GraphQLField(Name = "number")]
+        public int GetNumber() => this.Number;
     }
 }

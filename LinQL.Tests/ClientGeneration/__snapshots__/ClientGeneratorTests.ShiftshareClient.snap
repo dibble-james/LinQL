@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 #pragma warning disable CS8618
 namespace Shiftshare.Graph
 {
@@ -8,21 +8,6 @@ namespace Shiftshare.Graph
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.DependencyInjection;
     using NodaTime;
-
-    public static class ServiceCollectionExtensions
-    {
-        public static GraphBuilder<ShiftshareGraph> AddShiftshareGraph(this IServiceCollection services) => services.AddGraphQLClient<ShiftshareGraph>();
-    }
-
-    public partial class ShiftshareGraph : Graph
-    {
-        public ShiftshareGraph(ILogger<ShiftshareGraph> logger, IGraphQLConnection connection, IQueryTranslator queryTranslator) : base(logger, connection, queryTranslator)
-        {
-        }
-
-        public Query Query => this.RootType<Query>();
-        public Mutation Mutation => this.RootType<Mutation>();
-    }
 
     [OperationType(RootOperationType.Query)]
     public partial class Query : RootType<Query>
