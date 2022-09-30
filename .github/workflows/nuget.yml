@@ -37,3 +37,11 @@ jobs:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
           VERSION: ${{ steps.tag.outputs.VERSION }}
         run: dotnet nuget push "**/LinQL*.$VERSION.nupkg" -s https://api.nuget.org/v3/index.json -k "$NUGET_API_KEY"
+      - name: Sync Wiki
+        uses: Andrew-Chen-Wang/github-wiki-action@v3
+        if: github.ref_type == 'tag'
+        env:
+          WIKI_DIR: docs/
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_MAIL: 11923585+dibble-james@users.noreply.github.com
+          GH_NAME: ${{ github.repository_owner }}
