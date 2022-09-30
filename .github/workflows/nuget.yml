@@ -39,6 +39,7 @@ jobs:
         run: dotnet nuget push "**/LinQL*.$VERSION.nupkg" -s https://api.nuget.org/v3/index.json -k "$NUGET_API_KEY"
       - name: Sync Wiki
         uses: Andrew-Chen-Wang/github-wiki-action@v3
+        if: github.ref_type == 'tag'
         env:
           WIKI_DIR: docs/
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
