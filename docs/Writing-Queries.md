@@ -1,5 +1,3 @@
-# Writing Queries
-
 All queries start from a `RootType<T>` which the source generator will create for
 you.  You can then project a result from it using a C# `Expression` which has it's
 limitations, much like with Entity Framework, but still very powerful.  This library

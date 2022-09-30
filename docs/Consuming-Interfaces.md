@@ -1,6 +1,4 @@
-# Consuming Interfaces
-
-Interfaces types must be regisered in the Graph so that they can be deserialised correctly, not require large reflection calls and improve security (some known exploits exist with unconstrained deserialization).
+Interfaces types must be registered in the Graph so that they can be deserialised correctly, not require large reflection calls and improve security (some known exploits exist with unconstrained deserialization).
 
 ```csharp
 new JsonSerializerOptions().RegisterInterface<IAmInterface>(typeof(ConcreateA), typeof(ConcreteB));
