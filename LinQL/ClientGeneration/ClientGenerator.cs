@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 /// Converts SDL into a set of types.
 /// </summary>
 [Generator]
-public class ClientGenerator : ISourceGenerator
+public class ClientGenerator : IIncrementalGenerator
 {
     private static readonly DiagnosticDescriptor StartingInfo = new(
         id: "LINQLGEN01",
@@ -45,34 +45,41 @@ public class ClientGenerator : ISourceGenerator
     }
 
     /// <inheritdoc/>
-    public void Execute(GeneratorExecutionContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        foreach (var schema in context.AdditionalFiles.Where(x => x.Path.EndsWith(".graphql")))
-        {
-            context.ReportDiagnostic(Diagnostic.Create(StartingInfo, Location.None, schema.Path));
+        var files = context.AdditionalTextsProvider.Where(static x => x.Path.EndsWith(".graphql"));
 
-            if (!context.AnalyzerConfigOptions.GetOptions(schema).TryGetValue("build_metadata.additionalfiles.LinQLClientNamespace", out var ns))
+        var schemas = files.Select((file, ct) => (file, Contents: file.GetText(ct)!, file.Path));
+
+        var schemasAndOptions = schemas.Combine(context.AnalyzerConfigOptionsProvider).Select((x, ct) => new
+        {
+            x.Left.Contents,
+            x.Left.Path,
+            Options = x.Right.GetOptions(x.Left.file),
+        });
+
+        context.RegisterSourceOutput(schemasAndOptions, (output, schema) =>
+        {
+            output.ReportDiagnostic(Diagnostic.Create(StartingInfo, Location.None, schema.Path));
+
+            if (!schema.Options.TryGetValue("build_metadata.additionalfiles.LinQLClientNamespace", out var ns))
             {
-                context.ReportDiagnostic(Diagnostic.Create(MissingNamespace, Location.None, schema.Path));
-                continue;
+                output.ReportDiagnostic(Diagnostic.Create(MissingNamespace, Location.None, schema.Path));
+                return;
             }
 
-            context.AnalyzerConfigOptions.GetOptions(schema).TryGetValue("build_metadata.additionalfiles.LinQLExtraNamespaces", out var extraNamespaces);
+            schema.Options.TryGetValue("build_metadata.additionalfiles.LinQLExtraNamespaces", out var extraNamespaces);
 
             var extraUsings = extraNamespaces?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
 
-            var content = schema.GetText(context.CancellationToken)!.ToString();
             var schemaName = Path.GetFileName(schema.Path).Replace(".graphql", string.Empty);
 
-            context.AddSource(
+            output.AddSource(
                 $"{schemaName}.g.cs",
                 SourceText.From(
-                    Generate(content, ns, extraUsings),
+                    Generate(schema.Contents.ToString(), ns, extraUsings),
                     Encoding.UTF8)
                 );
-        }
+        });
     }
-
-    /// <inheritdoc/>
-    public void Initialize(GeneratorInitializationContext context) { }
 }
