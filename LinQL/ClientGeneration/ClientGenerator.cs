@@ -21,7 +21,7 @@ public class ClientGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor MissingNamespace = new(
         id: "LINQLGEN02",
         title: "Missing namespace attribute",
-        messageFormat: "GraphQL file {0} does not have a LinQLClientNamespace attribute. Please add it to the AdditionalFiles element in your CSProj file.",
+        messageFormat: "GraphQL file {0} does not have a LinQLClientNamespace attribute. Please add it to the AdditionalFiles element in your csproj file.",
         category: "LinQLClientGenerator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
