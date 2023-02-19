@@ -26,6 +26,7 @@
 1. Install the Nuget package
 
 ```bash
+dotnet add package LinQL
 dotnet add package LinQL.GraphQL.Client
 ```
 
@@ -60,3 +61,10 @@ Coming soon...
 A range of expressions can be converted as demonstrated by [the `TranslationProviderTests`](https://github.com/dibble-james/LinQL/blob/interface-support/LinQL.Tests/Translation/TranslationProviderTests.cs). If you come accross something that doesn't work, please raise an issue or a pull request with a supporting test.
 
 For more help check out the [docs](./docs/)
+
+### Troubleshooting
+```
+LINQLGEN02: GraphQL file {0} does not have a LinQLClientNamespace attribute. Please add it to the AdditionalFiles element in your csproj file.
+```
+This could be related to a Nuget bug where the `LinQL.props` file has not been imported because it won't follow transitive references.
+Install the `LinQL` package individually.
