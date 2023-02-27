@@ -3,6 +3,7 @@ namespace LinQL.Translation;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using LinQL.Expressions;
 
 /// <summary>
@@ -80,10 +81,10 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 
                 foreach (var argument in field.Arguments.Take(field.Arguments.Count - 1))
                 {
-                    this.query.AppendLine($"{argument.Key}: {JsonSerializer.Serialize(argument.Value, SerializerOptions)},");
+                    this.query.AppendLine($"{argument.Key}: {JsonSerializer.Serialize(argument.Value, SerializerOptions).UnquotePropertyNames()},");
                 }
 
-                this.query.AppendLine($"{last.Key}: {JsonSerializer.Serialize(last.Value, SerializerOptions)}");
+                this.query.AppendLine($"{last.Key}: {JsonSerializer.Serialize(last.Value, SerializerOptions).UnquotePropertyNames()}");
             }
 
             this.query.AppendLine(") {");
@@ -120,6 +121,8 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 internal static class Extentions
 {
     public static IndentingStringBuilder WithIndenting(this StringBuilder sb) => new(sb);
+
+    public static string UnquotePropertyNames(this string s) => Regex.Replace(s, @"""([\w|\d]+)"":", "$1:");
 }
 
 internal class IndentingStringBuilder
