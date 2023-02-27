@@ -120,9 +120,11 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 
 internal static class Extentions
 {
+    private static readonly Regex PropertyRegex = new(@"""([\w|\d]+)"":", RegexOptions.Compiled);
+
     public static IndentingStringBuilder WithIndenting(this StringBuilder sb) => new(sb);
 
-    public static string UnquotePropertyNames(this string s) => Regex.Replace(s, @"""([\w|\d]+)"":", "$1:");
+    public static string UnquotePropertyNames(this string s) => PropertyRegex.Replace(s, "$1:");
 }
 
 internal class IndentingStringBuilder
