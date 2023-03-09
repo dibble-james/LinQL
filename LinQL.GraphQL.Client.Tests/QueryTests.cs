@@ -16,7 +16,7 @@ using Xunit;
 public class QueryTests : IDisposable
 {
     private readonly TestServer server;
-    private readonly GraphQLHttpClient client;
+    private readonly IGraphQLClient client;
 
     public QueryTests()
     {
@@ -27,9 +27,11 @@ public class QueryTests : IDisposable
 
         this.server = new TestServer(hostBuilder);
 
-        this.client = new GraphQLHttpClient(
+        this.client = new LinqlGraphQLClient(
+            new GraphQLHttpClient(
             new GraphQLHttpClientOptions { HttpMessageHandler = this.server.CreateHandler(), EndPoint = new Uri(this.server.BaseAddress, "/graphql") },
-            new SystemTextJsonSerializer());
+            new SystemTextJsonSerializer()),
+            new());
     }
 
     [Fact]

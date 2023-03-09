@@ -31,7 +31,9 @@ public static class GraphQLClientExtensions
         CancellationToken cancellationToken = default)
         where TRoot : RootType<TRoot>
     {
-        var requestExpression = request.ToRequest(includes).ToGraphQLClientRequest();
+        var linqlClient = client as LinqlGraphQLClient ?? throw new InvalidOperationException($"Client was not a {nameof(LinqlGraphQLClient)}");
+
+        var requestExpression = request.ToRequest(linqlClient.Options, includes).ToGraphQLClientRequest();
 
         var response = await (requestExpression.Expression.RootOperation switch
         {
@@ -65,7 +67,9 @@ public static class GraphQLClientExtensions
         Action<GraphQLExpression<TRoot, TData>>? includes = null)
         where TRoot : RootType<TRoot>
     {
-        var requestExpression = request.ToRequest(includes).ToGraphQLClientRequest();
+        var linqlClient = client as LinqlGraphQLClient ?? throw new InvalidOperationException($"Client was not a {nameof(LinqlGraphQLClient)}");
+
+        var requestExpression = request.ToRequest(linqlClient.Options, includes).ToGraphQLClientRequest();
 
         var subscription = requestExpression.Expression.RootOperation switch
         {

@@ -15,16 +15,18 @@ public static class TranslationProvider
     /// <typeparam name="TRoot">The root data type.</typeparam>
     /// <typeparam name="TData">The requested data type.</typeparam>
     /// <param name="query">The expression to be sent to the server.</param>
+    /// <param name="options">The client configuration.</param>
     /// <param name="includes">Any extra fields required.</param>
     /// <returns>The request to execute.</returns>
     public static LinqQLRequest<TRoot, TData> ToRequest<TRoot, TData>(
         this Expression<Func<TRoot, TData>> query,
+        LinqlOptions options,
         Action<GraphQLExpression<TRoot, TData>>? includes = null)
     {
-        var expression = ExpressionTranslator.Translate(query);
+        var expression = ExpressionTranslator.Translate(query, options);
         includes?.Invoke(expression);
 
-        var request = GraphQLExpressionTranslator.Translate(expression);
+        var request = GraphQLExpressionTranslator.Translate(expression, options.TypeNameMap);
 
         return request;
     }

@@ -1,4 +1,6 @@
+#nullable enable
 namespace LinQL.Tests.Translation;
+
 using System;
 using System.Linq.Expressions;
 using LinQL.Description;
@@ -50,6 +52,14 @@ public class TranslationProviderTests
         var input = new SimpleScalarType { Number = 123, Text = "321" };
 
         this.Test<OperationWithTypeParametersType, object>(x => new { x.GetNumber(input).Number });
+    }
+
+    [Fact]
+    public void OperationWithNullableVariableParameters()
+    {
+        var input = new SimpleScalarType { Number = 123, Text = "321" };
+
+        this.Test<OperationWithNullableTypeParametersType, object>(x => new { x.GetNumber(input)!.Number });
     }
 
     [Fact]
@@ -174,7 +184,7 @@ public class TranslationProviderTests
 
     private void TestInclude<TRoot, TData>(Expression<Func<TRoot, TData>> expression, Action<GraphQLExpression<TRoot, TData>> includes)
     {
-        var request = TranslationProvider.ToRequest(expression, includes);
+        var request = TranslationProvider.ToRequest(expression, new(), includes);
 
         Snapshot.Match(request.Query);
     }
@@ -229,6 +239,15 @@ public class TranslationProviderTests
     {
         [GraphQLOperation]
         public SimpleScalarType GetNumber(SimpleScalarType input) => input;
+
+        public float Float { get; set; }
+    }
+
+    [OperationType]
+    private class OperationWithNullableTypeParametersType
+    {
+        [GraphQLOperation]
+        public SimpleScalarType? GetNumber(SimpleScalarType? input) => input;
 
         public float Float { get; set; }
     }

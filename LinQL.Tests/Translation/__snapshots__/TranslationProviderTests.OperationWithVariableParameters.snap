@@ -1,6 +1,9 @@
-﻿query {
+﻿query linql(
+  $var1: SimpleScalarType!
+)
+ {
   getNumber(
-    input: {number:123,text:"321"}
+    input: $var1
   ) {
     number
   }

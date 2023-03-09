@@ -1,10 +1,14 @@
-﻿query {
+﻿query linql(
+  $var1: Int!,
+  $var2: String!
+)
+ {
   operation(
-    number: 123
+    number: $var1
   ) {
     operation {
       getNumber(
-        value: "321"
+        value: $var2
       ) {
         number
       }

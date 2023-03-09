@@ -1,4 +1,4 @@
-query {
+﻿query {
   simpleType {
     __typename
     ...on someOtherSimpleType {

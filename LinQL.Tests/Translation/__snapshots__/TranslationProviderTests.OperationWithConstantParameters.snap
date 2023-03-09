@@ -1,7 +1,10 @@
-﻿query {
+﻿query linql(
+  $var1: String!
+)
+ {
   float
   getNumber(
-    value: "123"
+    value: $var1
   ) {
     number
   }

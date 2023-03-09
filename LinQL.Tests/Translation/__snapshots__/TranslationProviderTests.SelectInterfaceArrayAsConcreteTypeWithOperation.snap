@@ -1,10 +1,13 @@
-﻿query {
+﻿query linql(
+  $var1: String!
+)
+ {
   arrayOfInterfaces {
     __typename
     ...on someOtherSimpleType {
       operation {
         getNumber(
-          value: "123"
+          value: $var1
         ) {
           number
           text

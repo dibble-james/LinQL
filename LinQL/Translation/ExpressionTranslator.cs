@@ -22,14 +22,15 @@ public class ExpressionTranslator : ExpressionVisitor
     /// <typeparam name="TRoot">The root operation type.</typeparam>
     /// <typeparam name="TData">The query result.</typeparam>
     /// <param name="query">The query to translate.</param>
+    /// <param name="options">The current configuration.</param>
     /// <returns>The translated expression.</returns>
     /// <exception cref="InvalidOperationException">No <see cref="OperationTypeAttribute"/> is defined on <typeparamref name="TRoot"/></exception>
-    public static GraphQLExpression<TRoot, TData> Translate<TRoot, TData>(Expression<Func<TRoot, TData>> query)
+    public static GraphQLExpression<TRoot, TData> Translate<TRoot, TData>(Expression<Func<TRoot, TData>> query, LinqlOptions options)
     {
         var operationType = typeof(TRoot).GetCustomAttribute<OperationTypeAttribute>()?.Operation
             ?? throw new InvalidOperationException($"{typeof(TRoot)} does not have an {nameof(OperationTypeAttribute)} defined");
 
-        var root = new GraphQLExpression<TRoot, TData>(operationType, query);
+        var root = new GraphQLExpression<TRoot, TData>(operationType, query, options);
         var translator = new ExpressionTranslator(root);
         translator.Visit(query.Body);
         return root;
@@ -186,7 +187,10 @@ public class ExpressionTranslator : ExpressionVisitor
         var field = (TypeFieldExpression)node.Method.ToField(root);
 
         return node.Method.GetParameters()
-            .Zip(node.Arguments, (p, i) => (Name: p.Name!, Type: p.ParameterType, Value: ArgumentVistor.GetValue(i)))
-            .Aggregate(field, (f, arg) => field.WithArgument(arg.Name, arg.Type, arg.Value));
+            .Zip(node.Arguments, (p, i) => (
+                Name: p.Name!,
+                Type: p.IsParameterNullable(),
+                Value: ArgumentVistor.GetValue(i)))
+            .Aggregate(field, (f, arg) => field.WithArgument(arg.Name, arg.Type.Type, arg.Type.Nullable, arg.Value));
     }
 }
