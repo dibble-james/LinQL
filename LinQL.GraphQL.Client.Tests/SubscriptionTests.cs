@@ -40,13 +40,15 @@ public class SubscriptionTests : IDisposable
     [Fact]
     public async Task TestSubscriptions()
     {
-        IGraphQLClient client = new GraphQLHttpClient(
-            opt =>
-            {
-                opt.EndPoint = new UriBuilder(HostUrl) { Path = "graphql" }.Uri;
-                opt.WebSocketEndPoint = new UriBuilder(HostUrl) { Scheme = "ws", Path = "graphql" }.Uri;
-            },
-            new SystemTextJsonSerializer());
+        IGraphQLClient client = new LinqlGraphQLClient(
+            new GraphQLHttpClient(
+                opt =>
+                {
+                    opt.EndPoint = new UriBuilder(HostUrl) { Path = "graphql" }.Uri;
+                    opt.WebSocketEndPoint = new UriBuilder(HostUrl) { Scheme = "ws", Path = "graphql" }.Uri;
+                },
+                new SystemTextJsonSerializer()),
+            new());
 
         var ranToCompletion = false;
 

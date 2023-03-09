@@ -31,7 +31,9 @@ public static class GraphQLClientExtensions
         CancellationToken cancellationToken = default)
         where TRoot : RootType<TRoot>
     {
-        var requestExpression = request.ToRequest(includes).ToGraphQLClientRequest();
+        var linqlClient = client as LinqlGraphQLClient ?? throw new InvalidOperationException($"Client was not a {nameof(LinqlGraphQLClient)}");
+
+        var requestExpression = request.ToRequest(linqlClient.Options, includes).ToGraphQLClientRequest();
 
         var response = await (requestExpression.Expression.RootOperation switch
         {
@@ -39,6 +41,11 @@ public static class GraphQLClientExtensions
             { Type: RootOperationType.Mutation } => client.SendMutationAsync<TRoot>(requestExpression, cancellationToken),
             _ => throw new NotSupportedException($"Can't Send a {requestExpression.Expression.RootOperation.Type}"),
         }).ConfigureAwait(false);
+
+        if (response.Data is null)
+        {
+            return new GraphQLExpressionResponse<TRoot, TData>(requestExpression.Expression) { Data = default!, Errors = response.Errors, Extensions = response.Extensions };
+        }
 
         var result = requestExpression.Expression.OriginalQuery.CompileFast()(response.Data);
 
@@ -60,7 +67,9 @@ public static class GraphQLClientExtensions
         Action<GraphQLExpression<TRoot, TData>>? includes = null)
         where TRoot : RootType<TRoot>
     {
-        var requestExpression = request.ToRequest(includes).ToGraphQLClientRequest();
+        var linqlClient = client as LinqlGraphQLClient ?? throw new InvalidOperationException($"Client was not a {nameof(LinqlGraphQLClient)}");
+
+        var requestExpression = request.ToRequest(linqlClient.Options, includes).ToGraphQLClientRequest();
 
         var subscription = requestExpression.Expression.RootOperation switch
         {

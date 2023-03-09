@@ -2,7 +2,6 @@ namespace LinQL.Translation;
 
 using System.Linq.Expressions;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using LinQL.Expressions;
 
@@ -17,20 +16,24 @@ public static class GraphQLExpressionTranslator
     /// <typeparam name="TRoot">The root operation type.</typeparam>
     /// <typeparam name="TData">The result type.</typeparam>
     /// <param name="expression">The expression to translate.</param>
+    /// <param name="typeNameMap">The configured type name map.</param>
     /// <returns>The request.</returns>
-    public static LinqQLRequest<TRoot, TData> Translate<TRoot, TData>(GraphQLExpression<TRoot, TData> expression)
-        => new(expression, new GraphQLExpressionTranslator<TRoot, TData>().Translate(expression));
+    public static LinqQLRequest<TRoot, TData> Translate<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, TypeNameMap typeNameMap)
+    {
+        var translator = new GraphQLExpressionTranslator<TRoot, TData>(typeNameMap);
+
+        var query = translator.Translate(expression);
+
+        return new(expression, query, expression.Variables.ToDictionary(x => x.Name, x => x.Value));
+    }
 }
 
 internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false,
-    };
-
     private readonly IndentingStringBuilder query = new StringBuilder().WithIndenting();
+    private readonly TypeNameMap typeNameMap;
+
+    public GraphQLExpressionTranslator(TypeNameMap typeNameMap) => this.typeNameMap = typeNameMap;
 
     public string Translate(GraphQLExpression<TRoot, TData> query)
     {
@@ -48,6 +51,24 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
     private Expression VisitField(TypeFieldExpression field)
     {
         this.query.Append(field.FieldName.ToCamelCase());
+
+        if (field is IRootExpression root && root.Variables.Any())
+        {
+            this.query.AppendLine(" linql(");
+            using (this.query.Indent())
+            {
+                var last = root.Variables.Last();
+
+                foreach (var variable in root.Variables.Take(root.Variables.Count - 1))
+                {
+                    this.query.AppendLine($"${variable.Name}: {this.typeNameMap.GetTypeName(variable)},");
+                }
+
+                this.query.AppendLine($"${last.Name}: {this.typeNameMap.GetTypeName(last)}");
+            }
+
+            this.query.AppendLine(")");
+        }
 
         if (field.Type.IsScalar() && !field.Arguments.Any() && field.DeclaringType.IsRootOperation())
         {
@@ -81,10 +102,10 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 
                 foreach (var argument in field.Arguments.Take(field.Arguments.Count - 1))
                 {
-                    this.query.AppendLine($"{argument.Key}: {JsonSerializer.Serialize(argument.Value, SerializerOptions).UnquotePropertyNames()},");
+                    this.query.AppendLine($"{argument.Key}: ${argument.Value},");
                 }
 
-                this.query.AppendLine($"{last.Key}: {JsonSerializer.Serialize(last.Value, SerializerOptions).UnquotePropertyNames()}");
+                this.query.AppendLine($"{last.Key}: ${last.Value}");
             }
 
             this.query.AppendLine(") {");
@@ -159,7 +180,7 @@ internal class IndentingStringBuilder
         return this;
     };
 
-    private struct IndentHandle : IDisposable
+    private readonly struct IndentHandle : IDisposable
     {
         private readonly IndentingStringBuilder indenter;
 

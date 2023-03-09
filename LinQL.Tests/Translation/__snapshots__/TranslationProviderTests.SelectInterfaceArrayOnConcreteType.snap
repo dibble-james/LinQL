@@ -1,4 +1,4 @@
-query {
+﻿query {
   arrayOfInterfaces {
     __typename
     ...on simpleScalarType {

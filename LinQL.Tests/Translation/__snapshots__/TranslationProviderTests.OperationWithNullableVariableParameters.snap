@@ -1,8 +1,7 @@
-﻿query linql(
-  $var1: SimpleScalarType!
+query linql(
+  $var1: SimpleScalarType
 )
  {
-  float
   getNumber(
     input: $var1
   ) {

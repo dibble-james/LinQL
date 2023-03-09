@@ -8,7 +8,7 @@ using System.Linq.Expressions;
 public class TypeFieldExpression : FieldExpression
 {
     private Dictionary<string, Expression> fields = new();
-    private Dictionary<string, object?> arguments = new();
+    private Dictionary<string, string> arguments = new();
 
     /// <summary>
     /// Create a new <see cref="TypeFieldExpression"/>.
@@ -16,13 +16,25 @@ public class TypeFieldExpression : FieldExpression
     /// <param name="field">The field name.</param>
     /// <param name="fieldType">The return type of the field.</param>
     /// <param name="declaringType">The .Net type that field is a member of.</param>
-    public TypeFieldExpression(string field, Type fieldType, Type declaringType)
-        : base(field, fieldType, declaringType) { }
+    /// <param name="root"></param>
+    public TypeFieldExpression(string field, Type fieldType, Type declaringType, IRootExpression? root)
+        : base(field, fieldType, declaringType) => this.Root = root ?? (this as IRootExpression)!;
+
+    /// <inheritdoc />
+    protected TypeFieldExpression(string field, Type fieldType, Type declaringType)
+        : this(field, fieldType, declaringType, null)
+    {
+    }
 
     /// <summary>
     /// Gets the arguments to be passed to the field on the server.
     /// </summary>
-    public IReadOnlyDictionary<string, object?> Arguments => this.arguments;
+    public IReadOnlyDictionary<string, string> Arguments => this.arguments;
+
+    /// <summary>
+    /// Gets the root expression
+    /// </summary>
+    public IRootExpression Root { get; }
 
     /// <inheritdoc/>
     public FieldExpression WithField(FieldExpression field)
@@ -32,19 +44,23 @@ public class TypeFieldExpression : FieldExpression
     /// Add an argument to the field.
     /// </summary>
     /// <param name="name">The name of the argument.</param>
-    /// <param name="argument">The argument value.</param>
+    /// <param name="type">The graphql type.</param>
+    /// <param name="nullable">Whether the argument is nullable.</param>
+    /// <param name="value">The name of the variable that will hold the argument value.</param>
     /// <returns>The updated <see cref="TypeFieldExpression"/>.</returns>
-    public TypeFieldExpression WithArgument(string name, object? argument)
+    public TypeFieldExpression WithArgument(string name, Type type, bool nullable, object? value)
     {
-        this.arguments.Add(name, argument);
+        var variable = this.Root.WithVariable(type, nullable, value);
+
+        this.arguments.Add(name, variable.Name);
         return this;
     }
 
     internal TypeFieldExpression ReplaceType(Type type)
-        => new(this.FieldName, type, this.DeclaringType)
+        => new(this.FieldName, type, this.DeclaringType, this.Root)
         {
             fields = this.fields,
-            arguments = this.arguments
+            arguments = this.arguments,
         };
 
     /// <inheritdoc />
@@ -59,7 +75,7 @@ public class TypeFieldExpression : FieldExpression
         }
         else
         {
-            foreach (var scalar in this.Type.GetAllScalars())
+            foreach (var scalar in this.Type.GetAllScalars(this.Root))
             {
                 visitor.Visit(scalar);
             }

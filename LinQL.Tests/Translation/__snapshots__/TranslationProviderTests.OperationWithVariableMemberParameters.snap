@@ -1,6 +1,9 @@
-﻿query {
+﻿query linql(
+  $var1: String!
+)
+ {
   getNumber(
-    value: "321"
+    value: $var1
   ) {
     number
   }

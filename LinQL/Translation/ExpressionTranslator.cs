@@ -22,14 +22,15 @@ public class ExpressionTranslator : ExpressionVisitor
     /// <typeparam name="TRoot">The root operation type.</typeparam>
     /// <typeparam name="TData">The query result.</typeparam>
     /// <param name="query">The query to translate.</param>
+    /// <param name="options">The current configuration.</param>
     /// <returns>The translated expression.</returns>
     /// <exception cref="InvalidOperationException">No <see cref="OperationTypeAttribute"/> is defined on <typeparamref name="TRoot"/></exception>
-    public static GraphQLExpression<TRoot, TData> Translate<TRoot, TData>(Expression<Func<TRoot, TData>> query)
+    public static GraphQLExpression<TRoot, TData> Translate<TRoot, TData>(Expression<Func<TRoot, TData>> query, LinqlOptions options)
     {
         var operationType = typeof(TRoot).GetCustomAttribute<OperationTypeAttribute>()?.Operation
             ?? throw new InvalidOperationException($"{typeof(TRoot)} does not have an {nameof(OperationTypeAttribute)} defined");
 
-        var root = new GraphQLExpression<TRoot, TData>(operationType, query);
+        var root = new GraphQLExpression<TRoot, TData>(operationType, query, options);
         var translator = new ExpressionTranslator(root);
         translator.Visit(query.Body);
         return root;
@@ -53,10 +54,10 @@ public class ExpressionTranslator : ExpressionVisitor
     /// <inheritdoc/>
     protected override Expression VisitMember(MemberExpression node) => node switch
     {
-        { Member: FieldInfo field, Expression: object } => this.TraverseMember(node.Expression).WithField(field.ToField()),
-        { Member: FieldInfo field } => this.expression.WithField(field.ToField()),
-        { Member: PropertyInfo property, Expression: object } => this.TraverseMember(node.Expression).WithField(property.ToField()),
-        { Member: PropertyInfo property } => this.expression.WithField(property.ToField()),
+        { Member: FieldInfo field, Expression: object } => this.TraverseMember(node.Expression).WithField(field.ToField(this.expression.Root)),
+        { Member: FieldInfo field } => this.expression.WithField(field.ToField(this.expression.Root)),
+        { Member: PropertyInfo property, Expression: object } => this.TraverseMember(node.Expression).WithField(property.ToField(this.expression.Root)),
+        { Member: PropertyInfo property } => this.expression.WithField(property.ToField(this.expression.Root)),
         _ => base.VisitMember(node),
     };
 
@@ -64,9 +65,9 @@ public class ExpressionTranslator : ExpressionVisitor
     protected override Expression VisitMethodCall(MethodCallExpression node) => node switch
     {
         var m when m.IsOn() => this.TraverseOn(node),
-        { Method: var method } when method.IsOperation() && method.ReturnType.IsScalar() && !method.GetParameters().Any() => this.expression.WithField(node.Method.ToField()),
-        { Object: object, Method: var method } when method.IsOperation() => this.TraverseMember(node.Object).WithField(VisitFieldWithArguments(node)),
-        { Method: var method } when method.IsOperation() => this.expression.WithField(VisitFieldWithArguments(node)),
+        { Method: var method } when method.IsOperation() && method.ReturnType.IsScalar() && !method.GetParameters().Any() => this.expression.WithField(node.Method.ToField(this.expression.Root)),
+        { Object: object, Method: var method } when method.IsOperation() => this.TraverseMember(node.Object).WithField(VisitFieldWithArguments(node, this.expression.Root)),
+        { Method: var method } when method.IsOperation() => this.expression.WithField(VisitFieldWithArguments(node, this.expression.Root)),
         { Method.Name: nameof(Enumerable.OfType) } => this.TraverseExtensionMethodCall(node).WithField(new SpreadExpression(node.Method.GetGenericArguments()[0])),
         { Method.Name: nameof(Enumerable.Select) } => this.TraverseSelect(node),
         { Method.Name: nameof(SelectExtentions.SelectAll), Method.DeclaringType.Name: nameof(SelectExtentions) } => this.TraverseSelectAll(node),
@@ -143,7 +144,7 @@ public class ExpressionTranslator : ExpressionVisitor
             ? field.Type.GetGenericArguments()[0]
             : field.Type;
 
-        foreach (var scalar in type.GetAllScalars())
+        foreach (var scalar in type.GetAllScalars(this.expression.Root))
         {
             field.WithField(scalar);
         }
@@ -181,12 +182,15 @@ public class ExpressionTranslator : ExpressionVisitor
         return parent;
     }
 
-    private static TypeFieldExpression VisitFieldWithArguments(MethodCallExpression node)
+    private static TypeFieldExpression VisitFieldWithArguments(MethodCallExpression node, IRootExpression root)
     {
-        var field = (TypeFieldExpression)node.Method.ToField();
+        var field = (TypeFieldExpression)node.Method.ToField(root);
 
         return node.Method.GetParameters()
-            .Zip(node.Arguments, (p, i) => (Name: p.Name!, Value: ArgumentVistor.GetValue(i)))
-            .Aggregate(field, (f, arg) => field.WithArgument(arg.Name, arg.Value));
+            .Zip(node.Arguments, (p, i) => (
+                Name: p.Name!,
+                Type: p.IsParameterNullable(),
+                Value: ArgumentVistor.GetValue(i)))
+            .Aggregate(field, (f, arg) => field.WithArgument(arg.Name, arg.Type.Type, arg.Type.Nullable, arg.Value));
     }
 }
