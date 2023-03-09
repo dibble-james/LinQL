@@ -9,4 +9,5 @@ using LinQL.Expressions;
 /// <typeparam name="TData">The result type.</typeparam>
 /// <param name="Expression">The translated expression.</param>
 /// <param name="Query">The GQL to send to the server.</param>
-public record LinqQLRequest<TRoot, TData>(GraphQLExpression<TRoot, TData> Expression, string Query);
+/// <param name="Variables">The values used in the query.</param>
+public record LinqQLRequest<TRoot, TData>(GraphQLExpression<TRoot, TData> Expression, string Query, object? Variables);

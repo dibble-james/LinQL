@@ -40,6 +40,11 @@ public static class GraphQLClientExtensions
             _ => throw new NotSupportedException($"Can't Send a {requestExpression.Expression.RootOperation.Type}"),
         }).ConfigureAwait(false);
 
+        if (response.Data is null)
+        {
+            return new GraphQLExpressionResponse<TRoot, TData>(requestExpression.Expression) { Data = default!, Errors = response.Errors, Extensions = response.Extensions };
+        }
+
         var result = requestExpression.Expression.OriginalQuery.CompileFast()(response.Data);
 
         return new GraphQLExpressionResponse<TRoot, TData>(requestExpression.Expression) { Data = result, Errors = response.Errors, Extensions = response.Extensions };

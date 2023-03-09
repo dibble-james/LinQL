@@ -26,14 +26,14 @@ internal static class Extensions
 
     public static bool IsScalar(this Type type) => type.IsPrimitive || type.IsEnum || type.Equals(typeof(string));
 
-    public static FieldExpression ToField(this MemberInfo member) => member switch
+    public static FieldExpression ToField(this MemberInfo member, IRootExpression root) => member switch
     {
         PropertyInfo prop when prop.PropertyType.IsScalar() => new ScalarFieldExpression(member.GetFieldName(), prop.PropertyType, member.DeclaringType!),
         FieldInfo field when field.FieldType.IsScalar() => new ScalarFieldExpression(member.GetFieldName(), field.FieldType, member.DeclaringType!),
         MethodInfo method when method.ReturnType.IsScalar() && !method.GetParameters().Any() => new ScalarFieldExpression(method.GetFieldName(), method.ReturnType, member.DeclaringType!),
-        MethodInfo method when method.IsOperation() => new TypeFieldExpression(member.GetFieldName(), method.ReturnType, member.DeclaringType!),
-        PropertyInfo prop => new TypeFieldExpression(prop.GetFieldName(), prop.PropertyType, member.DeclaringType!),
-        FieldInfo field => new TypeFieldExpression(field.GetFieldName(), field.FieldType, member.DeclaringType!),
+        MethodInfo method when method.IsOperation() => new TypeFieldExpression(member.GetFieldName(), method.ReturnType, member.DeclaringType!, root),
+        PropertyInfo prop => new TypeFieldExpression(prop.GetFieldName(), prop.PropertyType, member.DeclaringType!, root),
+        FieldInfo field => new TypeFieldExpression(field.GetFieldName(), field.FieldType, member.DeclaringType!, root),
         _ => throw new NotSupportedException(),
     };
 
@@ -56,8 +56,8 @@ internal static class Extensions
         => method.Method.DeclaringType?.Equals(typeof(SelectExtentions)) == true
             && method.Method.Name == nameof(SelectExtentions.On);
 
-    public static IEnumerable<FieldExpression> GetAllScalars(this Type type)
-        => type.GetProperties().Where(p => p.PropertyType.IsScalar()).Select(x => x.ToField());
+    public static IEnumerable<FieldExpression> GetAllScalars(this Type type, IRootExpression root)
+        => type.GetProperties().Where(p => p.PropertyType.IsScalar()).Select(x => x.ToField(root));
 
     public static bool IsAssignableFromGenericInterface(this Type type, Type genericInterface)
         => type.GetInterfaces().Any(@interface => @interface.IsAssignableFrom(genericInterface));

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 public class QueryTests : IDisposable
@@ -21,7 +22,8 @@ public class QueryTests : IDisposable
     {
         var hostBuilder = new WebHostBuilder()
             .ConfigureServices(services => services.AddRouting().AddGraphQLServer().AddQueryType<TestQueryType>().AddMutationType<TestMutationType>())
-            .Configure(app => app.UseRouting().UseEndpoints(e => e.MapGraphQL()));
+            .Configure(app => app.UseRouting().UseEndpoints(e => e.MapGraphQL()))
+            .ConfigureLogging(logging => logging.AddDebug());
 
         this.server = new TestServer(hostBuilder);
 
@@ -35,6 +37,7 @@ public class QueryTests : IDisposable
     {
         var result = await this.client.SendAsync((TestQuery q) => q.GetNumber());
 
+        result.Errors.Should().BeNull();
         result.Data.Should().Be(12345);
     }
 
@@ -43,6 +46,7 @@ public class QueryTests : IDisposable
     {
         var result = await this.client.SendAsync((TestMutation m) => m.SetNumberOperation(54321));
 
+        result.Errors.Should().BeNull();
         result.Data.Number.Should().Be(54321);
     }
 
