@@ -27,11 +27,10 @@ public class QueryTests : IDisposable
 
         this.server = new TestServer(hostBuilder);
 
-        this.client = new LinqlGraphQLClient(
-            new GraphQLHttpClient(
+        this.client = new GraphQLHttpClient(
             new GraphQLHttpClientOptions { HttpMessageHandler = this.server.CreateHandler(), EndPoint = new Uri(this.server.BaseAddress, "/graphql") },
-            new SystemTextJsonSerializer()),
-            new());
+            new SystemTextJsonSerializer())
+            .WithLinQL(new LinqlOptions());
     }
 
     [Fact]

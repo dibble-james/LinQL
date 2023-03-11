@@ -20,6 +20,8 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
 
     public List<IClassFactory> Types { get; } = new();
 
+    public List<string> Scalars { get; } = new();
+
     public override string ToString()
     {
         var ns = NamespaceDeclaration(IdentifierName(this.graphNamespace))
@@ -36,7 +38,8 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
         }
 
         ns = ns.AddMembers(this.RootOperations.Select(x => x.Create()).ToArray())
-          .AddMembers(this.Types.Select(x => x.Create()).ToArray());
+          .AddMembers(this.Types.Select(x => x.Create()).ToArray())
+          .AddMembers(new OptionExtensionsClass(this.Scalars).Create());
 
         using var clientContent = new StringWriter();
         clientContent.WriteLine("#nullable enable");

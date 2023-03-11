@@ -60,4 +60,11 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
         return base.VisitChildren(node, context);
     }
+
+    protected override ISyntaxVisitorAction VisitChildren(ScalarTypeDefinitionNode node, DocumentWalkerContext context)
+    {
+        context.Scalars.Add(node.Name.Value);
+
+        return base.VisitChildren(node, context);
+    }
 }

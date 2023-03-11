@@ -1,4 +1,3 @@
-
 namespace GraphQL.Client.Abstractions;
 
 using System.Linq.Expressions;

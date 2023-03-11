@@ -9,7 +9,7 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 internal class ComplexTypeClass : IClassFactory
 {
-    private static readonly Dictionary<string, string> TypeMapping = new(StringComparer.InvariantCultureIgnoreCase)
+    internal static readonly Dictionary<string, string> NativeScalars = new(StringComparer.InvariantCultureIgnoreCase)
     {
         { "Int", "int" },
         { "Float", "float" },
@@ -69,10 +69,10 @@ internal class ComplexTypeClass : IClassFactory
 
     protected static string TypeName(ITypeNode type)
     {
-        var typeName = TypeMapping.TryGetValue(type.NamedType().Name.Value, out var mapped)
+        var typeName = NativeScalars.TryGetValue(type.NamedType().Name.Value, out var mapped)
             ? mapped : type.NamedType().Name.Value;
 
-        typeName = type.IsListType() || type.IsNonNullType() && type.InnerType().IsListType() ? typeName + "[]" : typeName;
+        typeName = type.IsListType() || (type.IsNonNullType() && type.InnerType().IsListType()) ? typeName + "[]" : typeName;
 
         return type.IsNonNullType() ? typeName : typeName + "?";
     }
