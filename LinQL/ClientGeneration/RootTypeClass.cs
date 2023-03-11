@@ -15,7 +15,7 @@ internal class RootTypeClass : ComplexTypeClass
     public override MemberDeclarationSyntax Create()
     {
         var rootType = (base.Create() as ClassDeclarationSyntax)!
-            .AddBaseListTypes(SimpleBaseType(IdentifierName($"{nameof(RootType<object>)}<{this.Name}>")))
+            .AddBaseListTypes(SimpleBaseType(IdentifierName($"RootType<{this.Name}>")))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(
                 Attribute(
                     IdentifierName(nameof(OperationTypeAttribute).AttributeName()),

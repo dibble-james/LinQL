@@ -22,6 +22,7 @@ public static class TranslationProvider
         this Expression<Func<TRoot, TData>> query,
         LinqlOptions options,
         Action<GraphQLExpression<TRoot, TData>>? includes = null)
+        where TRoot : RootType<TRoot>
     {
         var expression = ExpressionTranslator.Translate(query, options);
         includes?.Invoke(expression);

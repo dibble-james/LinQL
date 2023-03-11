@@ -15,6 +15,11 @@ public interface IRootExpression
     IReadOnlyCollection<Variable> Variables { get; }
 
     /// <summary>
+    /// Gets the scalar types discovered in the schema
+    /// </summary>
+    IReadOnlyCollection<Type> Scalars { get; }
+
+    /// <summary>
     /// Register a required variable
     /// </summary>
     /// <param name="type">The variable type</param>
@@ -30,6 +35,7 @@ public interface IRootExpression
 /// <typeparam name="TRoot">The root query type.</typeparam>
 /// <typeparam name="TData">The query result type.</typeparam>
 public class GraphQLExpression<TRoot, TData> : TypeFieldExpression, IRootExpression
+    where TRoot : RootType<TRoot>
 {
     private readonly List<Variable> variables = new();
     private readonly LinqlOptions options;
@@ -61,6 +67,9 @@ public class GraphQLExpression<TRoot, TData> : TypeFieldExpression, IRootExpress
 
     /// <inheritdoc />
     public IReadOnlyCollection<Variable> Variables => this.variables;
+
+    /// <inheritdoc />
+    public IReadOnlyCollection<Type> Scalars => this.options.Scalars.ToList();
 
     /// <summary>
     /// Add an extra field to the selection.

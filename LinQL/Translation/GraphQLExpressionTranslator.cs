@@ -19,6 +19,7 @@ public static class GraphQLExpressionTranslator
     /// <param name="typeNameMap">The configured type name map.</param>
     /// <returns>The request.</returns>
     public static LinqQLRequest<TRoot, TData> Translate<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, TypeNameMap typeNameMap)
+        where TRoot : RootType<TRoot>
     {
         var translator = new GraphQLExpressionTranslator<TRoot, TData>(typeNameMap);
 
@@ -29,6 +30,7 @@ public static class GraphQLExpressionTranslator
 }
 
 internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
+    where TRoot : RootType<TRoot>
 {
     private readonly IndentingStringBuilder query = new StringBuilder().WithIndenting();
     private readonly TypeNameMap typeNameMap;
@@ -70,7 +72,7 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
             this.query.AppendLine(")");
         }
 
-        if (field.Type.IsScalar() && !field.Arguments.Any() && field.DeclaringType.IsRootOperation())
+        if (field.Type.IsScalar(field.Root.Scalars) && !field.Arguments.Any() && field.DeclaringType.IsRootOperation())
         {
             this.query.AppendLine(" {");
 
@@ -87,7 +89,7 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
             }
         }
 
-        if (field.Type.IsScalar() && !field.Arguments.Any())
+        if (field.Type.IsScalar(field.Root.Scalars) && !field.Arguments.Any())
         {
             this.query.AppendLine();
             return base.VisitExtension(field);

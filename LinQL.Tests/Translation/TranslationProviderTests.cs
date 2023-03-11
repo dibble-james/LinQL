@@ -183,6 +183,7 @@ public class TranslationProviderTests
         => this.TestInclude<NestedOperationType, object>(x => x.Operation, x => x.Include(y => y.Operation.GetNumber("123")));
 
     private void TestInclude<TRoot, TData>(Expression<Func<TRoot, TData>> expression, Action<GraphQLExpression<TRoot, TData>> includes)
+        where TRoot : RootType<TRoot>
     {
         var request = TranslationProvider.ToRequest(expression, new(), includes);
 
@@ -190,10 +191,11 @@ public class TranslationProviderTests
     }
 
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
+        where TRoot : RootType<TRoot>
         => this.TestInclude(expression, _ => { });
 
     [OperationType]
-    private class SimpleScalarType : ISimpleType
+    private class SimpleScalarType : ISimpleType, RootType<SimpleScalarType>
     {
         public int Number { get; set; }
 
@@ -201,7 +203,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class NestedClassType
+    private class NestedClassType : RootType<NestedClassType>
     {
         public SimpleScalarType Nested { get; set; }
 
@@ -209,7 +211,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class NestedArrayType
+    private class NestedArrayType : RootType<NestedArrayType>
     {
         public IEnumerable<SimpleScalarType> Types { get; set; } = null!;
 
@@ -217,7 +219,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class SimpleOperationType
+    private class SimpleOperationType : RootType<SimpleOperationType>
     {
         [GraphQLOperation]
         public SimpleScalarType GetNumber() => default!;
@@ -226,7 +228,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class OperationWithScalarParametersType
+    private class OperationWithScalarParametersType : RootType<OperationWithScalarParametersType>
     {
         [GraphQLOperation]
         public SimpleScalarType GetNumber(string value) => new() { Text = value };
@@ -235,7 +237,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class OperationWithTypeParametersType
+    private class OperationWithTypeParametersType : RootType<OperationWithTypeParametersType>
     {
         [GraphQLOperation]
         public SimpleScalarType GetNumber(SimpleScalarType input) => input;
@@ -244,7 +246,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class OperationWithNullableTypeParametersType
+    private class OperationWithNullableTypeParametersType : RootType<OperationWithNullableTypeParametersType>
     {
         [GraphQLOperation]
         public SimpleScalarType? GetNumber(SimpleScalarType? input) => input;
@@ -253,7 +255,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class NestedOperationType
+    private class NestedOperationType : RootType<NestedOperationType>
     {
         public OperationWithScalarParametersType Operation => default!;
 
@@ -263,7 +265,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class NestedOperationInOperationType
+    private class NestedOperationInOperationType : RootType<NestedOperationInOperationType>
     {
         [GraphQLOperation]
         public NestedOperationType Operation(int number) => new() { Number = number };
@@ -272,7 +274,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class RenamedType
+    private class RenamedType : RootType<RenamedType>
     {
         [GraphQLField(Name = "notText")]
         public string Text => default!;
@@ -302,7 +304,7 @@ public class TranslationProviderTests
     }
 
     [OperationType]
-    private class InterfaceRootType
+    private class InterfaceRootType : RootType<InterfaceRootType>
     {
         public ISimpleType SimpleType { get; set; }
 

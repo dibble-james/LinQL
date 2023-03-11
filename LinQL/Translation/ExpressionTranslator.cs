@@ -26,6 +26,7 @@ public class ExpressionTranslator : ExpressionVisitor
     /// <returns>The translated expression.</returns>
     /// <exception cref="InvalidOperationException">No <see cref="OperationTypeAttribute"/> is defined on <typeparamref name="TRoot"/></exception>
     public static GraphQLExpression<TRoot, TData> Translate<TRoot, TData>(Expression<Func<TRoot, TData>> query, LinqlOptions options)
+        where TRoot : RootType<TRoot>
     {
         var operationType = typeof(TRoot).GetCustomAttribute<OperationTypeAttribute>()?.Operation
             ?? throw new InvalidOperationException($"{typeof(TRoot)} does not have an {nameof(OperationTypeAttribute)} defined");
@@ -45,6 +46,7 @@ public class ExpressionTranslator : ExpressionVisitor
     /// <param name="include">The field to include.</param>
     /// <returns>The translated expression.</returns>
     public static GraphQLExpression<TRoot, TData> Include<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, Expression<Func<TRoot, object>> include)
+        where TRoot : RootType<TRoot>
     {
         var translator = new ExpressionTranslator(expression);
         translator.Visit(include.Body);
@@ -65,7 +67,7 @@ public class ExpressionTranslator : ExpressionVisitor
     protected override Expression VisitMethodCall(MethodCallExpression node) => node switch
     {
         var m when m.IsOn() => this.TraverseOn(node),
-        { Method: var method } when method.IsOperation() && method.ReturnType.IsScalar() && !method.GetParameters().Any() => this.expression.WithField(node.Method.ToField(this.expression.Root)),
+        { Method: var method } when method.IsOperation() && method.ReturnType.IsScalar(this.expression.Root.Scalars) && !method.GetParameters().Any() => this.expression.WithField(node.Method.ToField(this.expression.Root)),
         { Object: object, Method: var method } when method.IsOperation() => this.TraverseMember(node.Object).WithField(VisitFieldWithArguments(node, this.expression.Root)),
         { Method: var method } when method.IsOperation() => this.expression.WithField(VisitFieldWithArguments(node, this.expression.Root)),
         { Method.Name: nameof(Enumerable.OfType) } => this.TraverseExtensionMethodCall(node).WithField(new SpreadExpression(node.Method.GetGenericArguments()[0])),
