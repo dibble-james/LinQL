@@ -48,7 +48,7 @@ public class SubscriptionTests : IDisposable
                     opt.WebSocketEndPoint = new UriBuilder(HostUrl) { Scheme = "ws", Path = "graphql" }.Uri;
                 },
                 new SystemTextJsonSerializer())
-            .WithLinQL(new LinqlOptions());
+            .WithLinQL(new LinQLOptions());
 
         var ranToCompletion = false;
 

@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 #pragma warning disable CS8618
 namespace StarWars
 {
@@ -688,5 +688,18 @@ namespace StarWars
         public string Cursor { get; set; }
 
         public Vehicle? Node { get; set; }
+    }
+
+    public static class LinQLOptionExtensions
+    {
+        public static LinQLOptions WithKnownScalars(this LinQLOptions options)
+        {
+            options.Scalars.Add(new("Int", "int"));
+            options.Scalars.Add(new("Float", "float"));
+            options.Scalars.Add(new("String", "string"));
+            options.Scalars.Add(new("Id", "string"));
+            options.Scalars.Add(new("Boolean", "bool"));
+            return options;
+        }
     }
 }

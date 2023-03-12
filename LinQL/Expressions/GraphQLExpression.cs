@@ -17,7 +17,7 @@ public interface IRootExpression
     /// <summary>
     /// Gets the scalar types discovered in the schema
     /// </summary>
-    IReadOnlyCollection<Type> Scalars { get; }
+    IReadOnlyCollection<Scalar> Scalars { get; }
 
     /// <summary>
     /// Register a required variable
@@ -38,7 +38,7 @@ public class GraphQLExpression<TRoot, TData> : TypeFieldExpression, IRootExpress
     where TRoot : RootType<TRoot>
 {
     private readonly List<Variable> variables = new();
-    private readonly LinqlOptions options;
+    private readonly LinQLOptions options;
     private Lazy<string> queryValue;
 
     /// <summary>
@@ -47,7 +47,7 @@ public class GraphQLExpression<TRoot, TData> : TypeFieldExpression, IRootExpress
     /// <param name="rootOperation">The root operation to query against.</param>
     /// <param name="originalQuery">The expression this will be based on.</param>
     /// <param name="options">The current configuration</param>
-    public GraphQLExpression(RootOperation rootOperation, Expression<Func<TRoot, TData>> originalQuery, LinqlOptions options)
+    public GraphQLExpression(RootOperation rootOperation, Expression<Func<TRoot, TData>> originalQuery, LinQLOptions options)
         : base(rootOperation.Name, typeof(TData), typeof(TRoot), null)
     {
         (this.RootOperation, this.OriginalQuery) = (rootOperation, originalQuery);
@@ -69,7 +69,7 @@ public class GraphQLExpression<TRoot, TData> : TypeFieldExpression, IRootExpress
     public IReadOnlyCollection<Variable> Variables => this.variables;
 
     /// <inheritdoc />
-    public IReadOnlyCollection<Type> Scalars => this.options.Scalars.ToList();
+    public IReadOnlyCollection<Scalar> Scalars => this.options.Scalars.ToList();
 
     /// <summary>
     /// Add an extra field to the selection.

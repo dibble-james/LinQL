@@ -1,5 +1,7 @@
 namespace LinQL.ClientGeneration;
 
+using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -29,15 +31,17 @@ public class ClientGenerator : IIncrementalGenerator
     /// <summary>
     /// Takes a SDL input and generates a set of corresponding types.
     /// </summary>
+    /// <param name="output">The analyser output.</param>
+    /// <param name="path">The file being parsed.</param>
     /// <param name="sdl">The SDL</param>
     /// <param name="graphNamespace">The namespace to put the types into.</param>
     /// <param name="extraUsings">Extra required namespaces required for the client to compile.</param>
     /// <returns>The generated types</returns>
-    public static string Generate(string sdl, string graphNamespace, string[] extraUsings)
+    public static string Generate(SourceProductionContext output, string path, string sdl, string graphNamespace, string[] extraUsings)
     {
         var document = HotChocolate.Language.Utf8GraphQLParser.Parse(sdl);
 
-        var clientContext = new DocumentWalkerContext(graphNamespace, extraUsings);
+        var clientContext = new DocumentWalkerContext(path, output, graphNamespace, extraUsings);
 
         new DocumentWalker().Visit(document, clientContext);
 
@@ -47,18 +51,22 @@ public class ClientGenerator : IIncrementalGenerator
     /// <inheritdoc/>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var files = context.AdditionalTextsProvider.Where(static x => x.Path.EndsWith(".graphql"));
+        var files = context.AdditionalTextsProvider.Where(static x => x.Path.EndsWith(".graphql") && !x.Path.EndsWith(".extensions.graphql"));
+        var extensions = context.AdditionalTextsProvider.Where(static x => x.Path.EndsWith(".extensions.graphql")).Collect();
 
-        var schemas = files.Select((file, ct) => (file, Contents: file.GetText(ct)!, file.Path));
+        var schemas = files.Combine(context.AnalyzerConfigOptionsProvider).Select((file, ct) =>
+        (
+            File: file.Left,
+            Options: file.Right.GetOptions(file.Left)
+        )).Combine(extensions).Select((file, ct) =>
+        (
+            file.Left.File.Path,
+            Contents: file.Left.File.GetText(ct),
+            file.Left.Options,
+            Extensions: file.Right.FirstOrDefault(f => f.Path.Replace(".extensions.graphql", ".graphql") == file.Left.File.Path)?.GetText(ct)
+        ));
 
-        var schemasAndOptions = schemas.Combine(context.AnalyzerConfigOptionsProvider).Select((x, ct) => new
-        {
-            x.Left.Contents,
-            x.Left.Path,
-            Options = x.Right.GetOptions(x.Left.file),
-        });
-
-        context.RegisterSourceOutput(schemasAndOptions, (output, schema) =>
+        context.RegisterSourceOutput(schemas, (output, schema) =>
         {
             output.ReportDiagnostic(Diagnostic.Create(StartingInfo, Location.None, schema.Path));
 
@@ -72,12 +80,14 @@ public class ClientGenerator : IIncrementalGenerator
 
             var extraUsings = extraNamespaces?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
 
-            var schemaName = Path.GetFileName(schema.Path).Replace(".graphql", string.Empty);
+            var schemaName = Path.GetFileNameWithoutExtension(schema.Path);
+
+            var sdl = string.Join(Environment.NewLine, schema.Contents!.ToString(), schema.Extensions?.ToString() ?? string.Empty);
 
             output.AddSource(
                 $"{schemaName}.g.cs",
                 SourceText.From(
-                    Generate(schema.Contents.ToString(), ns, extraUsings),
+                    Generate(output, schema.Path, sdl, ns, extraUsings),
                     Encoding.UTF8)
                 );
         });

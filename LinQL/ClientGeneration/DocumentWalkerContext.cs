@@ -1,6 +1,8 @@
 namespace LinQL.ClientGeneration;
 
+using System.Collections.Generic;
 using HotChocolate.Language.Visitors;
+using LinQL.Description;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -10,8 +12,10 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
     private readonly string graphNamespace;
     private readonly string[] extraUsings;
 
-    public DocumentWalkerContext(string graphNamespace, string[] extraUsings)
+    public DocumentWalkerContext(string file, SourceProductionContext context, string graphNamespace, string[] extraUsings)
     {
+        this.File = file;
+        this.Context = context;
         this.graphNamespace = graphNamespace;
         this.extraUsings = extraUsings;
     }
@@ -20,7 +24,11 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
 
     public List<IClassFactory> Types { get; } = new();
 
-    public List<string> Scalars { get; } = new();
+    public List<Scalar> Scalars { get; } = Scalar.NativeScalars.ToList();
+
+    public string File { get; }
+
+    public SourceProductionContext Context { get; }
 
     public override string ToString()
     {
@@ -37,9 +45,11 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
             ns = ns.AddUsings(this.extraUsings.Select(x => UsingDirective(IdentifierName(x))).ToArray());
         }
 
-        ns = ns.AddMembers(this.RootOperations.Select(x => x.Create()).ToArray())
-          .AddMembers(this.Types.Select(x => x.Create()).ToArray())
-          .AddMembers(new OptionExtensionsClass(this.Scalars).Create());
+        var scalars = this.Scalars.ToDictionary(x => x.Name, StringComparer.InvariantCultureIgnoreCase);
+
+        ns = ns.AddMembers(this.RootOperations.Select(x => x.Create(scalars)).ToArray())
+          .AddMembers(this.Types.Select(x => x.Create(scalars)).ToArray())
+          .AddMembers(new OptionExtensionsClass().Create(scalars));
 
         using var clientContent = new StringWriter();
         clientContent.WriteLine("#nullable enable");

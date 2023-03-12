@@ -1,9 +1,11 @@
 namespace LinQL;
 
+using LinQL.Description;
+
 /// <summary>
 /// LinQL configuration
 /// </summary>
-public class LinqlOptions
+public class LinQLOptions
 {
     /// <summary>
     /// Gets or sets the type name map.
@@ -13,5 +15,5 @@ public class LinqlOptions
     /// <summary>
     /// Gets the scalar types discovered in the schema
     /// </summary>
-    public ICollection<Type> Scalars { get; } = new List<Type>();
+    public ICollection<Scalar> Scalars { get; } = new List<Scalar>();
 }

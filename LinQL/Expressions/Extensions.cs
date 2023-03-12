@@ -26,8 +26,8 @@ internal static class Extensions
 
     public static string ToCamelCase(this string that) => JsonNamingPolicy.CamelCase.ConvertName(that);
 
-    public static bool IsScalar(this Type type, IEnumerable<Type> scalars)
-        => type.IsPrimitive || type.IsEnum || type.Equals(typeof(string)) || scalars.Contains(type);
+    public static bool IsScalar(this Type type, IEnumerable<Scalar> scalars)
+        => type.IsPrimitive || type.IsEnum || type.Equals(typeof(string)) || scalars.Any(s => s.RuntimeType == type.Name);
 
     public static FieldExpression ToField(this MemberInfo member, IRootExpression root) => member switch
     {

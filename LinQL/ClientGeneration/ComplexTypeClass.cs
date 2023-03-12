@@ -9,20 +9,6 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 internal class ComplexTypeClass : IClassFactory
 {
-    internal static readonly Dictionary<string, string> NativeScalars = new(StringComparer.InvariantCultureIgnoreCase)
-    {
-        { "Int", "int" },
-        { "Float", "float" },
-        { "String", "string" },
-        { "ID", "string" },
-        { "Date", "System.DateTime" },
-        { "Boolean", "bool" },
-        { "Long", "long" },
-        { "uuid", "System.Guid" },
-        { "timestamptz", "System.DateTimeOffset" },
-        { "Uri", "System.Uri" }
-    };
-
     private readonly List<FieldDefinitionNode> fields;
     private readonly IEnumerable<string> interfaces;
 
@@ -41,17 +27,12 @@ internal class ComplexTypeClass : IClassFactory
 
     protected virtual TypeDeclarationSyntax Type => ClassDeclaration(Identifier(this.Name));
 
-    public virtual MemberDeclarationSyntax Create()
+    public virtual MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars)
     {
         var type = this.Type
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
-            .AddMembers(this.Properties.Select(f =>
-                PropertyDeclaration(ParseTypeName(TypeName(f.Type)), Identifier(FieldName(f.Name.Value)))
-                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                    .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
-                    .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken))))
-                .ToArray())
-            .AddMembers(this.Methods.SelectMany(this.CreateOperation).ToArray());
+            .AddMembers(this.Properties.Select(this.CreateField(knownScalars)).ToArray())
+            .AddMembers(this.Methods.SelectMany(this.CreateOperation(knownScalars)).ToArray());
 
         if (this.interfaces.Any())
         {
@@ -67,10 +48,10 @@ internal class ComplexTypeClass : IClassFactory
     private IEnumerable<FieldDefinitionNode> Methods
         => this.fields.Where(x => x.Arguments.Any());
 
-    protected static string TypeName(ITypeNode type)
+    protected static string TypeName(ITypeNode type, IDictionary<string, Scalar> knownScalars)
     {
-        var typeName = NativeScalars.TryGetValue(type.NamedType().Name.Value, out var mapped)
-            ? mapped : type.NamedType().Name.Value;
+        var typeName = knownScalars.TryGetValue(type.NamedType().Name.Value, out var mapped)
+            ? mapped.RuntimeType : type.NamedType().Name.Value;
 
         typeName = type.IsListType() || (type.IsNonNullType() && type.InnerType().IsListType()) ? typeName + "[]" : typeName;
 
@@ -80,16 +61,22 @@ internal class ComplexTypeClass : IClassFactory
     protected static string FieldName(string field)
         => char.ToUpperInvariant(field.First()) + field.ToCamelCase().Substring(1);
 
-    protected virtual IEnumerable<MemberDeclarationSyntax> CreateOperation(FieldDefinitionNode f)
-        => new MemberDeclarationSyntax[]
+    protected virtual Func<FieldDefinitionNode, PropertyDeclarationSyntax> CreateField(IDictionary<string, Scalar> knownScalars)
+        => f => PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+            .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
+            .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
+
+    protected virtual Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(IDictionary<string, Scalar> knownScalars)
+        => f => new MemberDeclarationSyntax[]
         {
-            PropertyDeclaration(ParseTypeName(TypeName(f.Type)), Identifier(FieldName(f.Name.Value)))
+            PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
                     .WithInitializer(EqualsValueClause(ParseExpression("null!")))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-            MethodDeclaration(ParseTypeName(TypeName(f.Type)), Identifier("Execute" + FieldName(f.Name.Value)))
+            MethodDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier("Execute" + FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAttributeLists(AttributeList(SeparatedList(new[]
                     {
@@ -97,7 +84,7 @@ internal class ComplexTypeClass : IClassFactory
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
                     })))
                     .AddParameterListParameters(
-                        f.Arguments.Select(p => Parameter(Identifier(p.Name.Value)).WithType(ParseTypeName(TypeName(p.Type)))).ToArray())
+                        f.Arguments.Select(p => Parameter(Identifier(p.Name.Value)).WithType(ParseTypeName(TypeName(p.Type, knownScalars)))).ToArray())
                     .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(f.Name.Value))))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
         };

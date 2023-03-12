@@ -92,7 +92,7 @@ public static class GraphQLClientExtensions
     /// <param name="graphQLClient">The client to wrap</param>
     /// <param name="options">The LinQL options.</param>
     /// <returns>The wrapper.</returns>
-    public static IGraphQLClient WithLinQL(this IGraphQLClient graphQLClient, LinqlOptions options)
+    public static IGraphQLClient WithLinQL(this IGraphQLClient graphQLClient, LinQLOptions options)
         => new LinqlGraphQLClient(graphQLClient, options);
 
     /// <summary>
@@ -101,9 +101,9 @@ public static class GraphQLClientExtensions
     /// <param name="graphQLClient">The client to wrap</param>
     /// <param name="options">The LinQL options.</param>
     /// <returns>The wrapper.</returns>
-    public static IGraphQLClient WithLinQL(this IGraphQLClient graphQLClient, Action<LinqlOptions> options)
+    public static IGraphQLClient WithLinQL(this IGraphQLClient graphQLClient, Action<LinQLOptions> options)
     {
-        var opt = new LinqlOptions();
+        var opt = new LinQLOptions();
         options(opt);
 
         return new LinqlGraphQLClient(graphQLClient, opt);

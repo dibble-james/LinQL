@@ -12,9 +12,9 @@ internal class RootTypeClass : ComplexTypeClass
 
     public OperationType RootOperation { get; }
 
-    public override MemberDeclarationSyntax Create()
+    public override MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars)
     {
-        var rootType = (base.Create() as ClassDeclarationSyntax)!
+        var rootType = (base.Create(knownScalars) as ClassDeclarationSyntax)!
             .AddBaseListTypes(SimpleBaseType(IdentifierName($"RootType<{this.Name}>")))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(
                 Attribute(

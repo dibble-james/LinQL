@@ -2,10 +2,9 @@ using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.SystemTextJson;
 using LinQL;
-using StarWars.Client;
 
 var client = new GraphQLHttpClient("https://swapi-graphql.netlify.app/.netlify/functions/index", new SystemTextJsonSerializer())
-    .WithLinQL(opt => opt.WithKnownScalars());
+    .WithLinQL(new LinQLOptions());
 
 var films = await client.SendAsync((StarWars.Client.Root x) => x.ExecuteAllFilms(null, null, 10, null)!.Films!.Select(x => x.SelectAll()));
 

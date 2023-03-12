@@ -30,7 +30,7 @@ public class QueryTests : IDisposable
         this.client = new GraphQLHttpClient(
             new GraphQLHttpClientOptions { HttpMessageHandler = this.server.CreateHandler(), EndPoint = new Uri(this.server.BaseAddress, "/graphql") },
             new SystemTextJsonSerializer())
-            .WithLinQL(new LinqlOptions());
+            .WithLinQL(new LinQLOptions());
     }
 
     [Fact]
