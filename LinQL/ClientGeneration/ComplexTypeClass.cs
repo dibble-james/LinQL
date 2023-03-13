@@ -10,7 +10,6 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 internal class ComplexTypeClass : IClassFactory
 {
     private readonly List<FieldDefinitionNode> fields;
-    private readonly IEnumerable<string> interfaces;
 
     public ComplexTypeClass(string name)
         : this(name, Enumerable.Empty<FieldDefinitionNode>(), Enumerable.Empty<string>())
@@ -18,9 +17,11 @@ internal class ComplexTypeClass : IClassFactory
     }
 
     public ComplexTypeClass(string name, IEnumerable<FieldDefinitionNode> fields, IEnumerable<string> interfaces)
-        => (this.Name, this.fields, this.interfaces) = (name, fields.ToList(), interfaces);
+        => (this.Name, this.fields, this.Interfaces) = (name, fields.ToList(), interfaces);
 
     public string Name { get; }
+
+    public IEnumerable<string> Interfaces { get; }
 
     public void WithFields(IReadOnlyList<FieldDefinitionNode> fields)
         => this.fields.AddRange(fields);
@@ -34,9 +35,9 @@ internal class ComplexTypeClass : IClassFactory
             .AddMembers(this.Properties.Select(this.CreateField(knownScalars)).ToArray())
             .AddMembers(this.Methods.SelectMany(this.CreateOperation(knownScalars)).ToArray());
 
-        if (this.interfaces.Any())
+        if (this.Interfaces.Any())
         {
-            return type.AddBaseListTypes(this.interfaces.Select(x => SimpleBaseType(IdentifierName(x))).ToArray());
+            return type.AddBaseListTypes(this.Interfaces.Select(x => SimpleBaseType(IdentifierName(x))).ToArray());
         }
 
         return type;

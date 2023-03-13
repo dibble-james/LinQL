@@ -34,6 +34,7 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
     {
         var ns = NamespaceDeclaration(IdentifierName(this.graphNamespace))
             .AddUsings(
+                UsingDirective(IdentifierName("System.Text.Json")),
                 UsingDirective(IdentifierName("LinQL")),
                 UsingDirective(IdentifierName("LinQL.Description")),
                 UsingDirective(IdentifierName("LinQL.Translation")),
@@ -49,7 +50,8 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
 
         ns = ns.AddMembers(this.RootOperations.Select(x => x.Create(scalars)).ToArray())
           .AddMembers(this.Types.Select(x => x.Create(scalars)).ToArray())
-          .AddMembers(new OptionExtensionsClass().Create(scalars));
+          .AddMembers(new OptionExtensionsClass().Create(scalars))
+          .AddMembers(new InterfaceRegistrationExtensionsClass(this.Types.OfType<ComplexTypeClass>()).Create(scalars));
 
         using var clientContent = new StringWriter();
         clientContent.WriteLine("#nullable enable");
