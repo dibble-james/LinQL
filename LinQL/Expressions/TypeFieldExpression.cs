@@ -45,12 +45,11 @@ public class TypeFieldExpression : FieldExpression
     /// </summary>
     /// <param name="name">The name of the argument.</param>
     /// <param name="type">The graphql type.</param>
-    /// <param name="nullable">Whether the argument is nullable.</param>
     /// <param name="value">The name of the variable that will hold the argument value.</param>
     /// <returns>The updated <see cref="TypeFieldExpression"/>.</returns>
-    public TypeFieldExpression WithArgument(string name, Type type, bool nullable, object? value)
+    public TypeFieldExpression WithArgument(string name, string type, object? value)
     {
-        var variable = this.Root.WithVariable(type, nullable, value);
+        var variable = this.Root.WithVariable(type, value);
 
         this.arguments.Add(name, variable.Name);
         return this;

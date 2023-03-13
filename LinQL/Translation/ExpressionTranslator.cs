@@ -191,8 +191,8 @@ public class ExpressionTranslator : ExpressionVisitor
         return node.Method.GetParameters()
             .Zip(node.Arguments, (p, i) => (
                 Name: p.Name!,
-                Type: p.IsParameterNullable(),
+                Type: p.GetArgumentType(),
                 Value: ArgumentVistor.GetValue(i)))
-            .Aggregate(field, (f, arg) => field.WithArgument(arg.Name, arg.Type.Type, arg.Type.Nullable, arg.Value));
+            .Aggregate(field, (f, arg) => field.WithArgument(arg.Name, arg.Type, arg.Value));
     }
 }

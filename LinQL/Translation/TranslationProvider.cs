@@ -27,7 +27,7 @@ public static class TranslationProvider
         var expression = ExpressionTranslator.Translate(query, options);
         includes?.Invoke(expression);
 
-        var request = GraphQLExpressionTranslator.Translate(expression, options.TypeNameMap);
+        var request = GraphQLExpressionTranslator.Translate(expression);
 
         return request;
     }

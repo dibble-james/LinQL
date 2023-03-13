@@ -231,7 +231,7 @@ public class TranslationProviderTests
     private class OperationWithScalarParametersType : RootType<OperationWithScalarParametersType>
     {
         [GraphQLOperation]
-        public SimpleScalarType GetNumber(string value) => new() { Text = value };
+        public SimpleScalarType GetNumber([GraphQLArgument(GQLType = "String!")] string value) => new() { Text = value };
 
         public float Float { get; set; }
     }
@@ -240,7 +240,7 @@ public class TranslationProviderTests
     private class OperationWithTypeParametersType : RootType<OperationWithTypeParametersType>
     {
         [GraphQLOperation]
-        public SimpleScalarType GetNumber(SimpleScalarType input) => input;
+        public SimpleScalarType GetNumber([GraphQLArgument(GQLType = "SimpleScalarType!")] SimpleScalarType input) => input;
 
         public float Float { get; set; }
     }
@@ -249,7 +249,7 @@ public class TranslationProviderTests
     private class OperationWithNullableTypeParametersType : RootType<OperationWithNullableTypeParametersType>
     {
         [GraphQLOperation]
-        public SimpleScalarType? GetNumber(SimpleScalarType? input) => input;
+        public SimpleScalarType? GetNumber([GraphQLArgument(GQLType = "SimpleScalarType")] SimpleScalarType? input) => input;
 
         public float Float { get; set; }
     }
@@ -268,7 +268,7 @@ public class TranslationProviderTests
     private class NestedOperationInOperationType : RootType<NestedOperationInOperationType>
     {
         [GraphQLOperation]
-        public NestedOperationType Operation(int number) => new() { Number = number };
+        public NestedOperationType Operation([GraphQLArgument(GQLType = "Int!")] int number) => new() { Number = number };
 
         public string Text => default!;
     }

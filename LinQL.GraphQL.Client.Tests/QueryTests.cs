@@ -64,7 +64,7 @@ public class QueryTests : IDisposable
 
     public class TestMutationType
     {
-        public NumberResult SetNumber(int input) => new() { Number = input };
+        public NumberResult SetNumber([GraphQLArgument(GQLType = "Int")] int input) => new() { Number = input };
 
         public class NumberResult
         {
@@ -87,6 +87,6 @@ public class QueryTests : IDisposable
         public TestMutationType.NumberResult SetNumber { get; set; }
 
         [GraphQLOperation, GraphQLField(Name = "setNumber")]
-        public TestMutationType.NumberResult SetNumberOperation(int input) => this.SetNumber;
+        public TestMutationType.NumberResult SetNumberOperation([GraphQLArgument(GQLType = "Int!")] int input) => this.SetNumber;
     }
 }
