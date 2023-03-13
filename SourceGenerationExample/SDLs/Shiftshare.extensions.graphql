@@ -1,16 +1,16 @@
 directive @customScalar(clrType: String!) on SCALAR
 
 extend scalar UUID
-    @customScalar(clrType: "global::System.Guid")
+    @customScalar(clrType: "System.Guid")
 
 extend scalar Duration
-    @customScalar(clrType: "global::NodaTime.Duration")
+    @customScalar(clrType: "NodaTime.Duration")
     
 extend scalar OffsetDateTime
-    @customScalar(clrType: "global::NodaTime.OffsetDateTime")
+    @customScalar(clrType: "NodaTime.OffsetDateTime")
     
 extend scalar OffsetDate
-    @customScalar(clrType: "global::NodaTime.OffsetDate")
+    @customScalar(clrType: "NodaTime.OffsetDate")
 
 extend scalar OffsetTime
-    @customScalar(clrType: "global::NodaTime.OffsetTime")
+    @customScalar(clrType: "NodaTime.OffsetTime")

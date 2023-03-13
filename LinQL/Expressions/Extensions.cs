@@ -1,6 +1,5 @@
 namespace LinQL.Expressions;
 
-using System.Collections.ObjectModel;
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -27,7 +26,11 @@ internal static class Extensions
     public static string ToCamelCase(this string that) => JsonNamingPolicy.CamelCase.ConvertName(that);
 
     public static bool IsScalar(this Type type, IEnumerable<Scalar> scalars)
-        => type.IsPrimitive || type.IsEnum || type.Equals(typeof(string)) || scalars.Any(s => s.RuntimeType == type.Name);
+    {
+        type = Nullable.GetUnderlyingType(type) ?? type;
+
+        return type.IsEnum || scalars.Any(s => s.RuntimeType == type.FullName || ((type.IsPrimitive || type.Equals(typeof(string))) && s.OriginalPrimitive == type.FullName));
+    }
 
     public static FieldExpression ToField(this MemberInfo member, IRootExpression root) => member switch
     {

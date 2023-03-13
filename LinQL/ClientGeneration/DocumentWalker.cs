@@ -84,6 +84,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
     {
         var scalarOptions = node.Directives.FirstOrDefault(x => x.Name.Value == "customScalar");
         var clrType = scalarOptions?.Arguments.FirstOrDefault(x => x.Name.Value == "clrType");
+        var primitiveType = scalarOptions?.Arguments.FirstOrDefault(x => x.Name.Value == "primitiveType");
 
         if (scalarOptions is null)
         {
@@ -113,7 +114,14 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
             return base.VisitChildren(node, context);
         }
 
-        context.Scalars.Add(new Scalar(node.Name.Value, clrType.Value!.Value!.ToString()));
+        if (primitiveType is not null)
+        {
+            context.Scalars.Add(new Scalar(node.Name.Value, clrType.Value!.Value!.ToString(), primitiveType.Value!.Value!.ToString()));
+        }
+        else
+        {
+            context.Scalars.Add(new Scalar(node.Name.Value, clrType.Value!.Value!.ToString()));
+        }
 
         return base.VisitChildren(node, context);
     }
