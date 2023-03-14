@@ -1,6 +1,5 @@
 namespace LinQL.ClientGeneration;
 
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -82,7 +81,7 @@ public class ClientGenerator : IIncrementalGenerator
 
             var schemaName = Path.GetFileNameWithoutExtension(schema.Path);
 
-            var sdl = string.Join(Environment.NewLine, schema.Contents!.ToString(), schema.Extensions?.ToString() ?? string.Empty);
+            var sdl = string.Join("\n", schema.Contents!.ToString(), schema.Extensions?.ToString() ?? string.Empty);
 
             output.AddSource(
                 $"{schemaName}.g.cs",

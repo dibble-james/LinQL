@@ -1,3 +1,5 @@
+#pragma warning disable CA1852 // Seal internal types
+
 using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.SystemTextJson;

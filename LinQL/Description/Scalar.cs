@@ -30,5 +30,5 @@ public record struct Scalar(string Name, string RuntimeType)
     /// <summary>
     /// Gets the System primitive the runtime type is mapped too.
     /// </summary>
-    public string? OriginalPrimitive { get; }
+    public string? OriginalPrimitive { get; } = null;
 }

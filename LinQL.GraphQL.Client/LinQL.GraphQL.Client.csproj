@@ -26,9 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GraphQL.Client" Version="5.0.*" />
-    <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="5.0.*" />
-    <PackageReference Include="System.Text.Json" Version="6.*" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="GraphQL.Client" Version="5.1.1" />
+    <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="5.1.1" />
+    <PackageReference Include="System.Text.Json" Version="7.0.2" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 
 </Project>
