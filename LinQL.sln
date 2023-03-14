@@ -10,14 +10,15 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AB580921-D008-4DE4-BB75-354D19999233}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		.github\workflows\nuget.yml = .github\workflows\nuget.yml
 		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SourceGenerationExample", "SourceGenerationExample\SourceGenerationExample.csproj", "{29CEB221-B4B5-4F86-902E-41A4B2C6D835}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinQL.GraphQL.Client", "LinQL.GraphQL.Client\LinQL.GraphQL.Client.csproj", "{DFEFB8A4-07D0-4127-A3A8-DF5611FD4B0F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LinQL.GraphQL.Client", "LinQL.GraphQL.Client\LinQL.GraphQL.Client.csproj", "{DFEFB8A4-07D0-4127-A3A8-DF5611FD4B0F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinQL.GraphQL.Client.Tests", "LinQL.GraphQL.Client.Tests\LinQL.GraphQL.Client.Tests.csproj", "{5CEA6196-EBC0-43D7-BF8C-31219955F948}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LinQL.GraphQL.Client.Tests", "LinQL.GraphQL.Client.Tests\LinQL.GraphQL.Client.Tests.csproj", "{5CEA6196-EBC0-43D7-BF8C-31219955F948}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

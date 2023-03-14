@@ -9,6 +9,7 @@ using LinQL.Expressions;
 /// <typeparam name="TRoot">The root operation type.</typeparam>
 /// <typeparam name="TData">The requested data type.</typeparam>
 public class GraphQLExpressionResponse<TRoot, TData> : GraphQLResponse<TData>
+    where TRoot : RootType<TRoot>
 {
     /// <summary>
     /// Creates a request to be sent to a GraphQL server.

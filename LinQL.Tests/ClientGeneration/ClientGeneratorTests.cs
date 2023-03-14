@@ -9,6 +9,8 @@ public class ClientGeneratorTests
     [Fact]
     public void StarWarsClient()
         => Snapshot.Match(ClientGenerator.Generate(
+            new Microsoft.CodeAnalysis.SourceProductionContext(),
+            "path",
             Encoding.UTF8.GetString(SDLs.StarWars),
             "StarWars",
             Array.Empty<string>()));
@@ -16,7 +18,9 @@ public class ClientGeneratorTests
     [Fact]
     public void ShiftshareClient()
         => Snapshot.Match(ClientGenerator.Generate(
-            Encoding.UTF8.GetString(SDLs.Shiftshare),
+            new Microsoft.CodeAnalysis.SourceProductionContext(),
+            "path",
+            Encoding.UTF8.GetString(SDLs.Shiftshare) + Encoding.UTF8.GetString(SDLs.Shiftshare_extensions),
             "Shiftshare.Graph",
             new[] { "NodaTime" }));
 }

@@ -5,5 +5,6 @@ namespace LinQL;
 /// </summary>
 /// <typeparam name="T">The root operation type.</typeparam>
 public interface RootType<T>
+    where T : RootType<T>
 {
 }

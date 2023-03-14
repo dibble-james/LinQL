@@ -16,14 +16,14 @@ internal class InterfaceTypeClass : ComplexTypeClass
 
     protected override TypeDeclarationSyntax Type => InterfaceDeclaration(Identifier(this.Name));
 
-    protected override IEnumerable<MemberDeclarationSyntax> CreateOperation(FieldDefinitionNode f)
-        => new MemberDeclarationSyntax[]
+    protected override Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(IDictionary<string, Scalar> knownScalars)
+        => f => new MemberDeclarationSyntax[]
         {
-            PropertyDeclaration(ParseTypeName(TypeName(f.Type)), Identifier(FieldName(f.Name.Value)))
+            PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken))),
-            MethodDeclaration(ParseTypeName(TypeName(f.Type)), Identifier("Execute" + FieldName(f.Name.Value)))
+            MethodDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier("Execute" + FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAttributeLists(AttributeList(SeparatedList(new[]
                     {
@@ -31,7 +31,7 @@ internal class InterfaceTypeClass : ComplexTypeClass
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
                     })))
                     .AddParameterListParameters(
-                        f.Arguments.Select(p => Parameter(Identifier(p.Name.Value)).WithType(ParseTypeName(TypeName(p.Type)))).ToArray())
+                        f.Arguments.Select(p => Parameter(Identifier(p.Name.Value)).WithType(ParseTypeName(TypeName(p.Type, knownScalars)))).ToArray())
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
         };
 }

@@ -17,13 +17,13 @@ public class LinqlGraphQLClient : IGraphQLClient
     /// </summary>
     /// <param name="client">The wrapped client.</param>
     /// <param name="options">LinQL configuration.</param>
-    public LinqlGraphQLClient(IGraphQLClient client, LinqlOptions options)
+    public LinqlGraphQLClient(IGraphQLClient client, LinQLOptions options)
         => (this.client, this.Options) = (client, options);
 
     /// <summary>
     /// Gets the configuration of this client.
     /// </summary>
-    public LinqlOptions Options { get; }
+    public LinQLOptions Options { get; }
 
     /// <inheritdoc/>
     public IObservable<global::GraphQL.GraphQLResponse<TResponse>> CreateSubscriptionStream<TResponse>(global::GraphQL.GraphQLRequest request) => this.client.CreateSubscriptionStream<TResponse>(request);

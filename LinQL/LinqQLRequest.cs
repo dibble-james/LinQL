@@ -10,4 +10,5 @@ using LinQL.Expressions;
 /// <param name="Expression">The translated expression.</param>
 /// <param name="Query">The GQL to send to the server.</param>
 /// <param name="Variables">The values used in the query.</param>
-public record LinqQLRequest<TRoot, TData>(GraphQLExpression<TRoot, TData> Expression, string Query, object? Variables);
+public record LinqQLRequest<TRoot, TData>(GraphQLExpression<TRoot, TData> Expression, string Query, object? Variables)
+    where TRoot : RootType<TRoot>;

@@ -20,13 +20,14 @@ public static class TranslationProvider
     /// <returns>The request to execute.</returns>
     public static LinqQLRequest<TRoot, TData> ToRequest<TRoot, TData>(
         this Expression<Func<TRoot, TData>> query,
-        LinqlOptions options,
+        LinQLOptions options,
         Action<GraphQLExpression<TRoot, TData>>? includes = null)
+        where TRoot : RootType<TRoot>
     {
         var expression = ExpressionTranslator.Translate(query, options);
         includes?.Invoke(expression);
 
-        var request = GraphQLExpressionTranslator.Translate(expression, options.TypeNameMap);
+        var request = GraphQLExpressionTranslator.Translate(expression);
 
         return request;
     }

@@ -2,6 +2,7 @@
 #pragma warning disable CS8618
 namespace StarWars
 {
+    using System.Text.Json;
     using LinQL;
     using LinQL.Description;
     using LinQL.Translation;
@@ -13,43 +14,43 @@ namespace StarWars
     {
         public FilmsConnection? AllFilms { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "allFilms")]
-        public FilmsConnection? ExecuteAllFilms(string? after, string? before, int? first, int? last) => AllFilms;
+        public FilmsConnection? ExecuteAllFilms([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => AllFilms;
         public PeopleConnection? AllPeople { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "allPeople")]
-        public PeopleConnection? ExecuteAllPeople(string? after, string? before, int? first, int? last) => AllPeople;
+        public PeopleConnection? ExecuteAllPeople([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => AllPeople;
         public PlanetsConnection? AllPlanets { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "allPlanets")]
-        public PlanetsConnection? ExecuteAllPlanets(string? after, string? before, int? first, int? last) => AllPlanets;
+        public PlanetsConnection? ExecuteAllPlanets([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => AllPlanets;
         public SpeciesConnection? AllSpecies { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "allSpecies")]
-        public SpeciesConnection? ExecuteAllSpecies(string? after, string? before, int? first, int? last) => AllSpecies;
+        public SpeciesConnection? ExecuteAllSpecies([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => AllSpecies;
         public StarshipsConnection? AllStarships { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "allStarships")]
-        public StarshipsConnection? ExecuteAllStarships(string? after, string? before, int? first, int? last) => AllStarships;
+        public StarshipsConnection? ExecuteAllStarships([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => AllStarships;
         public VehiclesConnection? AllVehicles { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "allVehicles")]
-        public VehiclesConnection? ExecuteAllVehicles(string? after, string? before, int? first, int? last) => AllVehicles;
+        public VehiclesConnection? ExecuteAllVehicles([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => AllVehicles;
         public Film? Film { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "film")]
-        public Film? ExecuteFilm(string? filmID, string? id) => Film;
+        public Film? ExecuteFilm([GraphQLArgument(GQLType = "ID")] string? filmID, [GraphQLArgument(GQLType = "ID")] string? id) => Film;
         public Node? Node { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "node")]
-        public Node? ExecuteNode(string id) => Node;
+        public Node? ExecuteNode([GraphQLArgument(GQLType = "ID!")] string id) => Node;
         public Person? Person { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "person")]
-        public Person? ExecutePerson(string? id, string? personID) => Person;
+        public Person? ExecutePerson([GraphQLArgument(GQLType = "ID")] string? id, [GraphQLArgument(GQLType = "ID")] string? personID) => Person;
         public Planet? Planet { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "planet")]
-        public Planet? ExecutePlanet(string? id, string? planetID) => Planet;
+        public Planet? ExecutePlanet([GraphQLArgument(GQLType = "ID")] string? id, [GraphQLArgument(GQLType = "ID")] string? planetID) => Planet;
         public Species? Species { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "species")]
-        public Species? ExecuteSpecies(string? id, string? speciesID) => Species;
+        public Species? ExecuteSpecies([GraphQLArgument(GQLType = "ID")] string? id, [GraphQLArgument(GQLType = "ID")] string? speciesID) => Species;
         public Starship? Starship { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "starship")]
-        public Starship? ExecuteStarship(string? id, string? starshipID) => Starship;
+        public Starship? ExecuteStarship([GraphQLArgument(GQLType = "ID")] string? id, [GraphQLArgument(GQLType = "ID")] string? starshipID) => Starship;
         public Vehicle? Vehicle { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "vehicle")]
-        public Vehicle? ExecuteVehicle(string? id, string? vehicleID) => Vehicle;
+        public Vehicle? ExecuteVehicle([GraphQLArgument(GQLType = "ID")] string? id, [GraphQLArgument(GQLType = "ID")] string? vehicleID) => Vehicle;
     }
 
     public partial class Film : Node
@@ -74,19 +75,19 @@ namespace StarWars
 
         public FilmCharactersConnection? CharacterConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "characterConnection")]
-        public FilmCharactersConnection? ExecuteCharacterConnection(string? after, string? before, int? first, int? last) => CharacterConnection;
+        public FilmCharactersConnection? ExecuteCharacterConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => CharacterConnection;
         public FilmPlanetsConnection? PlanetConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "planetConnection")]
-        public FilmPlanetsConnection? ExecutePlanetConnection(string? after, string? before, int? first, int? last) => PlanetConnection;
+        public FilmPlanetsConnection? ExecutePlanetConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => PlanetConnection;
         public FilmSpeciesConnection? SpeciesConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "speciesConnection")]
-        public FilmSpeciesConnection? ExecuteSpeciesConnection(string? after, string? before, int? first, int? last) => SpeciesConnection;
+        public FilmSpeciesConnection? ExecuteSpeciesConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => SpeciesConnection;
         public FilmStarshipsConnection? StarshipConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "starshipConnection")]
-        public FilmStarshipsConnection? ExecuteStarshipConnection(string? after, string? before, int? first, int? last) => StarshipConnection;
+        public FilmStarshipsConnection? ExecuteStarshipConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => StarshipConnection;
         public FilmVehiclesConnection? VehicleConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "vehicleConnection")]
-        public FilmVehiclesConnection? ExecuteVehicleConnection(string? after, string? before, int? first, int? last) => VehicleConnection;
+        public FilmVehiclesConnection? ExecuteVehicleConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => VehicleConnection;
     }
 
     public partial class FilmCharactersConnection
@@ -261,13 +262,13 @@ namespace StarWars
 
         public PersonFilmsConnection? FilmConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "filmConnection")]
-        public PersonFilmsConnection? ExecuteFilmConnection(string? after, string? before, int? first, int? last) => FilmConnection;
+        public PersonFilmsConnection? ExecuteFilmConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => FilmConnection;
         public PersonStarshipsConnection? StarshipConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "starshipConnection")]
-        public PersonStarshipsConnection? ExecuteStarshipConnection(string? after, string? before, int? first, int? last) => StarshipConnection;
+        public PersonStarshipsConnection? ExecuteStarshipConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => StarshipConnection;
         public PersonVehiclesConnection? VehicleConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "vehicleConnection")]
-        public PersonVehiclesConnection? ExecuteVehicleConnection(string? after, string? before, int? first, int? last) => VehicleConnection;
+        public PersonVehiclesConnection? ExecuteVehicleConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => VehicleConnection;
     }
 
     public partial class PersonFilmsConnection
@@ -352,10 +353,10 @@ namespace StarWars
 
         public PlanetFilmsConnection? FilmConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "filmConnection")]
-        public PlanetFilmsConnection? ExecuteFilmConnection(string? after, string? before, int? first, int? last) => FilmConnection;
+        public PlanetFilmsConnection? ExecuteFilmConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => FilmConnection;
         public PlanetResidentsConnection? ResidentConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "residentConnection")]
-        public PlanetResidentsConnection? ExecuteResidentConnection(string? after, string? before, int? first, int? last) => ResidentConnection;
+        public PlanetResidentsConnection? ExecuteResidentConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => ResidentConnection;
     }
 
     public partial class PlanetFilmsConnection
@@ -442,10 +443,10 @@ namespace StarWars
 
         public SpeciesFilmsConnection? FilmConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "filmConnection")]
-        public SpeciesFilmsConnection? ExecuteFilmConnection(string? after, string? before, int? first, int? last) => FilmConnection;
+        public SpeciesFilmsConnection? ExecuteFilmConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => FilmConnection;
         public SpeciesPeopleConnection? PersonConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "personConnection")]
-        public SpeciesPeopleConnection? ExecutePersonConnection(string? after, string? before, int? first, int? last) => PersonConnection;
+        public SpeciesPeopleConnection? ExecutePersonConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => PersonConnection;
     }
 
     public partial class SpeciesConnection
@@ -538,10 +539,10 @@ namespace StarWars
 
         public StarshipFilmsConnection? FilmConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "filmConnection")]
-        public StarshipFilmsConnection? ExecuteFilmConnection(string? after, string? before, int? first, int? last) => FilmConnection;
+        public StarshipFilmsConnection? ExecuteFilmConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => FilmConnection;
         public StarshipPilotsConnection? PilotConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "pilotConnection")]
-        public StarshipPilotsConnection? ExecutePilotConnection(string? after, string? before, int? first, int? last) => PilotConnection;
+        public StarshipPilotsConnection? ExecutePilotConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => PilotConnection;
     }
 
     public partial class StarshipFilmsConnection
@@ -630,10 +631,10 @@ namespace StarWars
 
         public VehicleFilmsConnection? FilmConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "filmConnection")]
-        public VehicleFilmsConnection? ExecuteFilmConnection(string? after, string? before, int? first, int? last) => FilmConnection;
+        public VehicleFilmsConnection? ExecuteFilmConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => FilmConnection;
         public VehiclePilotsConnection? PilotConnection { get; set; } = null !;
         [GraphQLOperation, GraphQLField(Name = "pilotConnection")]
-        public VehiclePilotsConnection? ExecutePilotConnection(string? after, string? before, int? first, int? last) => PilotConnection;
+        public VehiclePilotsConnection? ExecutePilotConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => PilotConnection;
     }
 
     public partial class VehicleFilmsConnection
@@ -688,5 +689,27 @@ namespace StarWars
         public string Cursor { get; set; }
 
         public Vehicle? Node { get; set; }
+    }
+
+    public static class LinQLOptionExtensions
+    {
+        public static LinQLOptions WithKnownScalars(this LinQLOptions options)
+        {
+            options.Scalars.Add(new("Int", "int"));
+            options.Scalars.Add(new("Float", "float"));
+            options.Scalars.Add(new("String", "string"));
+            options.Scalars.Add(new("Id", "string"));
+            options.Scalars.Add(new("Boolean", "bool"));
+            return options;
+        }
+    }
+
+    public static class JsonSerializerOptionsExtensions
+    {
+        public static JsonSerializerOptions WithKnownInterfaces(this JsonSerializerOptions options)
+        {
+            options.RegisterInterface<Node>(typeof(Film), typeof(Person), typeof(Planet), typeof(Species), typeof(Starship), typeof(Vehicle));
+            return options;
+        }
     }
 }

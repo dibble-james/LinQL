@@ -1,0 +1,16 @@
+directive @customScalar(clrType: String!) on SCALAR
+
+extend scalar UUID
+    @customScalar(clrType: "System.Guid")
+
+extend scalar Duration
+    @customScalar(clrType: "NodaTime.Duration")
+    
+extend scalar OffsetDateTime
+    @customScalar(clrType: "NodaTime.OffsetDateTime")
+    
+extend scalar OffsetDate
+    @customScalar(clrType: "NodaTime.OffsetDate")
+
+extend scalar OffsetTime
+    @customScalar(clrType: "NodaTime.OffsetTime")

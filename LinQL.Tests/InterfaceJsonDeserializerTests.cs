@@ -35,7 +35,7 @@ public class InterfaceJsonDeserializerTests
         result!.Last().Should().BeOfType<ConcreteClass2>().Which.Number.Should().Be(87);
     }
 
-    private class Data
+    private sealed class Data
     {
         public InterfaceType Input { get; set; }
 
@@ -44,12 +44,12 @@ public class InterfaceJsonDeserializerTests
 
     private interface InterfaceType { }
 
-    private class ConcreteClass1 : InterfaceType
+    private sealed class ConcreteClass1 : InterfaceType
     {
         public string Text { get; set; }
     }
 
-    private class ConcreteClass2 : InterfaceType
+    private sealed class ConcreteClass2 : InterfaceType
     {
         public int Number { get; set; }
     }

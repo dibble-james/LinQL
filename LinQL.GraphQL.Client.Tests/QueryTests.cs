@@ -27,11 +27,10 @@ public class QueryTests : IDisposable
 
         this.server = new TestServer(hostBuilder);
 
-        this.client = new LinqlGraphQLClient(
-            new GraphQLHttpClient(
+        this.client = new GraphQLHttpClient(
             new GraphQLHttpClientOptions { HttpMessageHandler = this.server.CreateHandler(), EndPoint = new Uri(this.server.BaseAddress, "/graphql") },
-            new SystemTextJsonSerializer()),
-            new());
+            new SystemTextJsonSerializer())
+            .WithLinQL(new LinQLOptions());
     }
 
     [Fact]
@@ -65,7 +64,7 @@ public class QueryTests : IDisposable
 
     public class TestMutationType
     {
-        public NumberResult SetNumber(int input) => new() { Number = input };
+        public NumberResult SetNumber([GraphQLArgument(GQLType = "Int")] int input) => new() { Number = input };
 
         public class NumberResult
         {
@@ -88,6 +87,6 @@ public class QueryTests : IDisposable
         public TestMutationType.NumberResult SetNumber { get; set; }
 
         [GraphQLOperation, GraphQLField(Name = "setNumber")]
-        public TestMutationType.NumberResult SetNumberOperation(int input) => this.SetNumber;
+        public TestMutationType.NumberResult SetNumberOperation([GraphQLArgument(GQLType = "Int!")] int input) => this.SetNumber;
     }
 }

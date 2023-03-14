@@ -13,5 +13,6 @@ public static class GraphQLExpressionExtensions
     /// </summary>
     /// <returns>The request.</returns>
     public static GraphQLExpressionRequest<TRoot, TData> ToGraphQLClientRequest<TRoot, TData>(this LinqQLRequest<TRoot, TData> request)
+        where TRoot : RootType<TRoot>
         => new(request.Expression) { Query = request.Query, Variables = request.Variables };
 }

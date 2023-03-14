@@ -1,12 +1,14 @@
 namespace LinQL;
 
+using LinQL.Description;
+
 /// <summary>
 /// LinQL configuration
 /// </summary>
-public class LinqlOptions
+public class LinQLOptions
 {
     /// <summary>
-    /// Gets or sets the type name map.
+    /// Gets the scalar types discovered in the schema
     /// </summary>
-    public TypeNameMap TypeNameMap { get; set; } = TypeNameMap.DefaultMappings;
+    public ICollection<Scalar> Scalars { get; } = Scalar.NativeScalars;
 }
