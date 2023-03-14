@@ -3,6 +3,25 @@
 If you're using graphql-dotnet's GraphQL.Client, you can use Linq by
 using the overload extension methods on `GraphQL.Client.Abstractions.IGraphQLClient`.
 
+But first you need to wrap it with configuration like so:
+```csharp
+var client = new GraphQLHttpClient(
+    "https://swapi-graphql.netlify.app/.netlify/functions/index",
+    new SystemTextJsonSerializer(new JsonSerializerOptions().WithKnownInterfaces()))
+    .WithLinQL(new LinQLOptions().WithKnownScalars());
+```
+
+If you're using `HTTPClientFactory` you'd register it this way:
+```csharp
+builder.Services.AddHttpClient<IGraphQLClient, LinqlGraphQLClient>(
+    http => new LinqlGraphQLClient(
+        new GraphQLHttpClient(
+            new GraphQLHttpClientOptions { EndPoint = new Uri("https://swapi-graphql.netlify.app/.netlify/functions/index") },
+            new SystemTextJsonSerializer().WithKnownInterfaces(),
+            http),
+        new LinQL.LinqlOptions().WithKnownScalars()))
+```
+
 To execute queries and mutations use:
 
 ```csharp

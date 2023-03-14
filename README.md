@@ -15,10 +15,10 @@
 -   [x] Interfaces/Unions
 -   [x] Auto-generating types via introspection
 -   [x] Subscriptions
+-   [x] Custom Scalars
 
 #### Coming soon
 
--   [ ] Custom Scalars
 -   [ ] Strawberry Shake support
 
 ### Getting Started using `GraphQL.Client`
@@ -38,7 +38,17 @@ dotnet add package LinQL.GraphQL.Client
 </ItemGroup>
 ```
 
-3. Write queries!
+3. Create a client:
+```csharp
+using StarWars.Types;
+
+var client = new GraphQLHttpClient(
+    "https://swapi-graphql.netlify.app/.netlify/functions/index",
+    new SystemTextJsonSerializer(new JsonSerializerOptions().WithKnownInterfaces()))
+    .WithLinQL(new LinQLOptions().WithKnownScalars());
+```
+
+4. Write queries!
 
 ```csharp
 using GraphQL.Client.Abstractions;
@@ -58,13 +68,11 @@ public class StarWarsClient
 ### Getting Started using `StrawberryShake`
 Coming soon...
 
-A range of expressions can be converted as demonstrated by [the `TranslationProviderTests`](https://github.com/dibble-james/LinQL/blob/interface-support/LinQL.Tests/Translation/TranslationProviderTests.cs). If you come accross something that doesn't work, please raise an issue or a pull request with a supporting test.
+### What can I do with it?
+A range of expressions can be converted as demonstrated by [the `TranslationProviderTests`](https://github.com/dibble-james/LinQL/blob/interface-support/LinQL.Tests/Translation/TranslationProviderTests.cs). 
+If you come accross something that doesn't work, please raise an issue or a pull request with a supporting test.
 
-For more help check out the [docs](./docs/)
+For more help check out the [docs](https://github.com/dibble-james/LinQL/wiki)
 
 ### Troubleshooting
-```
-LINQLGEN02: GraphQL file {0} does not have a LinQLClientNamespace attribute. Please add it to the AdditionalFiles element in your csproj file.
-```
-This could be related to a Nuget bug where the `LinQL.props` file has not been imported because it won't follow transitive references.
-Install the `LinQL` package individually.
+There are a couple gotchas with the source generator that can be solved using the guides [here](https://github.com/dibble-james/LinQL/wiki/troubleshooting/)
