@@ -30,25 +30,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FastExpressionCompiler" Version="3.3.4" />
-    <PackageReference Include="HotChocolate.Language" Version="13.0.5" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="HotChocolate.Language.SyntaxTree" Version="13.0.5" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="HotChocolate.Language.Visitors" Version="13.0.5" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="HotChocolate.Language.Utf8" Version="13.0.5" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="FastExpressionCompiler" Version="4.1.0" />
+    <PackageReference Include="HotChocolate.Language" Version="13.9.0" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.SyntaxTree" Version="13.9.0" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.Visitors" Version="13.9.0" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.Utf8" Version="13.9.0" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="IsExternalInit" Version="1.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.5.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="OneOf" Version="3.0.*" />
-    <PackageReference Include="System.Text.Json" Version="7.0.2" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="System.Text.Json" Version="8.0.3" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 
   <PropertyGroup>

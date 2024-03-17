@@ -5,12 +5,9 @@ using LinQL.Description;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-internal class RootTypeClass : ComplexTypeClass
+internal class RootTypeClass(string name, OperationType rootOperationType) : ComplexTypeClass(name)
 {
-    public RootTypeClass(string name, OperationType rootOperationType)
-        : base(name) => this.RootOperation = rootOperationType;
-
-    public OperationType RootOperation { get; }
+    public OperationType RootOperation { get; } = rootOperationType;
 
     public override MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars)
     {

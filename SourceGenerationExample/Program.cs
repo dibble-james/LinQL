@@ -17,7 +17,7 @@ Console.WriteLine("Film Names\n=========");
 Console.WriteLine("Query: {0}", films.Expression);
 films!.Data.ToList().ForEach(f => Console.WriteLine(f.Title));
 
-var firstFilm = await client.SendAsync((Root x) => x.ExecuteFilm(films!.Data.First().EpisodeID.ToString(), films!.Data.First().Id));
+var firstFilm = await client.SendAsync((Root x) => x.ExecuteFilm($"{films!.Data.First().EpisodeID}", films!.Data.First().Id));
 
 Console.WriteLine("\nOpening Crawl\n============");
 Console.WriteLine("Query: {0}", firstFilm.Expression);

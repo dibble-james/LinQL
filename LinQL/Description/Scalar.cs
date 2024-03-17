@@ -18,14 +18,14 @@ public record struct Scalar(string Name, string RuntimeType)
     public Scalar(string name, string runtimeType, string originalPrimitive)
         : this(name, runtimeType) => this.OriginalPrimitive = originalPrimitive;
 
-    internal static readonly List<Scalar> NativeScalars = new()
-    {
+    internal static readonly List<Scalar> NativeScalars =
+    [
         new Scalar("Int", "int", "System.Int32"),
         new Scalar("Float", "float", "System.Single"),
         new Scalar("String", "string", "System.String"),
         new Scalar("Id", "string", "System.String"),
         new Scalar("Boolean", "bool", "System.Boolean"),
-    };
+    ];
 
     /// <summary>
     /// Gets the System primitive the runtime type is mapped too.

@@ -133,9 +133,9 @@ public class TranslationProviderTests
 
     [Fact]
     public void SelectAllFieldsInterfaceOnConcreteType()
-        => this.Test<InterfaceRootType, object>(x =>
-            x.SimpleType.On((SomeOtherSimpleType y) => y.Number.ToString()!)
-                        .On((SimpleScalarType y) => y.Text));
+        => this.Test<InterfaceRootType, object?>(x =>
+            x.SimpleType.On((SomeOtherSimpleType y) => y.Number.ToString())
+                        .On((SimpleScalarType y) => y.Text!));
 
     [Fact]
     public void SelectInterfaceArray()
@@ -200,13 +200,13 @@ public class TranslationProviderTests
     {
         public int Number { get; set; }
 
-        public string Text { get; set; }
+        public string? Text { get; set; }
     }
 
     [OperationType]
     private class NestedClassType : RootType<NestedClassType>
     {
-        public SimpleScalarType Nested { get; set; }
+        public SimpleScalarType? Nested { get; set; }
 
         public float Float { get; set; }
     }
@@ -288,14 +288,14 @@ public class TranslationProviderTests
 
     private interface ISimpleType
     {
-        string Text { get; }
+        string? Text { get; }
 
         int Number { get; }
     }
 
     private class SomeOtherSimpleType : ISimpleType
     {
-        public string Text { get; }
+        public string? Text { get; }
 
         public int Number { get; }
 
@@ -307,9 +307,9 @@ public class TranslationProviderTests
     [OperationType]
     private class InterfaceRootType : RootType<InterfaceRootType>
     {
-        public ISimpleType SimpleType { get; set; }
+        public required ISimpleType SimpleType { get; set; }
 
-        public IEnumerable<ISimpleType> ArrayOfInterfaces { get; set; } = Enumerable.Empty<ISimpleType>();
+        public IEnumerable<ISimpleType> ArrayOfInterfaces { get; set; } = [];
     }
 
     [OperationType(RootOperationType.Query)]

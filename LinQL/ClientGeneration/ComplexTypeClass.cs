@@ -12,7 +12,7 @@ internal class ComplexTypeClass : IClassFactory
     private readonly List<FieldDefinitionNode> fields;
 
     public ComplexTypeClass(string name)
-        : this(name, Enumerable.Empty<FieldDefinitionNode>(), Enumerable.Empty<string>())
+        : this(name, [], [])
     {
     }
 
@@ -69,8 +69,8 @@ internal class ComplexTypeClass : IClassFactory
             .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
 
     protected virtual Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(IDictionary<string, Scalar> knownScalars)
-        => f => new MemberDeclarationSyntax[]
-        {
+        => f =>
+        [
             PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
@@ -93,5 +93,5 @@ internal class ComplexTypeClass : IClassFactory
                             })))).ToArray())
                     .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(f.Name.Value))))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-        };
+        ];
 }

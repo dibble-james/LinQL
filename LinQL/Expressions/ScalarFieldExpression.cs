@@ -3,14 +3,12 @@ namespace LinQL.Expressions;
 /// <summary>
 /// Access to a scalar field (a field that can have no child fields)
 /// </summary>
-public class ScalarFieldExpression : FieldExpression
+/// <remarks>
+/// Create a new <see cref="ScalarFieldExpression"/>.
+/// </remarks>
+/// <param name="field">The name of the field.</param>
+/// <param name="fieldType">The return type of the field.</param>
+/// <param name="declaringType">The .Net type that field is a member of.</param>
+public class ScalarFieldExpression(string field, Type fieldType, Type declaringType) : FieldExpression(field, fieldType, declaringType)
 {
-    /// <summary>
-    /// Create a new <see cref="ScalarFieldExpression"/>.
-    /// </summary>
-    /// <param name="field">The name of the field.</param>
-    /// <param name="fieldType">The return type of the field.</param>
-    /// <param name="declaringType">The .Net type that field is a member of.</param>
-    public ScalarFieldExpression(string field, Type fieldType, Type declaringType)
-        : base(field, fieldType, declaringType) { }
 }

@@ -146,21 +146,17 @@ internal static class Extentions
     public static string UnquotePropertyNames(this string s) => PropertyRegex.Replace(s, "$1:");
 }
 
-internal class IndentingStringBuilder
+internal class IndentingStringBuilder(StringBuilder stringBuilder)
 {
     private bool indentPending = true;
     private int indent;
-
-    private readonly StringBuilder inner;
-
-    public IndentingStringBuilder(StringBuilder stringBuilder) => this.inner = stringBuilder;
 
     public IndentingStringBuilder Append(string value) => this.DoIndent(sb => sb.Append(value))(false);
     public IndentingStringBuilder Append(char value) => this.DoIndent(sb => sb.Append(value))(false);
     public IndentingStringBuilder AppendLine(string value) => this.DoIndent(sb => sb.AppendLine(value))(true);
     public IndentingStringBuilder AppendLine() => this.DoIndent(sb => sb.AppendLine())(true);
 
-    public override string ToString() => this.inner.ToString();
+    public override string ToString() => stringBuilder.ToString();
 
     public IDisposable Indent() => new IndentHandle(this);
 
@@ -168,12 +164,12 @@ internal class IndentingStringBuilder
     {
         if (this.indentPending)
         {
-            this.inner.Append(' ', 2 * this.indent);
+            stringBuilder.Append(' ', 2 * this.indent);
         }
 
         this.indentPending = reset;
 
-        action(this.inner);
+        action(stringBuilder);
 
         return this;
     };

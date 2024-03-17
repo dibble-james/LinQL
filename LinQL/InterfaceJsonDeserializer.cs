@@ -10,15 +10,12 @@ using LinQL.Description;
 /// A JSON converter that respects the __typename from the server.
 /// </summary>
 /// <typeparam name="T">The interface to deserialize too.</typeparam>
-public class InterfaceJsonDeserializer<T> : JsonConverter<T>
+/// <remarks>
+/// Create a new <see cref="InterfaceJsonDeserializer{T}"/>.
+/// </remarks>
+public class InterfaceJsonDeserializer<T>(IEnumerable<Type> knownTypes) : JsonConverter<T>
 {
-    private readonly Dictionary<string, Type> knownTypes;
-
-    /// <summary>
-    /// Create a new <see cref="InterfaceJsonDeserializer{T}"/>.
-    /// </summary>
-    public InterfaceJsonDeserializer(IEnumerable<Type> knownTypes)
-        => this.knownTypes = knownTypes.ToDictionary(x => x.GetCustomAttribute<GraphQLTypeAttribute>()?.Name ?? x.Name);
+    private readonly Dictionary<string, Type> knownTypes = knownTypes.ToDictionary(x => x.GetCustomAttribute<GraphQLTypeAttribute>()?.Name ?? x.Name);
 
     /// <inheritdoc/>
     public override bool HandleNull => true;

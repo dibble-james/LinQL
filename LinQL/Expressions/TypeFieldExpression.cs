@@ -7,8 +7,8 @@ using System.Linq.Expressions;
 /// </summary>
 public class TypeFieldExpression : FieldExpression
 {
-    private Dictionary<string, Expression> fields = new();
-    private Dictionary<string, string> arguments = new();
+    private Dictionary<string, Expression> fields = [];
+    private Dictionary<string, string> arguments = [];
 
     /// <summary>
     /// Create a new <see cref="TypeFieldExpression"/>.

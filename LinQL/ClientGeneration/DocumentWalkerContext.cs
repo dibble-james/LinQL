@@ -7,32 +7,21 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-internal class DocumentWalkerContext : ISyntaxVisitorContext
+internal class DocumentWalkerContext(string file, SourceProductionContext context, string graphNamespace, string[] extraUsings) : ISyntaxVisitorContext
 {
-    private readonly string graphNamespace;
-    private readonly string[] extraUsings;
+    public List<RootTypeClass> RootOperations { get; } = [];
 
-    public DocumentWalkerContext(string file, SourceProductionContext context, string graphNamespace, string[] extraUsings)
-    {
-        this.File = file;
-        this.Context = context;
-        this.graphNamespace = graphNamespace;
-        this.extraUsings = extraUsings;
-    }
+    public List<IClassFactory> Types { get; } = [];
 
-    public List<RootTypeClass> RootOperations { get; } = new();
+    public List<Scalar> Scalars { get; } = [.. Scalar.NativeScalars];
 
-    public List<IClassFactory> Types { get; } = new();
+    public string File { get; } = file;
 
-    public List<Scalar> Scalars { get; } = Scalar.NativeScalars.ToList();
-
-    public string File { get; }
-
-    public SourceProductionContext Context { get; }
+    public SourceProductionContext Context { get; } = context;
 
     public override string ToString()
     {
-        var ns = NamespaceDeclaration(IdentifierName(this.graphNamespace))
+        var ns = NamespaceDeclaration(IdentifierName(graphNamespace))
             .AddUsings(
                 UsingDirective(IdentifierName("System.Text.Json")),
                 UsingDirective(IdentifierName("LinQL")),
@@ -41,9 +30,9 @@ internal class DocumentWalkerContext : ISyntaxVisitorContext
                 UsingDirective(IdentifierName("Microsoft.Extensions.Logging")),
                 UsingDirective(IdentifierName("Microsoft.Extensions.DependencyInjection")));
 
-        if (this.extraUsings.Any())
+        if (extraUsings.Any())
         {
-            ns = ns.AddUsings(this.extraUsings.Select(x => UsingDirective(IdentifierName(x))).ToArray());
+            ns = ns.AddUsings(extraUsings.Select(x => UsingDirective(IdentifierName(x))).ToArray());
         }
 
         var scalars = this.Scalars.ToDictionary(x => x.Name, StringComparer.InvariantCultureIgnoreCase);

@@ -59,7 +59,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(UnionTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        context.Types.Add(new InterfaceTypeClass(node.Name.Value, Enumerable.Empty<FieldDefinitionNode>(), Enumerable.Empty<string>()));
+        context.Types.Add(new InterfaceTypeClass(node.Name.Value, [], []));
 
         return base.VisitChildren(node, context);
     }
@@ -73,9 +73,9 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(InputObjectTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        var fields = node.Fields.Select(x => new FieldDefinitionNode(x.Location, x.Name, x.Description, new List<InputValueDefinitionNode>(), x.Type, x.Directives));
+        var fields = node.Fields.Select(x => new FieldDefinitionNode(x.Location, x.Name, x.Description, [], x.Type, x.Directives));
 
-        context.Types.Add(new ComplexTypeClass(node.Name.Value, fields, Enumerable.Empty<string>()));
+        context.Types.Add(new ComplexTypeClass(node.Name.Value, fields, []));
 
         return base.VisitChildren(node, context);
     }

@@ -13,7 +13,9 @@ public class ClientGeneratorTests
             "path",
             Encoding.UTF8.GetString(SDLs.StarWars),
             "StarWars",
-            Array.Empty<string>()));
+            []));
+
+    private static readonly string[] ExtraUsings = ["NodaTime"];
 
     [Fact]
     public void ShiftshareClient()
@@ -22,5 +24,5 @@ public class ClientGeneratorTests
             "path",
             Encoding.UTF8.GetString(SDLs.Shiftshare) + Encoding.UTF8.GetString(SDLs.Shiftshare_extensions),
             "Shiftshare.Graph",
-            new[] { "NodaTime" }));
+            ExtraUsings));
 }
