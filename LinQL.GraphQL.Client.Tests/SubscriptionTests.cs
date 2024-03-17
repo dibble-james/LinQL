@@ -35,7 +35,7 @@ public class SubscriptionTests : IDisposable
 
         this.server = builder.Build();
         this.server.UseRouting().UseWebSockets().UseEndpoints(e => e.MapGraphQL());
-        Task.Run(() => this.server.Run());
+        Task.Run(() => this.server.Run(HostUrl));
     }
 
     [Fact]
