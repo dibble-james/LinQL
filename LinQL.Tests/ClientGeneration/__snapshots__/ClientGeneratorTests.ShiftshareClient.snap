@@ -14,8 +14,8 @@ namespace Shiftshare.Graph
     public partial class Query : RootType<Query>
     {
         public User? Me { get; set; }
-
         public IEvent[] Events { get; set; } = null !;
+
         [GraphQLOperation, GraphQLField(Name = "events")]
         public IEvent[] ExecuteEvents([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendar, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime from, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime to) => Events;
     }
@@ -24,23 +24,28 @@ namespace Shiftshare.Graph
     public partial class Mutation : RootType<Mutation>
     {
         public User RegisterUser { get; set; }
-
         public IEvent CancelEvent { get; set; } = null !;
+
         [GraphQLOperation, GraphQLField(Name = "cancelEvent")]
         public IEvent ExecuteCancelEvent([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(GQLType = "UUID!")] global::System.Guid id) => CancelEvent;
         public Calendar CreateCalendar { get; set; } = null !;
+
         [GraphQLOperation, GraphQLField(Name = "createCalendar")]
         public Calendar ExecuteCreateCalendar([GraphQLArgument(GQLType = "CreateCalendarInput!")] CreateCalendarInput input) => CreateCalendar;
         public IEvent RescheduleShift { get; set; } = null !;
+
         [GraphQLOperation, GraphQLField(Name = "rescheduleShift")]
         public IEvent ExecuteRescheduleShift([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(GQLType = "UUID!")] global::System.Guid id, [GraphQLArgument(GQLType = "OffsetDate!")] global::NodaTime.OffsetDate date) => RescheduleShift;
         public IEvent ScheduleShift { get; set; } = null !;
+
         [GraphQLOperation, GraphQLField(Name = "scheduleShift")]
         public IEvent ExecuteScheduleShift([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(GQLType = "UUID!")] global::System.Guid shiftType, [GraphQLArgument(GQLType = "OffsetDate!")] global::NodaTime.OffsetDate date) => ScheduleShift;
         public Calendar SetupShiftType { get; set; } = null !;
+
         [GraphQLOperation, GraphQLField(Name = "setupShiftType")]
         public Calendar ExecuteSetupShiftType([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(GQLType = "ShiftTypeInput!")] ShiftTypeInput shiftType) => SetupShiftType;
         public ICalendarEvent[] SyncCalendarEvents { get; set; } = null !;
+
         [GraphQLOperation, GraphQLField(Name = "syncCalendarEvents")]
         public ICalendarEvent[] ExecuteSyncCalendarEvents([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendar, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime after, [GraphQLArgument(GQLType = "CalendarEventInput!")] CalendarEventInput[] newEvents) => SyncCalendarEvents;
     }
@@ -54,31 +59,22 @@ namespace Shiftshare.Graph
     public partial interface IEvent
     {
         public global::System.Guid Calendar { get; set; }
-
         public global::System.Guid Id { get; set; }
-
         public global::NodaTime.OffsetDate Date { get; set; }
     }
 
     public partial class Shift : IEvent
     {
         public IEvent Cancel { get; set; }
-
         public global::System.Guid ShiftType { get; set; }
-
         public global::System.Guid Calendar { get; set; }
-
         public global::System.Guid Id { get; set; }
-
         public int Version { get; set; }
-
         public global::System.Guid CorrelationId { get; set; }
-
         public string? State { get; set; }
-
         public global::NodaTime.OffsetDate Date { get; set; }
-
         public IEvent Reschedule { get; set; } = null !;
+
         [GraphQLOperation, GraphQLField(Name = "reschedule")]
         public IEvent ExecuteReschedule([GraphQLArgument(GQLType = "OffsetDate!")] global::NodaTime.OffsetDate to) => Reschedule;
     }
@@ -86,27 +82,20 @@ namespace Shiftshare.Graph
     public partial class User
     {
         public global::System.Guid Id { get; set; }
-
         public string Email { get; set; }
-
         public string Name { get; set; }
-
         public string Avatar { get; set; }
-
         public Calendar[] Calendars { get; set; }
     }
 
     public partial class Calendar
     {
         public global::System.Guid Id { get; set; }
-
         public string Name { get; set; }
-
         public CalendarAccess[] Access { get; set; }
-
         public ShiftType[] ShiftTypes { get; set; }
-
         public Shift ScheduleShift { get; set; } = null !;
+
         [GraphQLOperation, GraphQLField(Name = "scheduleShift")]
         public Shift ExecuteScheduleShift([GraphQLArgument(GQLType = "UUID!")] global::System.Guid shiftType, [GraphQLArgument(GQLType = "OffsetDate!")] global::NodaTime.OffsetDate date) => ScheduleShift;
     }
@@ -114,7 +103,6 @@ namespace Shiftshare.Graph
     public partial class CalendarAccess
     {
         public global::System.Guid User { get; set; }
-
         public PermissionAttributes Permission { get; set; }
     }
 
@@ -126,127 +114,91 @@ namespace Shiftshare.Graph
     public partial class ShiftType
     {
         public global::System.Guid Id { get; set; }
-
         public string Name { get; set; }
-
         public global::NodaTime.OffsetTime Starts { get; set; }
-
         public global::NodaTime.Duration Duration { get; set; }
     }
 
     public partial class CreateCalendarInput
     {
         public global::System.Guid Id { get; set; }
-
         public string Name { get; set; }
     }
 
     public partial class ShiftTypeInput
     {
         public global::System.Guid Id { get; set; }
-
         public string Name { get; set; }
-
         public global::NodaTime.OffsetTime Starts { get; set; }
-
         public global::NodaTime.Duration Duration { get; set; }
     }
 
     public partial interface ICalendarEvent
     {
         public global::System.Guid Id { get; set; }
-
         public global::NodaTime.OffsetDateTime Raised { get; set; }
-
         public global::System.Guid Calendar { get; set; }
-
         public global::System.Guid EventId { get; set; }
     }
 
     public partial class ShiftScheduled : ICalendarEvent
     {
         public global::System.Guid ShiftType { get; set; }
-
         public global::NodaTime.OffsetDate Date { get; set; }
-
         public global::System.Guid Id { get; set; }
-
         public global::NodaTime.OffsetDateTime Raised { get; set; }
-
         public global::System.Guid Calendar { get; set; }
-
         public global::System.Guid EventId { get; set; }
     }
 
     public partial class ShiftRescheduled : ICalendarEvent
     {
         public global::NodaTime.OffsetDate Date { get; set; }
-
         public global::System.Guid Id { get; set; }
-
         public global::NodaTime.OffsetDateTime Raised { get; set; }
-
         public global::System.Guid Calendar { get; set; }
-
         public global::System.Guid EventId { get; set; }
     }
 
     public partial class EventCancelled : ICalendarEvent
     {
         public global::System.Guid Id { get; set; }
-
         public global::NodaTime.OffsetDateTime Raised { get; set; }
-
         public global::System.Guid Calendar { get; set; }
-
         public global::System.Guid EventId { get; set; }
     }
 
     public partial class CalendarEventInput
     {
         public ShiftScheduledInput? ShiftScheduled { get; set; }
-
         public ShiftRescheduledInput? ShiftRescheduled { get; set; }
-
         public EventCancelledInput? EventCancelled { get; set; }
     }
 
     public partial class ShiftScheduledInput
     {
         public global::System.Guid ShiftType { get; set; }
-
         public global::NodaTime.OffsetDate Date { get; set; }
-
         public global::System.Guid Id { get; set; }
-
         public global::NodaTime.OffsetDateTime Raised { get; set; }
-
         public global::System.Guid Calendar { get; set; }
-
         public global::System.Guid EventId { get; set; }
     }
 
     public partial class ShiftRescheduledInput
     {
         public global::NodaTime.OffsetDate Date { get; set; }
-
         public global::System.Guid Id { get; set; }
-
         public global::NodaTime.OffsetDateTime Raised { get; set; }
-
         public global::System.Guid Calendar { get; set; }
-
         public global::System.Guid EventId { get; set; }
     }
 
     public partial class EventCancelledInput
     {
         public global::System.Guid Id { get; set; }
-
         public global::NodaTime.OffsetDateTime Raised { get; set; }
-
         public global::System.Guid Calendar { get; set; }
-
         public global::System.Guid EventId { get; set; }
     }
 

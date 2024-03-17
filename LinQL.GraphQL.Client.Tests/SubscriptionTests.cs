@@ -2,6 +2,7 @@ namespace LinQL.GraphQL.Client.Tests;
 
 using System;
 using System.Reactive.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using global::GraphQL.Client.Abstractions;
 using global::GraphQL.Client.Http;
@@ -34,7 +35,7 @@ public class SubscriptionTests : IDisposable
 
         this.server = builder.Build();
         this.server.UseRouting().UseWebSockets().UseEndpoints(e => e.MapGraphQL());
-        Task.Run(() => this.server.Run(HostUrl));
+        Task.Run(() => this.server.Run());
     }
 
     [Fact]
@@ -78,14 +79,16 @@ public class SubscriptionTests : IDisposable
 
     public class TestSubscriptionType
     {
-        [SubscribeAndResolve]
-        public async IAsyncEnumerable<TestSubscription.NumberResult> Numbers()
+        [Subscribe(With = nameof(EnumerateNumbers))]
+        public TestSubscription.NumberResult Numbers([EventMessage] TestSubscription.NumberResult number) => number;
+
+        public async IAsyncEnumerable<TestSubscription.NumberResult> EnumerateNumbers([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var i = 0;
 
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(100);
+                await Task.Delay(100, cancellationToken);
                 yield return new TestSubscription.NumberResult { Number = i++ };
             }
         }

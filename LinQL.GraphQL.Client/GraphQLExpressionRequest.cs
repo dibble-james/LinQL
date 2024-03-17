@@ -8,18 +8,16 @@ using LinQL.Expressions;
 /// </summary>
 /// <typeparam name="TRoot">The root operation type.</typeparam>
 /// <typeparam name="TData">The requested data type.</typeparam>
-public class GraphQLExpressionRequest<TRoot, TData> : GraphQLRequest
+/// <remarks>
+/// Creates a request to be sent to a GraphQL server.
+/// </remarks>
+/// <param name="expression">The expression to send.</param>
+public class GraphQLExpressionRequest<TRoot, TData>(GraphQLExpression<TRoot, TData> expression) : GraphQLRequest
     where TRoot : RootType<TRoot>
 {
-    /// <summary>
-    /// Creates a request to be sent to a GraphQL server.
-    /// </summary>
-    /// <param name="expression">The expression to send.</param>
-    public GraphQLExpressionRequest(GraphQLExpression<TRoot, TData> expression)
-        => this.Expression = expression;
 
     /// <summary>
     /// Gets the expression to send to the server.
     /// </summary>
-    public GraphQLExpression<TRoot, TData> Expression { get; }
+    public GraphQLExpression<TRoot, TData> Expression { get; } = expression;
 }

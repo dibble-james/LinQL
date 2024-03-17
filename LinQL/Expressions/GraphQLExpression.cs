@@ -36,7 +36,7 @@ public interface IRootExpression
 public class GraphQLExpression<TRoot, TData> : TypeFieldExpression, IRootExpression
     where TRoot : RootType<TRoot>
 {
-    private readonly List<Variable> variables = new();
+    private readonly List<Variable> variables = [];
     private readonly LinQLOptions options;
     private Lazy<string> queryValue;
 
@@ -68,7 +68,7 @@ public class GraphQLExpression<TRoot, TData> : TypeFieldExpression, IRootExpress
     public IReadOnlyCollection<Variable> Variables => this.variables;
 
     /// <inheritdoc />
-    public IReadOnlyCollection<Scalar> Scalars => this.options.Scalars.ToList();
+    public IReadOnlyCollection<Scalar> Scalars => [.. this.options.Scalars];
 
     /// <summary>
     /// Add an extra field to the selection.
