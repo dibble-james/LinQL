@@ -77,7 +77,7 @@ public class ClientGenerator : IIncrementalGenerator
 
             schema.Options.TryGetValue("build_metadata.additionalfiles.LinQLExtraNamespaces", out var extraNamespaces);
 
-            var extraUsings = extraNamespaces?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+            var extraUsings = extraNamespaces?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? [];
 
             var schemaName = Path.GetFileNameWithoutExtension(schema.Path);
 

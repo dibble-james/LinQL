@@ -15,6 +15,6 @@ internal class OptionExtensionsClass : IClassFactory
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
                 .AddParameterListParameters(
                     Parameter(Identifier("options")).WithModifiers(TokenList(Token(SyntaxKind.ThisKeyword))).WithType(ParseTypeName(nameof(LinQLOptions))))
-                .AddBodyStatements(knownScalars.Values.Select(s => ParseStatement(@$"options.Scalars.Add(new(""{s.Name}"", ""{s.RuntimeType}""));")).ToArray())
+                .AddBodyStatements([.. knownScalars.Values.Select(s => ParseStatement(@$"options.Scalars.Add(new(""{s.Name}"", ""{s.RuntimeType}""));"))])
                 .AddBodyStatements(ParseStatement("return options;")));
 }

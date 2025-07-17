@@ -26,7 +26,7 @@ internal class ArgumentVistor : ExpressionVisitor
 
     protected override Expression VisitNew(NewExpression node)
     {
-        this.value = node.Constructor!.Invoke(node.Arguments.Select(GetValue).ToArray());
+        this.value = node.Constructor!.Invoke([.. node.Arguments.Select(GetValue)]);
 
         return base.VisitNew(node);
     }

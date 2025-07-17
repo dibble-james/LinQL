@@ -32,13 +32,13 @@ internal class DocumentWalkerContext(string file, SourceProductionContext contex
 
         if (extraUsings.Any())
         {
-            ns = ns.AddUsings(extraUsings.Select(x => UsingDirective(IdentifierName(x))).ToArray());
+            ns = ns.AddUsings([.. extraUsings.Select(x => UsingDirective(IdentifierName(x)))]);
         }
 
         var scalars = this.Scalars.ToDictionary(x => x.Name, StringComparer.InvariantCultureIgnoreCase);
 
-        ns = ns.AddMembers(this.RootOperations.Select(x => x.Create(scalars)).ToArray())
-          .AddMembers(this.Types.Select(x => x.Create(scalars)).ToArray())
+        ns = ns.AddMembers([.. this.RootOperations.Select(x => x.Create(scalars))])
+          .AddMembers([.. this.Types.Select(x => x.Create(scalars))])
           .AddMembers(new OptionExtensionsClass().Create(scalars))
           .AddMembers(new InterfaceRegistrationExtensionsClass(this.Types.OfType<ComplexTypeClass>()).Create(scalars));
 

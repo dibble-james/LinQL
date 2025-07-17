@@ -1,0 +1,7 @@
+﻿query {
+  listOfInterfaces {
+    __typename
+    number
+    text
+  }
+}

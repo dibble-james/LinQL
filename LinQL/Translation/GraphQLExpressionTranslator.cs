@@ -115,7 +115,7 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 
         using (this.query.Indent())
         {
-            if (field.Type.IsInterface)
+            if (field.Type.RequiresTypeName())
             {
                 this.query.AppendLine("__typename");
             }

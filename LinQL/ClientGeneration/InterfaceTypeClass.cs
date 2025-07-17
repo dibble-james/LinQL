@@ -20,13 +20,13 @@ internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> 
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken))),
             MethodDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier("Execute" + FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                    .AddAttributeLists(AttributeList(SeparatedList(new[]
-                    {
+                    .AddAttributeLists(AttributeList(SeparatedList(
+                    [
                         Attribute(IdentifierName(nameof(GraphQLOperationAttribute).AttributeName())),
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
-                    })))
+                    ])))
                     .AddParameterListParameters(
-                        f.Arguments.Select(p => Parameter(Identifier(p.Name.Value)).WithType(ParseTypeName(TypeName(p.Type, knownScalars)))).ToArray())
+                        [.. f.Arguments.Select(p => Parameter(Identifier(p.Name.Value)).WithType(ParseTypeName(TypeName(p.Type, knownScalars))))])
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
         ];
 }

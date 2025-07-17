@@ -1,6 +1,5 @@
 ﻿query {
   types {
-    __typename
     text
     number
   }

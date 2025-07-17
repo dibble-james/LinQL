@@ -24,6 +24,6 @@ internal class InterfaceRegistrationExtensionsClass : IClassFactory
                 .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
                 .AddParameterListParameters(
                     Parameter(Identifier("options")).WithModifiers(TokenList(Token(SyntaxKind.ThisKeyword))).WithType(ParseTypeName(nameof(JsonSerializerOptions))))
-                .AddBodyStatements(this.types.Select(i => ParseStatement(@$"options.RegisterInterface<{i.Key}>({string.Join(", ", i.Select(t => $"typeof({t})"))});")).ToArray())
+                .AddBodyStatements([.. this.types.Select(i => ParseStatement(@$"options.RegisterInterface<{i.Key}>({string.Join(", ", i.Select(t => $"typeof({t})"))});"))])
                 .AddBodyStatements(ParseStatement("return options;")));
 }

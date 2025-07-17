@@ -5,5 +5,5 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 internal interface IClassFactory
 {
-    MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars);
+    internal MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars);
 }

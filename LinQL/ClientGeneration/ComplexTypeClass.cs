@@ -32,12 +32,12 @@ internal class ComplexTypeClass : IClassFactory
     {
         var type = this.Type
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
-            .AddMembers(this.Properties.Select(this.CreateField(knownScalars)).ToArray())
-            .AddMembers(this.Methods.SelectMany(this.CreateOperation(knownScalars)).ToArray());
+            .AddMembers([.. this.Properties.Select(this.CreateField(knownScalars))])
+            .AddMembers([.. this.Methods.SelectMany(this.CreateOperation(knownScalars))]);
 
         if (this.Interfaces.Any())
         {
-            return type.AddBaseListTypes(this.Interfaces.Select(x => SimpleBaseType(IdentifierName(x))).ToArray());
+            return type.AddBaseListTypes([.. this.Interfaces.Select(x => SimpleBaseType(IdentifierName(x)))]);
         }
 
         return type;
@@ -79,18 +79,18 @@ internal class ComplexTypeClass : IClassFactory
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
             MethodDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier("Execute" + FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                    .AddAttributeLists(AttributeList(SeparatedList(new[]
-                    {
+                    .AddAttributeLists(AttributeList(SeparatedList(
+                    [
                         Attribute(IdentifierName(nameof(GraphQLOperationAttribute).AttributeName())),
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
-                    })))
+                    ])))
                     .AddParameterListParameters(
-                        f.Arguments.Select(p => Parameter(Identifier(p.Name.Value))
+                        [.. f.Arguments.Select(p => Parameter(Identifier(p.Name.Value))
                             .WithType(ParseTypeName(TypeName(p.Type, knownScalars)))
-                            .AddAttributeLists(AttributeList(SeparatedList(new[]
-                            {
+                            .AddAttributeLists(AttributeList(SeparatedList(
+                            [
                                 Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type.NamedType().Name.Value}{(p.Type.IsNonNullType() ? "!" : string.Empty)}""")))))
-                            })))).ToArray())
+                            ]))))])
                     .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(f.Name.Value))))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
         ];

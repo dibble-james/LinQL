@@ -1,4 +1,4 @@
-query linql(
+﻿query linql(
   $var1: SimpleScalarType
 )
  {

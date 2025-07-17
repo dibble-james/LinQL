@@ -179,6 +179,20 @@ public class TranslationProviderTests
             OtherTypes = x.ArrayOfInterfaces.OfType<SomeOtherSimpleType>().Select(y => y.SelectAll()),
         });
 
+    private record Projection(int Number, string? Text);
+
+    [Fact]
+    public void ProjectArrayOfInterface()
+        => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.Select(a => new Projection(a.Number, a.Text)));
+
+    [Fact]
+    public void ProjectIEnumerableOfInterface()
+        => this.Test<InterfaceRootType, object>(x => x.EnumerableOfInterfaces.Select(a => new Projection(a.Number, a.Text)));
+
+    [Fact]
+    public void ProjectListOfInterface()
+        => this.Test<InterfaceRootType, object>(x => x.ListOfInterfaces.Select(a => new Projection(a.Number, a.Text)));
+
     [Fact]
     public void BasicInclude()
         => this.TestInclude<NestedOperationType, object>(x => x.Operation, x => x.Include(y => y.Operation.GetNumber("123")));
@@ -309,7 +323,11 @@ public class TranslationProviderTests
     {
         public required ISimpleType SimpleType { get; set; }
 
-        public IEnumerable<ISimpleType> ArrayOfInterfaces { get; set; } = [];
+        public ISimpleType[] ArrayOfInterfaces { get; set; } = [];
+
+        public IEnumerable<ISimpleType> EnumerableOfInterfaces { get; set; } = [];
+
+        public List<ISimpleType> ListOfInterfaces { get; set; } = [];
     }
 
     [OperationType(RootOperationType.Query)]

@@ -12,12 +12,12 @@ public interface IRootExpression
     /// <summary>
     /// Gets the variables discovered in the query.
     /// </summary>
-    IReadOnlyCollection<Variable> Variables { get; }
+    public IReadOnlyCollection<Variable> Variables { get; }
 
     /// <summary>
     /// Gets the scalar types discovered in the schema
     /// </summary>
-    IReadOnlyCollection<Scalar> Scalars { get; }
+    public IReadOnlyCollection<Scalar> Scalars { get; }
 
     /// <summary>
     /// Register a required variable
@@ -25,7 +25,7 @@ public interface IRootExpression
     /// <param name="type">The variable type</param>
     /// <param name="value">The variable value</param>
     /// <returns>The variable</returns>
-    Variable WithVariable(string type, object? value);
+    public Variable WithVariable(string type, object? value);
 }
 
 /// <summary>

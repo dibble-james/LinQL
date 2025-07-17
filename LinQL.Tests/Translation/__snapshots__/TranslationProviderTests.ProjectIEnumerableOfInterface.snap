@@ -1,0 +1,7 @@
+﻿query {
+  enumerableOfInterfaces {
+    __typename
+    number
+    text
+  }
+}

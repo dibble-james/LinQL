@@ -70,4 +70,26 @@ internal static class Extensions
 
     public static string GetArgumentType(this ParameterInfo argument)
         => argument.GetCustomAttribute<GraphQLArgumentAttribute>().GQLType;
+
+
+    private static readonly Type[] CollectionTypes = [typeof(IEnumerable<>), typeof(List<>), typeof(ICollection<>), typeof(IReadOnlyCollection<>)];
+    public static bool RequiresTypeName(this Type type)
+    {
+        if (type.IsGenericType && CollectionTypes.Contains(type.GetGenericTypeDefinition()))
+        {
+            return type.GetGenericArguments().First().IsInterface;
+        }
+
+        if (type.IsArray && type.GetElementType().IsInterface)
+        {
+            return true;
+        }
+
+        if (type.IsInterface)
+        {
+            return true;
+        }
+
+        return false;
+    }
 }
