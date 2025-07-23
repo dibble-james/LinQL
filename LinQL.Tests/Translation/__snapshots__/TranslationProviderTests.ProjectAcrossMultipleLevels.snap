@@ -1,0 +1,13 @@
+﻿query linql(
+  $var1: String!
+)
+ {
+  number
+  operation {
+    getNumber(
+      value: $var1
+    ) {
+      text
+    }
+  }
+}

@@ -43,6 +43,16 @@ public class QueryTests : IDisposable
     }
 
     [Fact]
+    public async Task TestSendProjectionQuery()
+    {
+        var result = await this.client.SendAsync((TestQuery q) => q.ExecuteEchoOperation("echo").Project(e => new { e.Echo, e.Number }));
+
+        result.Errors.Should().BeNull();
+        result.Data.Number.Should().Be(42);
+        result.Data.Echo.Should().Be("echo");
+    }
+
+    [Fact]
     public async Task TestSendMutation()
     {
         var result = await this.client.SendAsync((TestMutation m) => m.SetNumberOperation(54321));
@@ -60,7 +70,11 @@ public class QueryTests : IDisposable
     public class TestQueryType
     {
         public int GetNumber() => 12345;
+
+        public TestObjectType EchoOperation(string toEcho) => new(toEcho, 42);
     }
+
+    public record TestObjectType(string Echo, int Number);
 
     public class TestMutationType
     {
@@ -79,6 +93,12 @@ public class QueryTests : IDisposable
 
         [GraphQLOperation, GraphQLField(Name = "number")]
         public int GetNumber() => this.Number;
+
+        [GraphQLOperation, GraphQLField(Name = "echoOperation")]
+        public TestObjectType ExecuteEchoOperation([GraphQLArgument(GQLType = "String!")] string toEcho)
+            => this.EchoOperation;
+
+        public TestObjectType EchoOperation { get; set; }
     }
 
     [OperationType(RootOperationType.Mutation)]

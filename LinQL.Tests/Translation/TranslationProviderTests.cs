@@ -181,6 +181,8 @@ public class TranslationProviderTests
 
     private record Projection(int Number, string? Text);
 
+    private record NestedProjection(float Float, Projection Projection);
+
     [Fact]
     public void ProjectArrayOfInterface()
         => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces.Select(a => new Projection(a.Number, a.Text)));
@@ -204,6 +206,18 @@ public class TranslationProviderTests
 
         Snapshot.Match(request.Query);
     }
+
+    [Fact]
+    public void Project()
+        => this.Test<NestedOperationType, Projection>(x => x.Operation.GetNumber("project me").Project(y => new Projection(y.Number, y.Text)));
+
+    [Fact]
+    public void ProjectAcrossMultipleLevels()
+        => this.Test<NestedOperationType, Projection>(x => new Projection(x.Number, x.Operation.GetNumber("project me").Project(y => y.Text)));
+
+    [Fact]
+    public void ProjectSameOperationMultipleTimes()
+        => this.Test<NestedOperationType, NestedProjection>(x => new NestedProjection(x.Operation.Float, x.Operation.GetNumber("project me").Project(y => new Projection(y.Number, y.Text))));
 
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
         where TRoot : RootType<TRoot>

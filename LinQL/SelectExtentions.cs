@@ -60,4 +60,14 @@ public static class SelectExtentions
     /// <param name="that">The type.</param>
     /// <returns>The type.</returns>
     public static T SelectAll<T>(this T that) => that;
+
+    /// <summary>
+    /// Instruct the query to get all scalar fields on this type.
+    /// </summary>
+    /// <typeparam name="T">The type to select from.</typeparam>
+    /// <typeparam name="TResult">The type to project to.</typeparam>
+    /// <param name="that">The type.</param>
+    /// <param name="projection">The expression required to create <typeparamref name="TResult"/> from <typeparamref name="T"/>.</param>
+    /// <returns>The projection.</returns>
+    public static TResult Project<T, TResult>(this T that, Expression<Func<T, TResult>> projection) => projection.CompileFast()(that);
 }
