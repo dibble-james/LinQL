@@ -62,7 +62,7 @@ public static class SelectExtentions
     public static T SelectAll<T>(this T that) => that;
 
     /// <summary>
-    /// Instruct the query to get all scalar fields on this type.
+    /// Extract specific fields from a type.
     /// </summary>
     /// <typeparam name="T">The type to select from.</typeparam>
     /// <typeparam name="TResult">The type to project to.</typeparam>
