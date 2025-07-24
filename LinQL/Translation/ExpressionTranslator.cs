@@ -184,9 +184,9 @@ public class ExpressionTranslator : ExpressionVisitor
         return parent;
     }
 
-    private static TypeFieldExpression VisitFieldWithArguments(MethodCallExpression node, IRootExpression root)
+    private static FieldExpression VisitFieldWithArguments(MethodCallExpression node, IRootExpression root)
     {
-        var field = (TypeFieldExpression)node.Method.ToField(root);
+        var field = node.Method.ToField(root);
 
         return node.Method.GetParameters()
             .Zip(node.Arguments, (p, i) => (

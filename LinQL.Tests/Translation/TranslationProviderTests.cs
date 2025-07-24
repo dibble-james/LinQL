@@ -13,7 +13,7 @@ public class TranslationProviderTests
 {
     [Fact]
     public void ScalarOnRoot()
-        => this.Test<ScarlarOnRootType, object>(x => x.GetNumber());
+        => this.Test<ScalarOnRootType, object>(x => x.GetNumber());
 
     [Fact]
     public void Simple()
@@ -316,9 +316,9 @@ public class TranslationProviderTests
 
     private interface ISimpleType
     {
-        string? Text { get; }
+        public string? Text { get; }
 
-        int Number { get; }
+        public int Number { get; }
     }
 
     private class SomeOtherSimpleType : ISimpleType
@@ -345,11 +345,35 @@ public class TranslationProviderTests
     }
 
     [OperationType(RootOperationType.Query)]
-    public class ScarlarOnRootType : RootType<ScarlarOnRootType>
+    public class ScalarOnRootType : RootType<ScalarOnRootType>
     {
         public int Number { get; set; }
 
         [GraphQLOperation, GraphQLField(Name = "number")]
         public int GetNumber() => this.Number;
     }
+
+    [OperationType(RootOperationType.Query)]
+    public class ScalarArray : RootType<ScalarArray>
+    {
+        public required string[] Strings { get; set; }
+
+        [GraphQLOperation, GraphQLField(Name = "numbers")]
+        public int[] GetNumbers() => [];
+
+        [GraphQLOperation, GraphQLField(Name = "filteredNumbers")]
+        public int[] GetFilteredNumbers([GraphQLArgument(GQLType = "Int!")] int number) => [number];
+    }
+
+    [Fact]
+    public void ScalarArrayFields()
+        => this.Test<ScalarArray, string[]>(x => x.Strings);
+
+    [Fact]
+    public void ScalarArrayOperation()
+        => this.Test<ScalarArray, int[]>(x => x.GetNumbers());
+
+    [Fact]
+    public void ScalarArrayOperationWithArguments()
+        => this.Test<ScalarArray, int[]>(x => x.GetFilteredNumbers(1));
 }

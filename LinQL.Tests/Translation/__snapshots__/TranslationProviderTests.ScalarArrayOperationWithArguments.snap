@@ -1,0 +1,8 @@
+﻿query linql(
+  $var1: Int!
+)
+ {
+  filteredNumbers(
+    number: $var1
+  )
+}
