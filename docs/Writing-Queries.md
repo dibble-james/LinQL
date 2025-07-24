@@ -104,5 +104,5 @@ You can then of course do whatever you like with the results
 
 Another scenario is where you have the results of an operation or a nested type that you need to retrieve fields from. In this instance you can use the `Project` helper method.
 ```csharp
-(await Query((Root x) => new { Number = x.ExampleType.Number, Obj = x.ExampleType.GetByNumber(123).Project(y => new { y.Number, y.Text });
+(await Query((Root x) => new { Number = x.ExampleType.Number, Obj = x.ExampleType.GetByNumber(123).Project(y => new { y.Number, y.Text }) });
 ```
