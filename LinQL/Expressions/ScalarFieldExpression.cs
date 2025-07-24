@@ -9,6 +9,8 @@ namespace LinQL.Expressions;
 /// <param name="field">The name of the field.</param>
 /// <param name="fieldType">The return type of the field.</param>
 /// <param name="declaringType">The .Net type that field is a member of.</param>
-public class ScalarFieldExpression(string field, Type fieldType, Type declaringType) : FieldExpression(field, fieldType, declaringType)
+/// <param name="root"></param>
+public class ScalarFieldExpression(string field, Type fieldType, Type declaringType, IRootExpression root)
+ : FieldExpression(field, fieldType, declaringType, root)
 {
 }

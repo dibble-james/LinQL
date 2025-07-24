@@ -130,7 +130,27 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 
     private Expression VisitScalar(ScalarFieldExpression scalar)
     {
-        this.query.AppendLine(scalar.FieldName.ToCamelCase());
+        if (scalar.Arguments.Any())
+        {
+            this.query.AppendLine($"{scalar.FieldName.ToCamelCase()}(");
+            using (this.query.Indent())
+            {
+                var last = scalar.Arguments.Last();
+
+                foreach (var argument in scalar.Arguments.Take(scalar.Arguments.Count - 1))
+                {
+                    this.query.AppendLine($"{argument.Key}: ${argument.Value},");
+                }
+
+                this.query.AppendLine($"{last.Key}: ${last.Value}");
+            }
+
+            this.query.AppendLine(")");
+        }
+        else
+        {
+            this.query.AppendLine(scalar.FieldName.ToCamelCase());
+        }
 
         return scalar;
     }
