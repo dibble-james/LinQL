@@ -29,6 +29,9 @@ public class ExampleType
     public IEnumerable<string> Strings { get; set; }
 
     public ExampleType Nested { get; set; }
+
+    [GraphQLOperation]
+    public ExampleType GetNestedById(int id) { get; set; }
 }
 ```
 If you were to query:
@@ -97,4 +100,9 @@ You can then of course do whatever you like with the results
 ```csharp
 (await Query((Root x) => x.ExampleTypes.Select(y => new { y.Number, y.Text, IsAvailable = y.IsTrue() })))
     .Where(x => x.IsAvailable).ToList();
+```
+
+Another scenario is where you have the results of an operation or a nested type that you need to retrieve fields from. In this instance you can use the `Project` helper method.
+```csharp
+(await Query((Root x) => new { Number = x.ExampleType.Number, Obj = x.ExampleType.GetByNumber(123).Project(y => new { y.Number, y.Text });
 ```
