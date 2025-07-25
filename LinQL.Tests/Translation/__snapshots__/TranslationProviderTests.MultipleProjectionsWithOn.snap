@@ -1,0 +1,31 @@
+﻿query {
+  iAmObject {
+    __typename
+    ...on implementaion1 {
+      text
+    }
+    ...on implementaion2 {
+      value
+    }
+    ...on implementaion3 {
+      date {
+        year
+        month
+        day
+        dayOfWeek
+        dayOfYear
+        dayNumber
+      }
+    }
+    ...on implementaion4 {
+      amount
+    }
+    ...on implementaion5 {
+      id {
+      }
+      collection {
+        text
+      }
+    }
+  }
+}
