@@ -9,6 +9,7 @@ namespace StarWars
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.DependencyInjection;
 
+    [GraphQLType(Name = "Root")]
     [OperationType(RootOperationType.Query)]
     public partial class Root : RootType<Root>
     {
@@ -66,6 +67,7 @@ namespace StarWars
         public Vehicle? ExecuteVehicle([GraphQLArgument(GQLType = "ID")] string? id, [GraphQLArgument(GQLType = "ID")] string? vehicleID) => Vehicle;
     }
 
+    [GraphQLType(Name = "Film")]
     public partial class Film : Node
     {
         public string? Created { get; set; }
@@ -99,6 +101,7 @@ namespace StarWars
         public FilmVehiclesConnection? ExecuteVehicleConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => VehicleConnection;
     }
 
+    [GraphQLType(Name = "FilmCharactersConnection")]
     public partial class FilmCharactersConnection
     {
         public Person[]? Characters { get; set; }
@@ -107,12 +110,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "FilmCharactersEdge")]
     public partial class FilmCharactersEdge
     {
         public string Cursor { get; set; }
         public Person? Node { get; set; }
     }
 
+    [GraphQLType(Name = "FilmPlanetsConnection")]
     public partial class FilmPlanetsConnection
     {
         public FilmPlanetsEdge[]? Edges { get; set; }
@@ -121,12 +126,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "FilmPlanetsEdge")]
     public partial class FilmPlanetsEdge
     {
         public string Cursor { get; set; }
         public Planet? Node { get; set; }
     }
 
+    [GraphQLType(Name = "FilmSpeciesConnection")]
     public partial class FilmSpeciesConnection
     {
         public FilmSpeciesEdge[]? Edges { get; set; }
@@ -135,12 +142,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "FilmSpeciesEdge")]
     public partial class FilmSpeciesEdge
     {
         public string Cursor { get; set; }
         public Species? Node { get; set; }
     }
 
+    [GraphQLType(Name = "FilmStarshipsConnection")]
     public partial class FilmStarshipsConnection
     {
         public FilmStarshipsEdge[]? Edges { get; set; }
@@ -149,12 +158,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "FilmStarshipsEdge")]
     public partial class FilmStarshipsEdge
     {
         public string Cursor { get; set; }
         public Starship? Node { get; set; }
     }
 
+    [GraphQLType(Name = "FilmVehiclesConnection")]
     public partial class FilmVehiclesConnection
     {
         public FilmVehiclesEdge[]? Edges { get; set; }
@@ -163,12 +174,14 @@ namespace StarWars
         public Vehicle[]? Vehicles { get; set; }
     }
 
+    [GraphQLType(Name = "FilmVehiclesEdge")]
     public partial class FilmVehiclesEdge
     {
         public string Cursor { get; set; }
         public Vehicle? Node { get; set; }
     }
 
+    [GraphQLType(Name = "FilmsConnection")]
     public partial class FilmsConnection
     {
         public FilmsEdge[]? Edges { get; set; }
@@ -177,6 +190,7 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "FilmsEdge")]
     public partial class FilmsEdge
     {
         public string Cursor { get; set; }
@@ -188,6 +202,7 @@ namespace StarWars
         public string Id { get; set; }
     }
 
+    [GraphQLType(Name = "PageInfo")]
     public partial class PageInfo
     {
         public string? EndCursor { get; set; }
@@ -196,6 +211,7 @@ namespace StarWars
         public string? StartCursor { get; set; }
     }
 
+    [GraphQLType(Name = "PeopleConnection")]
     public partial class PeopleConnection
     {
         public PeopleEdge[]? Edges { get; set; }
@@ -204,12 +220,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "PeopleEdge")]
     public partial class PeopleEdge
     {
         public string Cursor { get; set; }
         public Person? Node { get; set; }
     }
 
+    [GraphQLType(Name = "Person")]
     public partial class Person : Node
     {
         public string? BirthYear { get; set; }
@@ -239,6 +257,7 @@ namespace StarWars
         public PersonVehiclesConnection? ExecuteVehicleConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => VehicleConnection;
     }
 
+    [GraphQLType(Name = "PersonFilmsConnection")]
     public partial class PersonFilmsConnection
     {
         public PersonFilmsEdge[]? Edges { get; set; }
@@ -247,12 +266,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "PersonFilmsEdge")]
     public partial class PersonFilmsEdge
     {
         public string Cursor { get; set; }
         public Film? Node { get; set; }
     }
 
+    [GraphQLType(Name = "PersonStarshipsConnection")]
     public partial class PersonStarshipsConnection
     {
         public PersonStarshipsEdge[]? Edges { get; set; }
@@ -261,12 +282,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "PersonStarshipsEdge")]
     public partial class PersonStarshipsEdge
     {
         public string Cursor { get; set; }
         public Starship? Node { get; set; }
     }
 
+    [GraphQLType(Name = "PersonVehiclesConnection")]
     public partial class PersonVehiclesConnection
     {
         public PersonVehiclesEdge[]? Edges { get; set; }
@@ -275,12 +298,14 @@ namespace StarWars
         public Vehicle[]? Vehicles { get; set; }
     }
 
+    [GraphQLType(Name = "PersonVehiclesEdge")]
     public partial class PersonVehiclesEdge
     {
         public string Cursor { get; set; }
         public Vehicle? Node { get; set; }
     }
 
+    [GraphQLType(Name = "Planet")]
     public partial class Planet : Node
     {
         public string[]? Climates { get; set; }
@@ -305,6 +330,7 @@ namespace StarWars
         public PlanetResidentsConnection? ExecuteResidentConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => ResidentConnection;
     }
 
+    [GraphQLType(Name = "PlanetFilmsConnection")]
     public partial class PlanetFilmsConnection
     {
         public PlanetFilmsEdge[]? Edges { get; set; }
@@ -313,12 +339,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "PlanetFilmsEdge")]
     public partial class PlanetFilmsEdge
     {
         public string Cursor { get; set; }
         public Film? Node { get; set; }
     }
 
+    [GraphQLType(Name = "PlanetResidentsConnection")]
     public partial class PlanetResidentsConnection
     {
         public PlanetResidentsEdge[]? Edges { get; set; }
@@ -327,12 +355,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "PlanetResidentsEdge")]
     public partial class PlanetResidentsEdge
     {
         public string Cursor { get; set; }
         public Person? Node { get; set; }
     }
 
+    [GraphQLType(Name = "PlanetsConnection")]
     public partial class PlanetsConnection
     {
         public PlanetsEdge[]? Edges { get; set; }
@@ -341,12 +371,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "PlanetsEdge")]
     public partial class PlanetsEdge
     {
         public string Cursor { get; set; }
         public Planet? Node { get; set; }
     }
 
+    [GraphQLType(Name = "Species")]
     public partial class Species : Node
     {
         public float? AverageHeight { get; set; }
@@ -372,6 +404,7 @@ namespace StarWars
         public SpeciesPeopleConnection? ExecutePersonConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => PersonConnection;
     }
 
+    [GraphQLType(Name = "SpeciesConnection")]
     public partial class SpeciesConnection
     {
         public SpeciesEdge[]? Edges { get; set; }
@@ -380,12 +413,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "SpeciesEdge")]
     public partial class SpeciesEdge
     {
         public string Cursor { get; set; }
         public Species? Node { get; set; }
     }
 
+    [GraphQLType(Name = "SpeciesFilmsConnection")]
     public partial class SpeciesFilmsConnection
     {
         public SpeciesFilmsEdge[]? Edges { get; set; }
@@ -394,12 +429,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "SpeciesFilmsEdge")]
     public partial class SpeciesFilmsEdge
     {
         public string Cursor { get; set; }
         public Film? Node { get; set; }
     }
 
+    [GraphQLType(Name = "SpeciesPeopleConnection")]
     public partial class SpeciesPeopleConnection
     {
         public SpeciesPeopleEdge[]? Edges { get; set; }
@@ -408,12 +445,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "SpeciesPeopleEdge")]
     public partial class SpeciesPeopleEdge
     {
         public string Cursor { get; set; }
         public Person? Node { get; set; }
     }
 
+    [GraphQLType(Name = "Starship")]
     public partial class Starship : Node
     {
         public int? Mglt { get; set; }
@@ -442,6 +481,7 @@ namespace StarWars
         public StarshipPilotsConnection? ExecutePilotConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => PilotConnection;
     }
 
+    [GraphQLType(Name = "StarshipFilmsConnection")]
     public partial class StarshipFilmsConnection
     {
         public StarshipFilmsEdge[]? Edges { get; set; }
@@ -450,12 +490,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "StarshipFilmsEdge")]
     public partial class StarshipFilmsEdge
     {
         public string Cursor { get; set; }
         public Film? Node { get; set; }
     }
 
+    [GraphQLType(Name = "StarshipPilotsConnection")]
     public partial class StarshipPilotsConnection
     {
         public StarshipPilotsEdge[]? Edges { get; set; }
@@ -464,12 +506,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "StarshipPilotsEdge")]
     public partial class StarshipPilotsEdge
     {
         public string Cursor { get; set; }
         public Person? Node { get; set; }
     }
 
+    [GraphQLType(Name = "StarshipsConnection")]
     public partial class StarshipsConnection
     {
         public StarshipsEdge[]? Edges { get; set; }
@@ -478,12 +522,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "StarshipsEdge")]
     public partial class StarshipsEdge
     {
         public string Cursor { get; set; }
         public Starship? Node { get; set; }
     }
 
+    [GraphQLType(Name = "Vehicle")]
     public partial class Vehicle : Node
     {
         public float? CargoCapacity { get; set; }
@@ -510,6 +556,7 @@ namespace StarWars
         public VehiclePilotsConnection? ExecutePilotConnection([GraphQLArgument(GQLType = "String")] string? after, [GraphQLArgument(GQLType = "String")] string? before, [GraphQLArgument(GQLType = "Int")] int? first, [GraphQLArgument(GQLType = "Int")] int? last) => PilotConnection;
     }
 
+    [GraphQLType(Name = "VehicleFilmsConnection")]
     public partial class VehicleFilmsConnection
     {
         public VehicleFilmsEdge[]? Edges { get; set; }
@@ -518,12 +565,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "VehicleFilmsEdge")]
     public partial class VehicleFilmsEdge
     {
         public string Cursor { get; set; }
         public Film? Node { get; set; }
     }
 
+    [GraphQLType(Name = "VehiclePilotsConnection")]
     public partial class VehiclePilotsConnection
     {
         public VehiclePilotsEdge[]? Edges { get; set; }
@@ -532,12 +581,14 @@ namespace StarWars
         public int? TotalCount { get; set; }
     }
 
+    [GraphQLType(Name = "VehiclePilotsEdge")]
     public partial class VehiclePilotsEdge
     {
         public string Cursor { get; set; }
         public Person? Node { get; set; }
     }
 
+    [GraphQLType(Name = "VehiclesConnection")]
     public partial class VehiclesConnection
     {
         public VehiclesEdge[]? Edges { get; set; }
@@ -546,6 +597,7 @@ namespace StarWars
         public Vehicle[]? Vehicles { get; set; }
     }
 
+    [GraphQLType(Name = "VehiclesEdge")]
     public partial class VehiclesEdge
     {
         public string Cursor { get; set; }

@@ -10,6 +10,7 @@ namespace Shiftshare.Graph
     using Microsoft.Extensions.DependencyInjection;
     using NodaTime;
 
+    [GraphQLType(Name = "Query")]
     [OperationType(RootOperationType.Query)]
     public partial class Query : RootType<Query>
     {
@@ -20,6 +21,7 @@ namespace Shiftshare.Graph
         public IEvent[] ExecuteEvents([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendar, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime from, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime to) => Events;
     }
 
+    [GraphQLType(Name = "Mutation")]
     [OperationType(RootOperationType.Mutation)]
     public partial class Mutation : RootType<Mutation>
     {
@@ -63,6 +65,7 @@ namespace Shiftshare.Graph
         public global::NodaTime.OffsetDate Date { get; set; }
     }
 
+    [GraphQLType(Name = "Shift")]
     public partial class Shift : IEvent
     {
         public IEvent Cancel { get; set; }
@@ -79,6 +82,7 @@ namespace Shiftshare.Graph
         public IEvent ExecuteReschedule([GraphQLArgument(GQLType = "OffsetDate!")] global::NodaTime.OffsetDate to) => Reschedule;
     }
 
+    [GraphQLType(Name = "User")]
     public partial class User
     {
         public global::System.Guid Id { get; set; }
@@ -88,6 +92,7 @@ namespace Shiftshare.Graph
         public Calendar[] Calendars { get; set; }
     }
 
+    [GraphQLType(Name = "Calendar")]
     public partial class Calendar
     {
         public global::System.Guid Id { get; set; }
@@ -100,6 +105,7 @@ namespace Shiftshare.Graph
         public Shift ExecuteScheduleShift([GraphQLArgument(GQLType = "UUID!")] global::System.Guid shiftType, [GraphQLArgument(GQLType = "OffsetDate!")] global::NodaTime.OffsetDate date) => ScheduleShift;
     }
 
+    [GraphQLType(Name = "CalendarAccess")]
     public partial class CalendarAccess
     {
         public global::System.Guid User { get; set; }
@@ -111,6 +117,7 @@ namespace Shiftshare.Graph
         OWNER
     }
 
+    [GraphQLType(Name = "ShiftType")]
     public partial class ShiftType
     {
         public global::System.Guid Id { get; set; }
@@ -119,12 +126,14 @@ namespace Shiftshare.Graph
         public global::NodaTime.Duration Duration { get; set; }
     }
 
+    [GraphQLType(Name = "CreateCalendarInput")]
     public partial class CreateCalendarInput
     {
         public global::System.Guid Id { get; set; }
         public string Name { get; set; }
     }
 
+    [GraphQLType(Name = "ShiftTypeInput")]
     public partial class ShiftTypeInput
     {
         public global::System.Guid Id { get; set; }
@@ -141,6 +150,7 @@ namespace Shiftshare.Graph
         public global::System.Guid EventId { get; set; }
     }
 
+    [GraphQLType(Name = "ShiftScheduled")]
     public partial class ShiftScheduled : ICalendarEvent
     {
         public global::System.Guid ShiftType { get; set; }
@@ -151,6 +161,7 @@ namespace Shiftshare.Graph
         public global::System.Guid EventId { get; set; }
     }
 
+    [GraphQLType(Name = "ShiftRescheduled")]
     public partial class ShiftRescheduled : ICalendarEvent
     {
         public global::NodaTime.OffsetDate Date { get; set; }
@@ -160,6 +171,7 @@ namespace Shiftshare.Graph
         public global::System.Guid EventId { get; set; }
     }
 
+    [GraphQLType(Name = "EventCancelled")]
     public partial class EventCancelled : ICalendarEvent
     {
         public global::System.Guid Id { get; set; }
@@ -168,6 +180,7 @@ namespace Shiftshare.Graph
         public global::System.Guid EventId { get; set; }
     }
 
+    [GraphQLType(Name = "CalendarEventInput")]
     public partial class CalendarEventInput
     {
         public ShiftScheduledInput? ShiftScheduled { get; set; }
@@ -175,6 +188,7 @@ namespace Shiftshare.Graph
         public EventCancelledInput? EventCancelled { get; set; }
     }
 
+    [GraphQLType(Name = "ShiftScheduledInput")]
     public partial class ShiftScheduledInput
     {
         public global::System.Guid ShiftType { get; set; }
@@ -185,6 +199,7 @@ namespace Shiftshare.Graph
         public global::System.Guid EventId { get; set; }
     }
 
+    [GraphQLType(Name = "ShiftRescheduledInput")]
     public partial class ShiftRescheduledInput
     {
         public global::NodaTime.OffsetDate Date { get; set; }
@@ -194,6 +209,7 @@ namespace Shiftshare.Graph
         public global::System.Guid EventId { get; set; }
     }
 
+    [GraphQLType(Name = "EventCancelledInput")]
     public partial class EventCancelledInput
     {
         public global::System.Guid Id { get; set; }

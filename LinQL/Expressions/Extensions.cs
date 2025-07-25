@@ -55,7 +55,7 @@ internal static class Extensions
     };
 
     public static string GetTypeName(this Type member)
-        => member.GetCustomAttribute<GraphQLFieldAttribute>()?.Name ?? member.Name.ToCamelCase();
+        => member.GetCustomAttribute<GraphQLTypeAttribute>()?.Name ?? member.Name.ToCamelCase();
 
     public static string GetFieldName(this MemberInfo member)
         => member.GetCustomAttribute<GraphQLFieldAttribute>()?.Name ?? member.Name.ToCamelCase();
