@@ -3,6 +3,7 @@ namespace LinQL.ClientGeneration;
 using HotChocolate.Language;
 using LinQL.Description;
 using LinQL.Expressions;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
@@ -26,7 +27,11 @@ internal class ComplexTypeClass : IClassFactory
     public void WithFields(IReadOnlyList<FieldDefinitionNode> fields)
         => this.fields.AddRange(fields);
 
-    protected virtual TypeDeclarationSyntax Type => ClassDeclaration(Identifier(this.Name));
+    protected virtual TypeDeclarationSyntax Type => ClassDeclaration(Identifier(this.Name))
+            .AddAttributeLists([AttributeList(SeparatedList(
+            [
+                Attribute(IdentifierName(nameof(GraphQLTypeAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{this.Name}""")))))
+            ]))]);
 
     public virtual MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars)
     {
