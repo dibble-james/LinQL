@@ -9,7 +9,11 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> fields, IEnumerable<string> interfaces) : ComplexTypeClass(name, fields, interfaces)
 {
-    protected override TypeDeclarationSyntax Type => InterfaceDeclaration(Identifier(this.Name));
+    protected override TypeDeclarationSyntax Type => InterfaceDeclaration(Identifier(this.Name))
+            .AddAttributeLists([AttributeList(SeparatedList(
+            [
+                Attribute(IdentifierName(nameof(GraphQLTypeAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{this.Name}""")))))
+            ]))]);
 
     protected override Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(IDictionary<string, Scalar> knownScalars)
         => f =>
