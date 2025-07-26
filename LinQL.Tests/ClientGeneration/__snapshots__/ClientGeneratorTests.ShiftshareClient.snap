@@ -58,6 +58,7 @@ namespace Shiftshare.Graph
         AFTER_RESOLVER
     }
 
+    [GraphQLType(Name = "IEvent")]
     public partial interface IEvent
     {
         public global::System.Guid Calendar { get; set; }
@@ -142,6 +143,7 @@ namespace Shiftshare.Graph
         public global::NodaTime.Duration Duration { get; set; }
     }
 
+    [GraphQLType(Name = "ICalendarEvent")]
     public partial interface ICalendarEvent
     {
         public global::System.Guid Id { get; set; }

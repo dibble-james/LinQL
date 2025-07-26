@@ -197,6 +197,7 @@ namespace StarWars
         public Film? Node { get; set; }
     }
 
+    [GraphQLType(Name = "Node")]
     public partial interface Node
     {
         public string Id { get; set; }
