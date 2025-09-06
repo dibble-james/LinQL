@@ -19,6 +19,22 @@ namespace Shiftshare.Graph
 
         [GraphQLOperation, GraphQLField(Name = "events")]
         public IEvent[] ExecuteEvents([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendar, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime from, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime to) => Events;
+        public User[] Users { get; set; } = null !;
+
+        [GraphQLOperation, GraphQLField(Name = "users")]
+        public User[] ExecuteUsers([GraphQLArgument(GQLType = "[UUID!]!")] global::System.Guid[] ids) => Users;
+        public Calendar[] Calendars { get; set; } = null !;
+
+        [GraphQLOperation, GraphQLField(Name = "calendars")]
+        public Calendar[] ExecuteCalendars([GraphQLArgument(GQLType = "[UUID]")] global::System.Guid[]? ids) => Calendars;
+        public Shift[] Shifts { get; set; } = null !;
+
+        [GraphQLOperation, GraphQLField(Name = "shifts")]
+        public Shift[] ExecuteShifts([GraphQLArgument(GQLType = "[UUID]!")] global::System.Guid[] ids) => Shifts;
+        public ShiftType[] ShiftTypes { get; set; } = null !;
+
+        [GraphQLOperation, GraphQLField(Name = "shiftTypes")]
+        public ShiftType[] ExecuteShiftTypes([GraphQLArgument(GQLType = "[UUID!]")] global::System.Guid[]? ids) => ShiftTypes;
     }
 
     [GraphQLType(Name = "Mutation")]
@@ -49,7 +65,7 @@ namespace Shiftshare.Graph
         public ICalendarEvent[] SyncCalendarEvents { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "syncCalendarEvents")]
-        public ICalendarEvent[] ExecuteSyncCalendarEvents([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendar, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime after, [GraphQLArgument(GQLType = "CalendarEventInput!")] CalendarEventInput[] newEvents) => SyncCalendarEvents;
+        public ICalendarEvent[] ExecuteSyncCalendarEvents([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendar, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime after, [GraphQLArgument(GQLType = "[CalendarEventInput!]!")] CalendarEventInput[] newEvents) => SyncCalendarEvents;
     }
 
     public enum ApplyPolicy

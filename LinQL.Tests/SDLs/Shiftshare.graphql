@@ -71,6 +71,10 @@ type Query {
     to: OffsetDateTime!
   ): [IEvent!]!
   me: User
+  users(ids: [UUID!]!): [User]!
+  calendars(ids: [UUID]): [Calendar]!
+  shifts(ids: [UUID]!): [Shift]!
+  shiftTypes(ids: [UUID!]): [ShiftType]!
 }
 
 enum ApplyPolicy {

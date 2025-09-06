@@ -94,7 +94,7 @@ internal class ComplexTypeClass : IClassFactory
                             .WithType(ParseTypeName(TypeName(p.Type, knownScalars)))
                             .AddAttributeLists(AttributeList(SeparatedList(
                             [
-                                Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type.NamedType().Name.Value}{(p.Type.IsNonNullType() ? "!" : string.Empty)}""")))))
+                                Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type.ToString()}""")))))
                             ]))))])
                     .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(f.Name.Value))))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
