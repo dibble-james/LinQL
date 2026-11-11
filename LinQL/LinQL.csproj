@@ -31,10 +31,10 @@
 
   <ItemGroup>
     <PackageReference Include="FastExpressionCompiler" Version="4.1.0" />
-    <PackageReference Include="HotChocolate.Language" Version="13.9.0" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="HotChocolate.Language.SyntaxTree" Version="13.9.0" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="HotChocolate.Language.Visitors" Version="13.9.0" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="HotChocolate.Language.Utf8" Version="13.9.0" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language" Version="13.9.16" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.SyntaxTree" Version="13.9.16" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.Visitors" Version="13.9.16" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.Utf8" Version="13.9.16" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="IsExternalInit" Version="1.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
