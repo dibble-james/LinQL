@@ -20,6 +20,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LinQL.GraphQL.Client", "Lin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LinQL.GraphQL.Client.Tests", "LinQL.GraphQL.Client.Tests\LinQL.GraphQL.Client.Tests.csproj", "{5CEA6196-EBC0-43D7-BF8C-31219955F948}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinQL.StrawberryShake", "LinQL.StrawberryShake\LinQL.StrawberryShake.csproj", "{33DBCE0A-3263-41B1-BD76-78658E2A33E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinQL.StrawberryShake.Tests", "LinQL.StrawberryShake.Tests\LinQL.StrawberryShake.Tests.csproj", "{1A4C3136-3B37-410F-9303-3C0477E75641}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +50,14 @@ Global
 		{5CEA6196-EBC0-43D7-BF8C-31219955F948}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5CEA6196-EBC0-43D7-BF8C-31219955F948}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5CEA6196-EBC0-43D7-BF8C-31219955F948}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33DBCE0A-3263-41B1-BD76-78658E2A33E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33DBCE0A-3263-41B1-BD76-78658E2A33E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33DBCE0A-3263-41B1-BD76-78658E2A33E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33DBCE0A-3263-41B1-BD76-78658E2A33E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A4C3136-3B37-410F-9303-3C0477E75641}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A4C3136-3B37-410F-9303-3C0477E75641}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A4C3136-3B37-410F-9303-3C0477E75641}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A4C3136-3B37-410F-9303-3C0477E75641}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

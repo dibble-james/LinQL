@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>LinQL.StrawberryShake</PackageId>
+    <Description>LINQ-like access to GraphQL endpoints in .Net using Strawberry Shake</Description>
+    <Authors>James Dibble</Authors>
+    <RepositoryUrl>https://github.com/dibble-james/linql</RepositoryUrl>
+    <PackageTags>graphql client linq strawberryshake</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="LinQL.StrawberryShake.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LinQL\LinQL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StrawberryShake.Core" Version="16.7.3" />
+  </ItemGroup>
+
+</Project>
