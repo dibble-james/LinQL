@@ -12,10 +12,13 @@ using global::StrawberryShake.Json;
 /// <summary>
 /// Executes LinQL expressions over a Strawberry Shake <see cref="IConnection{TResponseBody}"/>.
 /// </summary>
-public sealed class StrawberryShakeLinQLClient
+public sealed class StrawberryShakeLinQLClient : IDisposable
 {
     private readonly IConnection<JsonDocument> connection;
     private readonly LinQLStrawberryShakeOptions options;
+    private readonly EntityStore entityStore;
+    private readonly OperationStore operationStore;
+    private bool disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StrawberryShakeLinQLClient"/> class.
@@ -26,12 +29,23 @@ public sealed class StrawberryShakeLinQLClient
     {
         this.connection = connection ?? throw new ArgumentNullException(nameof(connection));
         this.options = options ?? new LinQLStrawberryShakeOptions();
+        this.entityStore = new EntityStore();
+        this.operationStore = new OperationStore(this.entityStore);
     }
 
     /// <summary>
     /// Gets the LinQL configuration used to translate expressions.
     /// </summary>
     public LinQLOptions Options => this.options.LinQL;
+
+    /// <summary>
+    /// Gets the operation store owned by this client.
+    /// </summary>
+    /// <remarks>
+    /// The store caches finished results by operation (document and variables). It is disposed together with the
+    /// client and is never shared with another client.
+    /// </remarks>
+    public IOperationStore OperationStore => this.operationStore;
 
     /// <summary>
     /// Executes a query or mutation and returns the projected result.
@@ -48,6 +62,8 @@ public sealed class StrawberryShakeLinQLClient
         CancellationToken cancellationToken = default)
         where TRoot : RootType<TRoot>
     {
+        ObjectDisposedException.ThrowIf(this.disposed, this);
+
         var translated = request.ToRequest(this.options.LinQL, includes);
         var expression = translated.Expression;
 
@@ -79,6 +95,8 @@ public sealed class StrawberryShakeLinQLClient
         Action<GraphQLExpression<TRoot, TData>>? includes = null)
         where TRoot : RootType<TRoot>
     {
+        ObjectDisposedException.ThrowIf(this.disposed, this);
+
         var translated = request.ToRequest(this.options.LinQL, includes);
         var expression = translated.Expression;
         var operation = LinQLOperationRequest.Create(expression.RootOperation.Type, translated.Query, expression.Variables);
@@ -91,7 +109,20 @@ public sealed class StrawberryShakeLinQLClient
             static result => result.Data ?? throw new InvalidOperationException("The LinQL result builder did not produce a result."));
     }
 
-    private StorelessOperationExecutor<JsonDocument, LinQLResult<TData>> CreateExecutor<TRoot, TData>(
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (this.disposed)
+        {
+            return;
+        }
+
+        this.disposed = true;
+        this.operationStore.Dispose();
+        this.entityStore.Dispose();
+    }
+
+    private OperationExecutor<JsonDocument, LinQLResult<TData>> CreateExecutor<TRoot, TData>(
         GraphQLExpression<TRoot, TData> expression,
         string query)
         where TRoot : RootType<TRoot>
@@ -101,6 +132,8 @@ public sealed class StrawberryShakeLinQLClient
         return new(
             this.connection,
             () => new LinQLResultBuilder<TRoot, TData>(projection, this.options.Serializer, query),
-            static () => new JsonResultPatcher());
+            static () => new JsonResultPatcher(),
+            this.operationStore,
+            this.options.Strategy);
     }
 }

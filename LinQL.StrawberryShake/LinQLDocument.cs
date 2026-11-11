@@ -8,7 +8,7 @@ using global::StrawberryShake;
 /// <summary>
 /// A Strawberry Shake document built from a translated LinQL query.
 /// </summary>
-internal sealed class LinQLDocument : IDocument
+internal sealed class LinQLDocument : IDocument, IEquatable<LinQLDocument>
 {
     private readonly byte[] body;
 
@@ -45,4 +45,16 @@ internal sealed class LinQLDocument : IDocument
     /// Gets the GraphQL query body.
     /// </summary>
     public string Query { get; }
+
+    /// <inheritdoc />
+    public bool Equals(LinQLDocument? other)
+        => other is not null
+            && this.Kind == other.Kind
+            && string.Equals(this.Query, other.Query, StringComparison.Ordinal);
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj) => obj is LinQLDocument other && this.Equals(other);
+
+    /// <inheritdoc />
+    public override int GetHashCode() => ((int)this.Kind * 397) ^ StringComparer.Ordinal.GetHashCode(this.Query);
 }
