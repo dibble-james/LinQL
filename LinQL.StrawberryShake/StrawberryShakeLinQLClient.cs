@@ -2,6 +2,7 @@ namespace LinQL.StrawberryShake;
 
 using System.Linq.Expressions;
 using System.Text.Json;
+using FastExpressionCompiler;
 using LinQL.Description;
 using LinQL.Expressions;
 using LinQL.Translation;
@@ -94,8 +95,12 @@ public sealed class StrawberryShakeLinQLClient
         GraphQLExpression<TRoot, TData> expression,
         string query)
         where TRoot : RootType<TRoot>
-        => new(
+    {
+        var projection = expression.OriginalQuery.CompileFast();
+
+        return new(
             this.connection,
-            () => new LinQLResultBuilder<TRoot, TData>(expression, this.options.Serializer, query),
+            () => new LinQLResultBuilder<TRoot, TData>(projection, this.options.Serializer, query),
             static () => new JsonResultPatcher());
+    }
 }

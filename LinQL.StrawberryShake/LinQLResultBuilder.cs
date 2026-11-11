@@ -1,8 +1,6 @@
 namespace LinQL.StrawberryShake;
 
 using System.Text.Json;
-using FastExpressionCompiler;
-using LinQL.Expressions;
 using global::StrawberryShake;
 using global::StrawberryShake.Json;
 
@@ -16,19 +14,19 @@ internal sealed class LinQLResultBuilder<TRoot, TData> : IOperationResultBuilder
 {
     private static readonly IReadOnlyDictionary<string, object?> Empty = new Dictionary<string, object?>();
 
-    private readonly GraphQLExpression<TRoot, TData> expression;
+    private readonly Func<TRoot, TData> projection;
     private readonly JsonSerializerOptions serializer;
     private readonly string query;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LinQLResultBuilder{TRoot, TData}"/> class.
     /// </summary>
-    /// <param name="expression">The expression that was sent.</param>
+    /// <param name="projection">The compiled projection applied to the deserialised root data.</param>
     /// <param name="serializer">The serializer options used to read the response.</param>
     /// <param name="query">The document that was sent.</param>
-    public LinQLResultBuilder(GraphQLExpression<TRoot, TData> expression, JsonSerializerOptions serializer, string query)
+    public LinQLResultBuilder(Func<TRoot, TData> projection, JsonSerializerOptions serializer, string query)
     {
-        this.expression = expression;
+        this.projection = projection;
         this.serializer = serializer;
         this.query = query;
     }
@@ -61,7 +59,7 @@ internal sealed class LinQLResultBuilder<TRoot, TData> : IOperationResultBuilder
 
                 if (rootData is not null)
                 {
-                    data = this.expression.OriginalQuery.CompileFast()(rootData);
+                    data = this.projection(rootData);
                 }
             }
         }
