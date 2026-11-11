@@ -50,22 +50,27 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
     {
         this.query.Append(field.FieldName.ToCamelCase());
 
-        if (field is IRootExpression root && root.Variables.Any())
+        if (field is IRootExpression root)
         {
-            this.query.AppendLine(" linql(");
-            using (this.query.Indent())
-            {
-                var last = root.Variables.Last();
+            this.query.Append(" linql");
 
-                foreach (var variable in root.Variables.Take(root.Variables.Count - 1))
+            if (root.Variables.Any())
+            {
+                this.query.AppendLine("(");
+                using (this.query.Indent())
                 {
-                    this.query.AppendLine($"${variable.Name}: {variable.Type},");
+                    var last = root.Variables.Last();
+
+                    foreach (var variable in root.Variables.Take(root.Variables.Count - 1))
+                    {
+                        this.query.AppendLine($"${variable.Name}: {variable.Type},");
+                    }
+
+                    this.query.AppendLine($"${last.Name}: {last.Type}");
                 }
 
-                this.query.AppendLine($"${last.Name}: {last.Type}");
+                this.query.AppendLine(")");
             }
-
-            this.query.AppendLine(")");
         }
 
         if (field.Type.IsScalar(field.Root.Scalars) && !field.Arguments.Any() && field.DeclaringType.IsRootOperation())
