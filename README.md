@@ -16,10 +16,7 @@
 -   [x] Auto-generating types via introspection
 -   [x] Subscriptions
 -   [x] Custom Scalars
-
-#### Coming soon
-
--   [ ] Strawberry Shake support
+-   [x] Strawberry Shake support
 
 ### Getting Started using `GraphQL.Client`
 
@@ -66,7 +63,38 @@ public class StarWarsClient
 ```
 
 ### Getting Started using `StrawberryShake`
-Coming soon...
+
+1. Install the Nuget package
+
+```bash
+dotnet add package LinQL
+dotnet add package LinQL.StrawberryShake
+```
+
+2. Wrap your Strawberry Shake connection:
+
+```csharp
+using LinQL.StrawberryShake;
+using StrawberryShake;
+
+using var client = connection.WithLinQL(options =>
+{
+    options.Strategy = ExecutionStrategy.CacheAndNetwork;
+});
+
+var film = await client.SendAsync((Root q) => q.GetFilm("1"));
+```
+
+`Watch` observes queries and subscriptions; `SendAsync` executes queries and mutations.
+
+Some things are not supported by this integration yet:
+
+-   The cache is operation-level only: there is no entity normalisation, no cross-document dedupe, and cached results are replayed as-is rather than rebuilt from entities.
+-   Each LinQL client owns its cache; it cannot share the generated Strawberry Shake client's private operation or entity stores.
+-   Cache keys are the translated document plus variables, so a textually different translation of the same fields misses the cache.
+-   `SendAsync` always goes to the network. `Watch` honours the configured `ExecutionStrategy`; subscriptions always go to the network.
+
+See the [Strawberry Shake guide](https://github.com/dibble-james/LinQL/blob/main/docs/StrawberryShake.md) for usage, strategies and the cache boundary.
 
 ### What can I do with it?
 A range of expressions can be converted as demonstrated by [the `TranslationProviderTests`](https://github.com/dibble-james/LinQL/blob/interface-support/LinQL.Tests/Translation/TranslationProviderTests.cs). 

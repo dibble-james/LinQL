@@ -62,11 +62,18 @@ operation-level only:
 | `CacheAndNetwork` | Emits a cached result immediately, then refreshes it from the server. |
 | `CacheFirst` | Emits the cached result and does not contact the server; on a cache miss it fetches from the server. |
 
+A `CacheAndNetwork` refresh whose projected data and errors are unchanged is
+not emitted a second time.
+
 - `SendAsync` always contacts the server. Its result is written to the cache so
   a later `Watch` can replay it.
 - Subscriptions always contact the server and ignore the strategy.
-- Dispose the client when you are finished with it; the operation and entity
-  stores are disposed with it and disposing twice is safe.
+- Dispose the client when you are finished with it; active watchers are
+  stopped and the operation and entity stores are disposed with it. Store-backed
+  watchers receive `OnCompleted`; a network-only watch simply stops emitting.
+  Disposing twice is safe.
+- You can stop one watch without disposing the client by disposing its
+  subscription or by passing a `CancellationToken` to `Watch`.
 
 ```csharp
 using var client = connection.WithLinQL(
