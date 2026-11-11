@@ -18,6 +18,11 @@ public class QueryTests
         result.Errors.Should().BeEmpty();
         result.Data.Should().Be(12345);
         result.Query.Should().StartWith("query linql {");
+
+        var request = connection.Requests.Should().ContainSingle().Subject;
+
+        request.Name.Should().Be("linql");
+        Encoding.UTF8.GetString(request.Document.Body).Should().StartWith("query linql {");
     }
 
     [Fact]

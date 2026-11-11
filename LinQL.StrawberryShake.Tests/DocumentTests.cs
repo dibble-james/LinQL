@@ -8,31 +8,13 @@ using Xunit;
 
 public class DocumentTests
 {
-    [Fact]
-    public void NormalizesAnonymousQuery()
-    {
-        var (query, name) = LinQLDocument.Normalize("query {\n  number\n}");
-
-        name.Should().Be("linql");
-        query.Should().StartWith("query linql {");
-    }
-
-    [Fact]
-    public void KeepsNamedQuery()
-    {
-        var (query, name) = LinQLDocument.Normalize("query linql(\n  $var1: ID!\n)\n {\n  film\n}");
-
-        name.Should().Be("linql");
-        query.Should().StartWith("query linql(");
-    }
-
     [Theory]
     [InlineData(RootOperationType.Query, OperationKind.Query)]
     [InlineData(RootOperationType.Mutation, OperationKind.Mutation)]
     [InlineData(RootOperationType.Subscription, OperationKind.Subscription)]
     public void MapsOperationKind(RootOperationType type, OperationKind expected)
     {
-        var document = new LinQLDocument(type, "linql", "query linql { number }");
+        var document = new LinQLDocument(type, "query linql { number }");
 
         document.Kind.Should().Be(expected);
     }
@@ -40,7 +22,7 @@ public class DocumentTests
     [Fact]
     public void HashesTheBody()
     {
-        var document = new LinQLDocument(RootOperationType.Query, "linql", "query linql { number }");
+        var document = new LinQLDocument(RootOperationType.Query, "query linql { number }");
 
         document.Hash.Algorithm.Should().Be("sha256");
         document.Hash.Value.Should().NotBeNullOrEmpty();

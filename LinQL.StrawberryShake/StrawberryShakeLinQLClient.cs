@@ -55,8 +55,8 @@ public sealed class StrawberryShakeLinQLClient
             throw new NotSupportedException("Subscriptions must be consumed through Watch.");
         }
 
-        var (operation, query) = LinQLOperationRequest.Create(expression.RootOperation.Type, translated.Query, expression.Variables);
-        var executor = this.CreateExecutor(expression, query);
+        var operation = LinQLOperationRequest.Create(expression.RootOperation.Type, translated.Query, expression.Variables);
+        var executor = this.CreateExecutor(expression, translated.Query);
 
         var result = await executor
             .ExecuteAsync(operation, cancellationToken)
@@ -80,8 +80,8 @@ public sealed class StrawberryShakeLinQLClient
     {
         var translated = request.ToRequest(this.options.LinQL, includes);
         var expression = translated.Expression;
-        var (operation, query) = LinQLOperationRequest.Create(expression.RootOperation.Type, translated.Query, expression.Variables);
-        var executor = this.CreateExecutor(expression, query);
+        var operation = LinQLOperationRequest.Create(expression.RootOperation.Type, translated.Query, expression.Variables);
+        var executor = this.CreateExecutor(expression, translated.Query);
 
         var results = executor.Watch(operation);
 

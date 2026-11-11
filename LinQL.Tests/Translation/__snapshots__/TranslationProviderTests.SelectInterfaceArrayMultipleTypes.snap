@@ -1,4 +1,4 @@
-﻿query {
+﻿query linql {
   arrayOfInterfaces {
     __typename
     ...on simpleScalarType {
