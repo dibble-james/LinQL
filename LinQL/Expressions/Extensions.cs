@@ -44,13 +44,13 @@ internal static class Extensions
 
     public static FieldExpression ToField(this MemberInfo member, IRootExpression root) => member switch
     {
-        PropertyInfo prop when prop.PropertyType.IsScalar(root.Scalars) || prop.PropertyType.IsArrayOfScalars(root.Scalars) => new ScalarFieldExpression(member.GetFieldName(), prop.PropertyType, member.DeclaringType, root),
-        FieldInfo field when field.FieldType.IsScalar(root.Scalars) || field.FieldType.IsArrayOfScalars(root.Scalars) => new ScalarFieldExpression(member.GetFieldName(), field.FieldType, member.DeclaringType, root),
-        MethodInfo method when (method.ReturnType.IsArrayOfScalars(root.Scalars) || method.ReturnType.IsScalar(root.Scalars)) && !method.GetParameters().Any() => new ScalarFieldExpression(method.GetFieldName(), method.ReturnType, member.DeclaringType, root),
-        MethodInfo method when (method.ReturnType.IsArrayOfScalars(root.Scalars) || method.ReturnType.IsScalar(root.Scalars)) && method.IsOperation() => new ScalarFieldExpression(member.GetFieldName(), method.ReturnType, member.DeclaringType, root),
-        MethodInfo method when method.IsOperation() => new TypeFieldExpression(member.GetFieldName(), method.ReturnType, member.DeclaringType, root),
-        PropertyInfo prop => new TypeFieldExpression(prop.GetFieldName(), prop.PropertyType, member.DeclaringType, root),
-        FieldInfo field => new TypeFieldExpression(field.GetFieldName(), field.FieldType, member.DeclaringType, root),
+        PropertyInfo prop when prop.PropertyType.IsScalar(root.Scalars) || prop.PropertyType.IsArrayOfScalars(root.Scalars) => new ScalarFieldExpression(member.GetFieldName(), prop.PropertyType, member.DeclaringType!, root),
+        FieldInfo field when field.FieldType.IsScalar(root.Scalars) || field.FieldType.IsArrayOfScalars(root.Scalars) => new ScalarFieldExpression(member.GetFieldName(), field.FieldType, member.DeclaringType!, root),
+        MethodInfo method when (method.ReturnType.IsArrayOfScalars(root.Scalars) || method.ReturnType.IsScalar(root.Scalars)) && !method.GetParameters().Any() => new ScalarFieldExpression(method.GetFieldName(), method.ReturnType, member.DeclaringType!, root),
+        MethodInfo method when (method.ReturnType.IsArrayOfScalars(root.Scalars) || method.ReturnType.IsScalar(root.Scalars)) && method.IsOperation() => new ScalarFieldExpression(member.GetFieldName(), method.ReturnType, member.DeclaringType!, root),
+        MethodInfo method when method.IsOperation() => new TypeFieldExpression(member.GetFieldName(), method.ReturnType, member.DeclaringType!, root),
+        PropertyInfo prop => new TypeFieldExpression(prop.GetFieldName(), prop.PropertyType, member.DeclaringType!, root),
+        FieldInfo field => new TypeFieldExpression(field.GetFieldName(), field.FieldType, member.DeclaringType!, root),
         _ => throw new NotSupportedException(),
     };
 
