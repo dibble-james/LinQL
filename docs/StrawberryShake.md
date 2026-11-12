@@ -3,6 +3,17 @@
 `LinQL.StrawberryShake` executes LinQL expressions over a Strawberry Shake
 `IConnection<JsonDocument>` and projects the response onto your LinQL types.
 
+## Requirements
+
+-   `net10.0` or later. The adapter targets `net10.0` because Strawberry Shake
+    16.x ships no `netstandard2.0` build; `LinQL` itself is still
+    `netstandard2.0`, so this floor applies to the adapter only.
+-   `StrawberryShake.Core` `16.7.3` or later. That is the version the package is
+    built and tested against, and it is the earliest one with the public
+    executor, document and error types the adapter uses. No HTTP or transport
+    package is required by LinQL itself; use whichever Strawberry Shake
+    transport you already have.
+
 ## Getting started
 
 Wrap the connection with a LinQL client:
@@ -45,6 +56,36 @@ using var subscription = stream.Subscribe(
 ```
 
 Subscriptions must be consumed through `Watch`; `SendAsync` rejects them.
+
+## Errors
+
+A failed operation does not throw. `result.Errors` holds the `IClientError`
+values from the GraphQL `errors` array — message, code, path and locations —
+plus a `ClientError` wrapping the exception when the transport itself failed:
+
+```csharp
+var result = await client.SendAsync((Root q) => q.GetFilm("1"));
+
+if (result.HasErrors)
+{
+    foreach (var error in result.Errors)
+    {
+        Console.WriteLine($"{error.Code}: {error.Message}");
+    }
+}
+```
+
+-   `result.Data` is `default` when the response has no `data` object, so check
+    `HasErrors` before using it.
+-   `result.Extensions` exposes the response's `extensions` object.
+-   `result.Query` is the exact document that was sent, which is what to log when
+    a server rejects a translated query.
+-   In a `Watch` stream, GraphQL and transport errors arrive inside the result on
+    `OnNext`; `OnError` is only used when the result stream itself fails.
+
+Calling `SendAsync` with a subscription expression throws `NotSupportedException`;
+use `Watch` for subscriptions. A disposed client throws
+`ObjectDisposedException` on further use.
 
 ## Execution strategies and caching
 

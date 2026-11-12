@@ -5,7 +5,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>LinQL.StrawberryShake</PackageId>
-    <Description>LINQ-like access to GraphQL endpoints in .Net using Strawberry Shake</Description>
+    <Description>LINQ-like access to GraphQL endpoints in .Net using Strawberry Shake (requires StrawberryShake.Core 16.7.3 or later)</Description>
     <Authors>James Dibble</Authors>
     <RepositoryUrl>https://github.com/dibble-james/linql</RepositoryUrl>
     <PackageTags>graphql client linq strawberryshake</PackageTags>
