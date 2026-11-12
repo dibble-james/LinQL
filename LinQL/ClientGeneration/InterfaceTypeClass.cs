@@ -34,7 +34,7 @@ internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> 
                             .WithType(ParseTypeName(TypeName(p.Type, knownScalars)))
                             .AddAttributeLists(AttributeList(SeparatedList(
                             [
-                                Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type.NamedType().Name.Value}{(p.Type.IsNonNullType() ? "!" : string.Empty)}""")))))
+                                Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type}""")))))
                             ]))))])
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
         ];

@@ -1,0 +1,71 @@
+﻿#nullable enable
+#pragma warning disable CS8618
+namespace InterfaceArguments
+{
+    using System.Text.Json;
+    using LinQL;
+    using LinQL.Description;
+    using LinQL.Translation;
+    using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.DependencyInjection;
+
+    [GraphQLType(Name = "Query")]
+    [OperationType(RootOperationType.Query)]
+    public partial class Query : RootType<Query>
+    {
+        public SearchResult[] Search { get; set; } = null !;
+
+        [GraphQLOperation, GraphQLField(Name = "search")]
+        public SearchResult[] ExecuteSearch([GraphQLArgument(GQLType = "String!")] string term, [GraphQLArgument(GQLType = "[String!]")] string[]? tags) => Search;
+    }
+
+    [GraphQLType(Name = "SearchResult")]
+    public partial interface SearchResult
+    {
+        public string Id { get; set; }
+        public SearchResult[] Related { get; set; }
+
+        [GraphQLOperation, GraphQLField(Name = "related")]
+        public SearchResult[] ExecuteRelated([GraphQLArgument(GQLType = "Int!")] int first, [GraphQLArgument(GQLType = "[String!]")] string[]? tags, [GraphQLArgument(GQLType = "[FilterInput!]!")] FilterInput[] filters);
+    }
+
+    [GraphQLType(Name = "Product")]
+    public partial class Product : SearchResult
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public SearchResult[] Related { get; set; } = null !;
+
+        [GraphQLOperation, GraphQLField(Name = "related")]
+        public SearchResult[] ExecuteRelated([GraphQLArgument(GQLType = "Int!")] int first, [GraphQLArgument(GQLType = "[String!]")] string[]? tags, [GraphQLArgument(GQLType = "[FilterInput!]!")] FilterInput[] filters) => Related;
+    }
+
+    [GraphQLType(Name = "FilterInput")]
+    public partial class FilterInput
+    {
+        public string Field { get; set; }
+        public string Value { get; set; }
+    }
+
+    public static class LinQLOptionExtensions
+    {
+        public static LinQLOptions WithKnownScalars(this LinQLOptions options)
+        {
+            options.Scalars.Add(new("Int", "int"));
+            options.Scalars.Add(new("Float", "float"));
+            options.Scalars.Add(new("String", "string"));
+            options.Scalars.Add(new("Id", "string"));
+            options.Scalars.Add(new("Boolean", "bool"));
+            return options;
+        }
+    }
+
+    public static class JsonSerializerOptionsExtensions
+    {
+        public static JsonSerializerOptions WithKnownInterfaces(this JsonSerializerOptions options)
+        {
+            options.RegisterInterface<SearchResult>(typeof(Product));
+            return options;
+        }
+    }
+}
