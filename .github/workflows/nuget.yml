@@ -43,6 +43,11 @@ jobs:
       - name: Pack
         run: dotnet pack --no-restore -c release --include-symbols /p:SymbolPackageFormat=snupkg /p:AssemblyVersion=1.0.0.0 /p:Version=${VERSION}
 
+      # Builds a consumer against the packed artifacts so the generator is
+      # exercised from analyzers/dotnet/cs, not from a project reference.
+      - name: Smoke test packed analyzers
+        run: ./eng/smoke-test-package.sh
+
       - name: Push
         if: github.ref_type == 'tag' && !inputs.dry_run
         env:

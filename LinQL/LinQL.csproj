@@ -32,6 +32,9 @@
     <PackageReference Include="HotChocolate.Language.SyntaxTree" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="HotChocolate.Language.Visitors" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="HotChocolate.Language.Utf8" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.Utf8.SyntaxTree" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.Web" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Utilities.Buffers" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="IsExternalInit">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -59,6 +62,9 @@
       <TargetPathWithTargetPlatformMoniker Include="$(PKGHotChocolate_Language_SyntaxTree)\lib\netstandard2.0\HotChocolate.Language.SyntaxTree.dll" IncludeRuntimeDependency="false" />
       <TargetPathWithTargetPlatformMoniker Include="$(PKGHotChocolate_Language_Visitors)\lib\netstandard2.0\HotChocolate.Language.Visitors.dll" IncludeRuntimeDependency="false" />
       <TargetPathWithTargetPlatformMoniker Include="$(PKGHotChocolate_Language_Utf8)\lib\netstandard2.0\HotChocolate.Language.Utf8.dll" IncludeRuntimeDependency="false" />
+      <TargetPathWithTargetPlatformMoniker Include="$(PKGHotChocolate_Language_Utf8_SyntaxTree)\lib\netstandard2.0\HotChocolate.Language.Utf8.SyntaxTree.dll" IncludeRuntimeDependency="false" />
+      <TargetPathWithTargetPlatformMoniker Include="$(PKGHotChocolate_Language_Web)\lib\netstandard2.0\HotChocolate.Language.Web.dll" IncludeRuntimeDependency="false" />
+      <TargetPathWithTargetPlatformMoniker Include="$(PKGHotChocolate_Utilities_Buffers)\lib\netstandard2.0\HotChocolate.Buffers.dll" IncludeRuntimeDependency="false" />
       <TargetPathWithTargetPlatformMoniker Include="$(PKGMicrosoft_Extensions_ObjectPool)\lib\netstandard2.0\Microsoft.Extensions.ObjectPool.dll" IncludeRuntimeDependency="false" />
       <TargetPathWithTargetPlatformMoniker Include="$(PKGSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" IncludeRuntimeDependency="false" />
     </ItemGroup>
@@ -69,6 +75,9 @@
     <None Include="$(PKGHotChocolate_Language_SyntaxTree)\lib\netstandard2.0\HotChocolate.Language.SyntaxTree.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(PKGHotChocolate_Language_Visitors)\lib\netstandard2.0\HotChocolate.Language.Visitors.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(PKGHotChocolate_Language_Utf8)\lib\netstandard2.0\HotChocolate.Language.Utf8.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PKGHotChocolate_Language_Utf8_SyntaxTree)\lib\netstandard2.0\HotChocolate.Language.Utf8.SyntaxTree.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PKGHotChocolate_Language_Web)\lib\netstandard2.0\HotChocolate.Language.Web.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PKGHotChocolate_Utilities_Buffers)\lib\netstandard2.0\HotChocolate.Buffers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(PKGMicrosoft_Extensions_ObjectPool)\lib\netstandard2.0\Microsoft.Extensions.ObjectPool.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(PKGSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
