@@ -30,8 +30,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          # Stays on 8.0.x here. Moving to 10.0.x enables a new analyzer set that
-          # the codebase is not clean under yet; that move is #39.
+          # global.json pins the SDK to 8.0.428. Moving it to 10.0.x turns on a
+          # new analyzer set that the codebase is not clean under yet; that move
+          # is #39.
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
