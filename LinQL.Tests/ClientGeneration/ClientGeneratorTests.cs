@@ -18,6 +18,15 @@ public class ClientGeneratorTests
     private static readonly string[] ExtraUsings = ["NodaTime"];
 
     [Fact]
+    public void InterfaceArgumentsClient()
+        => Snapshot.Match(ClientGenerator.Generate(
+            new Microsoft.CodeAnalysis.SourceProductionContext(),
+            "path",
+            Encoding.UTF8.GetString(SDLs.InterfaceArguments),
+            "InterfaceArguments",
+            []));
+
+    [Fact]
     public void ShiftshareClient()
         => Snapshot.Match(ClientGenerator.Generate(
             new Microsoft.CodeAnalysis.SourceProductionContext(),

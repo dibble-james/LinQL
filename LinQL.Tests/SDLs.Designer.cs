@@ -63,6 +63,16 @@ namespace LinQL.Tests {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] InterfaceArguments {
+            get {
+                object obj = ResourceManager.GetObject("InterfaceArguments", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] Shiftshare {
             get {
                 object obj = ResourceManager.GetObject("Shiftshare", resourceCulture);

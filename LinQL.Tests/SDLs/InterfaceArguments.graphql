@@ -1,0 +1,31 @@
+schema {
+  query: Query
+}
+
+type Query {
+  search(term: String!, tags: [String!]): [SearchResult!]!
+}
+
+"""
+A result that can be narrowed to one of its implementing types, with an
+operation that takes scalar, list and input-object arguments.
+"""
+interface SearchResult {
+  id: ID!
+
+  related(first: Int!, tags: [String!], filters: [FilterInput!]!): [SearchResult!]!
+}
+
+type Product implements SearchResult {
+  id: ID!
+
+  related(first: Int!, tags: [String!], filters: [FilterInput!]!): [SearchResult!]!
+
+  name: String!
+}
+
+input FilterInput {
+  field: String!
+
+  value: String!
+}
