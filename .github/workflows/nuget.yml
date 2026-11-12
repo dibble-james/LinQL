@@ -50,24 +50,14 @@ jobs:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: dotnet nuget push "**/LinQL*.$VERSION.nupkg" -s https://api.nuget.org/v3/index.json -k "$NUGET_API_KEY"
 
-      # Mirrors docs/ to the wiki. The .wiki.git repository only exists once the
-      # wiki has at least one page, so this assumes it has been initialised.
+      # Mirrors docs/ to the wiki, rewriting in-source links so they resolve on
+      # the wiki too. strategy: clone (the default) adds a commit rather than
+      # force-pushing, and the .wiki.git repository only exists once the wiki has
+      # at least one page, so this assumes it has been initialised.
       - name: Sync Wiki
         if: github.ref_type == 'tag' && !inputs.dry_run
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_MAIL: 11923585+dibble-james@users.noreply.github.com
-          GH_NAME: ${{ github.repository_owner }}
-        run: |
-          set -euo pipefail
-          git config --global user.name "$GH_NAME"
-          git config --global user.email "$GH_MAIL"
-          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" wiki
-          rsync -a --delete --exclude '.git' docs/ wiki/
-          git -C wiki add -A
-          if git -C wiki diff --cached --quiet; then
-            echo "Wiki is already up to date."
-          else
-            git -C wiki commit -m "Sync wiki from ${GITHUB_SHA}"
-            git -C wiki push
-          fi
+        uses: Andrew-Chen-Wang/github-wiki-action@v5
+        with:
+          path: docs
+          # No commit on a tag whose docs are unchanged.
+          disable-empty-commits: true
