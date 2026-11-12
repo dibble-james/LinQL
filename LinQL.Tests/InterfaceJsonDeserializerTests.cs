@@ -37,16 +37,16 @@ public class InterfaceJsonDeserializerTests
 
     private sealed class Data
     {
-        public InterfaceType Input { get; set; }
+        public InterfaceType Input { get; set; } = null!;
 
-        public InterfaceType Output { get; set; }
+        public InterfaceType Output { get; set; } = null!;
     }
 
     private interface InterfaceType { }
 
     private sealed class ConcreteClass1 : InterfaceType
     {
-        public string Text { get; set; }
+        public string Text { get; set; } = null!;
     }
 
     private sealed class ConcreteClass2 : InterfaceType

@@ -372,7 +372,7 @@ public class CachingTests
         private readonly List<T> values = [];
         private readonly TaskCompletionSource completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public IReadOnlyList<T> Values
+        public T[] Values
         {
             get
             {
@@ -405,7 +405,7 @@ public class CachingTests
         {
             var deadline = DateTime.UtcNow.AddSeconds(5);
 
-            while (this.Values.Count < count)
+            while (this.Values.Length < count)
             {
                 if (this.Error is { } error)
                 {
@@ -415,7 +415,7 @@ public class CachingTests
                 if (DateTime.UtcNow >= deadline)
                 {
                     throw new TimeoutException(
-                        $"Expected {count} result(s) but received {this.Values.Count}.");
+                        $"Expected {count} result(s) but received {this.Values.Length}.");
                 }
 
                 await Task.Delay(10);

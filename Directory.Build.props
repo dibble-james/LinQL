@@ -1,0 +1,11 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- TreatWarningsAsErrors stays per project: the two libraries set true and
+         the test projects set false, so hoisting a default would change behaviour. -->
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
