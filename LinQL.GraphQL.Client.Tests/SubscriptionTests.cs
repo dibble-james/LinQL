@@ -97,7 +97,7 @@ public class SubscriptionTests : IDisposable
     [OperationType(RootOperationType.Subscription)]
     public class TestSubscription : RootType<TestSubscription>
     {
-        public NumberResult Numbers { get; set; }
+        public NumberResult Numbers { get; set; } = null!;
 
         [GraphQLOperation, GraphQLField(Name = "numbers")]
         public NumberResult GetNumbers() => this.Numbers;

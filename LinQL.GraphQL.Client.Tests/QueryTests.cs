@@ -98,13 +98,13 @@ public class QueryTests : IDisposable
         public TestObjectType ExecuteEchoOperation([GraphQLArgument(GQLType = "String!")] string toEcho)
             => this.EchoOperation;
 
-        public TestObjectType EchoOperation { get; set; }
+        public TestObjectType EchoOperation { get; set; } = null!;
     }
 
     [OperationType(RootOperationType.Mutation)]
     public class TestMutation : RootType<TestMutation>
     {
-        public TestMutationType.NumberResult SetNumber { get; set; }
+        public TestMutationType.NumberResult SetNumber { get; set; } = null!;
 
         [GraphQLOperation, GraphQLField(Name = "setNumber")]
         public TestMutationType.NumberResult SetNumberOperation([GraphQLArgument(GQLType = "Int!")] int input) => this.SetNumber;

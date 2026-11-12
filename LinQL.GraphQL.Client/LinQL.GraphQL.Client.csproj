@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>LinQL.GraphQL.Client</PackageId>
@@ -26,9 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GraphQL.Client" Version="6.0.2" />
-    <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="6.0.2" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="GraphQL.Client" />
+    <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" />
+    <PackageReference Include="System.Text.Json" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 
 </Project>

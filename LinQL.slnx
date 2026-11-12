@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".github/workflows/nuget.yml" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="LinQL.GraphQL.Client.Tests/LinQL.GraphQL.Client.Tests.csproj" />
+  <Project Path="LinQL.GraphQL.Client/LinQL.GraphQL.Client.csproj" />
+  <Project Path="LinQL.StrawberryShake.Tests/LinQL.StrawberryShake.Tests.csproj" />
+  <Project Path="LinQL.StrawberryShake/LinQL.StrawberryShake.csproj" />
+  <Project Path="LinQL.Tests/LinQL.Tests.csproj" />
+  <Project Path="LinQL/LinQL.csproj" />
+  <Project Path="SourceGenerationExample/SourceGenerationExample.csproj" />
+</Solution>

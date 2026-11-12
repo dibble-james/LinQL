@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>LinQL</PackageId>
@@ -30,25 +27,26 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FastExpressionCompiler" Version="4.1.0" />
-    <PackageReference Include="HotChocolate.Language" Version="13.9.20" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="HotChocolate.Language.SyntaxTree" Version="13.9.20" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="HotChocolate.Language.Visitors" Version="13.9.20" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="HotChocolate.Language.Utf8" Version="13.9.20" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="IsExternalInit" Version="1.0.3">
+    <PackageReference Include="FastExpressionCompiler" />
+    <PackageReference Include="HotChocolate.Language" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.SyntaxTree" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.Visitors" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="HotChocolate.Language.Utf8" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="IsExternalInit">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-    <PackageReference Include="OneOf" Version="3.0.*" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="OneOf" />
+    <PackageReference Include="System.Text.Json" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -61,6 +59,7 @@
       <TargetPathWithTargetPlatformMoniker Include="$(PKGHotChocolate_Language_SyntaxTree)\lib\netstandard2.0\HotChocolate.Language.SyntaxTree.dll" IncludeRuntimeDependency="false" />
       <TargetPathWithTargetPlatformMoniker Include="$(PKGHotChocolate_Language_Visitors)\lib\netstandard2.0\HotChocolate.Language.Visitors.dll" IncludeRuntimeDependency="false" />
       <TargetPathWithTargetPlatformMoniker Include="$(PKGHotChocolate_Language_Utf8)\lib\netstandard2.0\HotChocolate.Language.Utf8.dll" IncludeRuntimeDependency="false" />
+      <TargetPathWithTargetPlatformMoniker Include="$(PKGMicrosoft_Extensions_ObjectPool)\lib\netstandard2.0\Microsoft.Extensions.ObjectPool.dll" IncludeRuntimeDependency="false" />
       <TargetPathWithTargetPlatformMoniker Include="$(PKGSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" IncludeRuntimeDependency="false" />
     </ItemGroup>
   </Target>
@@ -70,6 +69,7 @@
     <None Include="$(PKGHotChocolate_Language_SyntaxTree)\lib\netstandard2.0\HotChocolate.Language.SyntaxTree.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(PKGHotChocolate_Language_Visitors)\lib\netstandard2.0\HotChocolate.Language.Visitors.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(PKGHotChocolate_Language_Utf8)\lib\netstandard2.0\HotChocolate.Language.Utf8.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PKGMicrosoft_Extensions_ObjectPool)\lib\netstandard2.0\Microsoft.Extensions.ObjectPool.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(PKGSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 </Project>
