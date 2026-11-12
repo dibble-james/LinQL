@@ -13,7 +13,7 @@ public class QueryTests
         var connection = new StubConnection("{\"data\":{\"number\":12345}}");
         var client = connection.WithLinQL();
 
-        var result = await client.SendAsync((TestQuery q) => q.GetNumber());
+        var result = await client.SendAsync((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeEmpty();
         result.Data.Should().Be(12345);
@@ -31,7 +31,7 @@ public class QueryTests
         var connection = new StubConnection("{\"data\":{\"film\":{\"title\":\"A New Hope\",\"episode\":4}}}");
         var client = connection.WithLinQL();
 
-        var result = await client.SendAsync((TestQuery q) => q.GetFilm("1"));
+        var result = await client.SendAsync((TestQuery q) => q.GetFilm("1"), cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeEmpty();
         result.Data.Should().Be(new TestFilm("A New Hope", 4));
@@ -43,7 +43,7 @@ public class QueryTests
         var connection = new StubConnection("{\"data\":{\"setNumber\":{\"number\":54321}}}");
         var client = connection.WithLinQL();
 
-        var result = await client.SendAsync((TestMutation m) => m.SetNumberOperation(54321));
+        var result = await client.SendAsync((TestMutation m) => m.SetNumberOperation(54321), cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeEmpty();
         result.Data.Number.Should().Be(54321);
@@ -55,7 +55,7 @@ public class QueryTests
         var connection = new StubConnection("{\"data\":{\"film\":{\"title\":\"A New Hope\",\"episode\":4}}}");
         var client = connection.WithLinQL();
 
-        await client.SendAsync((TestQuery q) => q.GetFilm("1"));
+        await client.SendAsync((TestQuery q) => q.GetFilm("1"), cancellationToken: TestContext.Current.CancellationToken);
 
         var request = connection.Requests.Should().ContainSingle().Subject;
 
@@ -72,7 +72,7 @@ public class QueryTests
             "{\"data\":null,\"errors\":[{\"message\":\"boom\",\"code\":\"E1\",\"path\":[\"film\"],\"locations\":[{\"line\":2,\"column\":3}]}]}");
         var client = connection.WithLinQL();
 
-        var result = await client.SendAsync((TestQuery q) => q.GetFilm("1"));
+        var result = await client.SendAsync((TestQuery q) => q.GetFilm("1"), cancellationToken: TestContext.Current.CancellationToken);
 
         result.HasErrors.Should().BeTrue();
         result.Errors.Should().ContainSingle();
@@ -88,7 +88,7 @@ public class QueryTests
         var connection = new StubConnection("{\"data\":{\"number\":1},\"extensions\":{\"traceId\":\"abc\"}}");
         var client = connection.WithLinQL();
 
-        var result = await client.SendAsync((TestQuery q) => q.GetNumber());
+        var result = await client.SendAsync((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken);
 
         result.Extensions.Should().ContainKey("traceId");
     }
@@ -99,7 +99,7 @@ public class QueryTests
         var connection = new StubConnection(new HttpRequestException("down"));
         var client = connection.WithLinQL();
 
-        var result = await client.SendAsync((TestQuery q) => q.GetNumber());
+        var result = await client.SendAsync((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().ContainSingle();
         result.Errors[0].Message.Should().Be("down");
@@ -128,10 +128,10 @@ public class QueryTests
         var values = new List<int>();
         var completed = new TaskCompletionSource();
         using var subscription = client
-            .Watch((TestSubscription s) => s.GetCounter())
+            .Watch((TestSubscription s) => s.GetCounter(), cancellationToken: TestContext.Current.CancellationToken)
             .Subscribe(new CollectingObserver(values, completed));
 
-        await completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         values.Should().Equal(1, 2);
         connection.Requests.Should().ContainSingle().Which.Document.Kind.Should().Be(OperationKind.Subscription);

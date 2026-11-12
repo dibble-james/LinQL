@@ -15,20 +15,24 @@ using Xunit;
 
 public class QueryTests : IDisposable
 {
-    private readonly TestServer server;
+    private readonly WebApplication server;
     private readonly IGraphQLClient client;
 
     public QueryTests()
     {
-        var hostBuilder = new WebHostBuilder()
-            .ConfigureServices(services => services.AddRouting().AddGraphQLServer().AddQueryType<TestQueryType>().AddMutationType<TestMutationType>())
-            .Configure(app => app.UseRouting().UseEndpoints(e => e.MapGraphQL()))
-            .ConfigureLogging(logging => logging.AddDebug());
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Services.AddRouting().AddGraphQLServer().AddQueryType<TestQueryType>().AddMutationType<TestMutationType>();
+        builder.Logging.AddDebug();
 
-        this.server = new TestServer(hostBuilder);
+        this.server = builder.Build();
+        this.server.UseRouting().UseEndpoints(e => e.MapGraphQL());
+        this.server.StartAsync().GetAwaiter().GetResult();
+
+        var testServer = this.server.GetTestServer();
 
         this.client = new GraphQLHttpClient(
-            new GraphQLHttpClientOptions { HttpMessageHandler = this.server.CreateHandler(), EndPoint = new Uri(this.server.BaseAddress, "/graphql") },
+            new GraphQLHttpClientOptions { HttpMessageHandler = testServer.CreateHandler(), EndPoint = new Uri(testServer.BaseAddress, "/graphql") },
             new SystemTextJsonSerializer())
             .WithLinQL(new LinQLOptions());
     }
@@ -36,7 +40,7 @@ public class QueryTests : IDisposable
     [Fact]
     public async Task TestSendQuery()
     {
-        var result = await this.client.SendAsync((TestQuery q) => q.GetNumber());
+        var result = await this.client.SendAsync((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
         result.Data.Should().Be(12345);
@@ -45,7 +49,7 @@ public class QueryTests : IDisposable
     [Fact]
     public async Task TestSendProjectionQuery()
     {
-        var result = await this.client.SendAsync((TestQuery q) => q.ExecuteEchoOperation("echo").Project(e => new { e.Echo, e.Number }));
+        var result = await this.client.SendAsync((TestQuery q) => q.ExecuteEchoOperation("echo").Project(e => new { e.Echo, e.Number }), cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
         result.Data.Number.Should().Be(42);
@@ -55,7 +59,7 @@ public class QueryTests : IDisposable
     [Fact]
     public async Task TestSendMutation()
     {
-        var result = await this.client.SendAsync((TestMutation m) => m.SetNumberOperation(54321));
+        var result = await this.client.SendAsync((TestMutation m) => m.SetNumberOperation(54321), cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
         result.Data.Number.Should().Be(54321);
@@ -64,7 +68,8 @@ public class QueryTests : IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        this.server.Dispose();
+        this.server.StopAsync().GetAwaiter().GetResult();
+        this.server.DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
     public class TestQueryType

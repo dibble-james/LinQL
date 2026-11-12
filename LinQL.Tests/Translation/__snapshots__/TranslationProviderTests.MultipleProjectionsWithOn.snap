@@ -22,6 +22,8 @@
     }
     ...on implementaion5 {
       id {
+        variant
+        version
       }
       collection {
         text
