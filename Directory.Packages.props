@@ -9,9 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+
     <PackageVersion Include="FastExpressionCompiler" Version="4.1.0" />
-    <PackageVersion Include="FluentAssertions" Version="6.12.0" />
+    <!-- 8.x and later are only free for non-commercial use; 7.x is the last
+         Apache-2.0 line, so this is a hard ceiling until a licence is bought. -->
+    <PackageVersion Include="FluentAssertions" Version="7.2.2" />
     <PackageVersion Include="GraphQL.Client" Version="6.0.2" />
     <PackageVersion Include="GraphQL.Client.Serializer.SystemTextJson" Version="6.0.2" />
     <PackageVersion Include="HotChocolate.AspNetCore" Version="13.9.20" />
@@ -21,29 +23,35 @@
     <PackageVersion Include="HotChocolate.Language.Visitors" Version="13.9.20" />
     <PackageVersion Include="IsExternalInit" Version="1.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.3" />
-    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="8.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.15" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <!-- Mvc.Testing 10.x pulls Hosting 10.x, so the whole graph has to sit on
+         the 10.0 line rather than downgrading it back to 8.0.0. -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.15" />
     <!-- Only reaches analyzers/dotnet/cs: the generator loads HotChocolate's
-         parser, which depends on this. HotChocolate.AspNetCore already drags in
-         8.0.0 for the test project, so 8.0.0 is the version to pin. -->
-    <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+         parser, which depends on this. It has to match the version the ASP.NET
+         Core shared framework gives the test project, or the netstandard2.0
+         assembly we ship collides with the framework one. -->
+    <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="10.0.15" />
+    <!-- Coverage for Microsoft.Testing.Platform. coverlet.collector is a VSTest
+         data collector and does nothing under MTP. -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
     <PackageVersion Include="NodaTime" Version="3.3.7" />
     <PackageVersion Include="NSubstitute" Version="5.1.0" />
     <PackageVersion Include="OneOf" Version="3.0.271" />
-    <PackageVersion Include="Snapshooter.Xunit" Version="0.14.1" />
+    <PackageVersion Include="Snapshooter.Xunit3" Version="1.3.1" />
     <PackageVersion Include="StrawberryShake.Core" Version="16.7.3" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
     <!-- Also packed into analyzers/dotnet/cs for the generator, so the version
-         here decides the DLL that ships. 8.0.0 is flagged by NU1903. -->
-    <PackageVersion Include="System.Text.Json" Version="8.0.5" />
-    <PackageVersion Include="xunit" Version="2.7.0" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.7" />
+         here decides the DLL that ships. It must be a 10.0 assembly version:
+         net10.0 consumers already have System.Text.Json 10.0.0.0 in the shared
+         framework, and an 8.0.0.0 copy makes every JsonDocument ambiguous. -->
+    <PackageVersion Include="System.Text.Json" Version="10.0.15" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
   </ItemGroup>
 
 </Project>

@@ -9,7 +9,6 @@ using global::GraphQL.Client.Http;
 using global::GraphQL.Client.Serializer.SystemTextJson;
 using LinQL.Description;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
 public class SubscriptionTests : IDisposable
@@ -19,14 +18,6 @@ public class SubscriptionTests : IDisposable
 
     public SubscriptionTests()
     {
-        var hostBuilder = new WebHostBuilder()
-            .Configure(app =>
-            {
-                app.UseRouting();
-                app.UseWebSockets();
-                app.UseEndpoints(e => e.MapGraphQL());
-            });
-
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddRouting()
                 .AddGraphQLServer()

@@ -14,7 +14,7 @@ public class CachingTests
         using var client = connection.WithLinQL(options => options.Strategy = ExecutionStrategy.CacheFirst);
 
         var first = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(first))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(first))
         {
             await first.WaitForAsync(1);
             first.Values.Should().Equal(7);
@@ -23,7 +23,7 @@ public class CachingTests
         await WaitUntilAsync(() => client.OperationStore.GetAll().Any());
 
         var second = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(second))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(second))
         {
             await second.WaitForAsync(1);
             second.Values.Should().Equal(7);
@@ -41,7 +41,7 @@ public class CachingTests
         using var client = connection.WithLinQL(options => options.Strategy = ExecutionStrategy.CacheAndNetwork);
 
         var first = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(first))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(first))
         {
             await first.WaitForAsync(1);
         }
@@ -49,7 +49,7 @@ public class CachingTests
         await WaitUntilAsync(() => client.OperationStore.GetAll().Any());
 
         var second = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(second))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(second))
         {
             await second.WaitForAsync(2);
             second.Values.Should().Equal(1, 2);
@@ -67,7 +67,7 @@ public class CachingTests
         using var client = connection.WithLinQL();
 
         var first = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(first))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(first))
         {
             await first.WaitForAsync(1);
             first.Values.Should().Equal(1);
@@ -76,7 +76,7 @@ public class CachingTests
         await WaitUntilAsync(() => client.OperationStore.GetAll().Any());
 
         var second = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(second))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(second))
         {
             await second.WaitForAsync(1);
             second.Values.Should().Equal(2);
@@ -94,7 +94,7 @@ public class CachingTests
         using var client = connection.WithLinQL(options => options.Strategy = ExecutionStrategy.CacheFirst);
 
         var first = new CollectingObserver<TestFilm>();
-        using (client.Watch((TestQuery q) => q.GetFilm("1")).Subscribe(first))
+        using (client.Watch((TestQuery q) => q.GetFilm("1"), cancellationToken: TestContext.Current.CancellationToken).Subscribe(first))
         {
             await first.WaitForAsync(1);
             first.Values.Should().Equal(new TestFilm("A New Hope", 4));
@@ -103,7 +103,7 @@ public class CachingTests
         await WaitUntilAsync(() => client.OperationStore.GetAll().Any());
 
         var second = new CollectingObserver<TestFilm>();
-        using (client.Watch((TestQuery q) => q.GetFilm("2")).Subscribe(second))
+        using (client.Watch((TestQuery q) => q.GetFilm("2"), cancellationToken: TestContext.Current.CancellationToken).Subscribe(second))
         {
             await second.WaitForAsync(1);
             second.Values.Should().Equal(new TestFilm("The Empire Strikes Back", 5));
@@ -112,7 +112,7 @@ public class CachingTests
         connection.Requests.Should().HaveCount(2);
 
         var replay = new CollectingObserver<TestFilm>();
-        using (client.Watch((TestQuery q) => q.GetFilm("1")).Subscribe(replay))
+        using (client.Watch((TestQuery q) => q.GetFilm("1"), cancellationToken: TestContext.Current.CancellationToken).Subscribe(replay))
         {
             await replay.WaitForAsync(1);
             replay.Values.Should().Equal(new TestFilm("A New Hope", 4));
@@ -130,7 +130,7 @@ public class CachingTests
         using var client = connection.WithLinQL(options => options.Strategy = ExecutionStrategy.CacheAndNetwork);
 
         var first = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(first))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(first))
         {
             await first.WaitForAsync(1);
         }
@@ -138,7 +138,7 @@ public class CachingTests
         await WaitUntilAsync(() => client.OperationStore.GetAll().Any());
 
         var second = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(second))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(second))
         {
             await second.WaitForAsync(1);
             await connection.WaitForCompletedRequestsAsync(2);
@@ -157,7 +157,7 @@ public class CachingTests
         using var client = connection.WithLinQL(options => options.Strategy = ExecutionStrategy.CacheAndNetwork);
 
         var first = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(first))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(first))
         {
             await first.WaitForAsync(1);
         }
@@ -165,7 +165,7 @@ public class CachingTests
         await WaitUntilAsync(() => client.OperationStore.GetAll().Any());
 
         var second = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(second))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(second))
         {
             await second.WaitForAsync(2);
             second.Values.Should().Equal(1, 1);
@@ -180,11 +180,11 @@ public class CachingTests
         var connection = new SequentialConnection("{\"data\":{\"number\":3}}");
         using var client = connection.WithLinQL(options => options.Strategy = ExecutionStrategy.CacheFirst);
 
-        var sent = await client.SendAsync((TestQuery q) => q.GetNumber());
+        var sent = await client.SendAsync((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken);
         sent.Data.Should().Be(3);
 
         var replay = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(replay))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(replay))
         {
             await replay.WaitForAsync(1);
             replay.Values.Should().Equal(3);
@@ -200,14 +200,14 @@ public class CachingTests
         using var client = connection.WithLinQL();
         var values = new CollectingObserver<int>();
 
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(values))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(values))
         {
             await WaitUntilAsync(() => connection.Requests.Count == 1);
 
             client.Dispose();
             connection.Release("{\"data\":{\"number\":1}}");
 
-            await connection.Finished.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await connection.Finished.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             values.Values.Should().BeEmpty();
         }
@@ -230,7 +230,7 @@ public class CachingTests
             cancellation.Cancel();
             connection.Release("{\"data\":{\"number\":1}}");
 
-            await connection.Finished.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await connection.Finished.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             values.Values.Should().BeEmpty();
         }
@@ -242,10 +242,10 @@ public class CachingTests
         var connection = new SequentialConnection("{\"data\":{\"number\":5}}");
         using var client = connection.WithLinQL(options => options.Strategy = ExecutionStrategy.CacheFirst);
 
-        await client.SendAsync((TestQuery q) => q.GetNumber());
+        await client.SendAsync((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken);
 
         var values = new CollectingObserver<int>();
-        using (client.Watch((TestQuery q) => q.GetNumber()).Subscribe(values))
+        using (client.Watch((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken).Subscribe(values))
         {
             await values.WaitForAsync(1);
 

@@ -32,11 +32,7 @@ jobs:
         with:
           # global.json pins the SDK, and that pin is what actually selects it:
           # without one the resolver picks the highest SDK on the runner.
-          # 8.0.x stays because the projects still target net8.0 and the test
-          # projects need the 8.0 runtime to run; #40 removes it.
-          dotnet-version: |
-            10.0.x
-            8.0.x
+          dotnet-version: 10.0.x
 
       - name: Restore dependencies
         run: dotnet restore
