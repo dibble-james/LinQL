@@ -1,13 +1,12 @@
 namespace LinQL.ClientGeneration;
 
 using System.Collections.Generic;
-using HotChocolate.Language.Visitors;
 using LinQL.Description;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-internal class DocumentWalkerContext(string file, SourceProductionContext context, string graphNamespace, string[] extraUsings) : ISyntaxVisitorContext
+internal class DocumentWalkerContext(string file, SourceProductionContext context, string graphNamespace, string[] extraUsings)
 {
     public List<RootTypeClass> RootOperations { get; } = [];
 
