@@ -132,6 +132,18 @@ public partial class TranslationProviderTests
             .Should().BeEquivalentTo(new Dictionary<string, object?> { ["text"] = "widget", ["present"] = "kept" });
 
     [Fact]
+    public void ArgumentsHonourCustomConverters()
+    {
+        // The converter decides the shape, so reflection must not: here an object writes itself as a string.
+        var normalized = FilterValue.Normalize(new { Converted = new ConvertedArgument { Text = "widget" }, Plain = "as-is" });
+
+        using var json = JsonDocument.Parse(JsonSerializer.Serialize(normalized));
+
+        json.RootElement.GetProperty("converted").GetString().Should().Be("WIDGET");
+        json.RootElement.GetProperty("plain").GetString().Should().Be("as-is");
+    }
+
+    [Fact]
     public void ArgumentsPassJsonElementsThrough()
     {
         // A JsonElement is already wire-shaped: reflecting over it would send `valueKind`/`rawText`
@@ -173,6 +185,21 @@ public partial class TranslationProviderTests
     {
         [JsonPropertyName("query")]
         public string? Text { get; set; }
+    }
+
+    [JsonConverter(typeof(UpperCaseConverter))]
+    private sealed class ConvertedArgument
+    {
+        public string Text { get; set; } = string.Empty;
+    }
+
+    private sealed class UpperCaseConverter : JsonConverter<ConvertedArgument>
+    {
+        public override ConvertedArgument Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => new() { Text = reader.GetString() ?? string.Empty };
+
+        public override void Write(Utf8JsonWriter writer, ConvertedArgument value, JsonSerializerOptions options)
+            => writer.WriteStringValue(value.Text.ToUpperInvariant());
     }
 
     private sealed class PartlyIgnoredArgument

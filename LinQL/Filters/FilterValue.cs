@@ -25,6 +25,8 @@ public sealed class FilterValue
 {
     private static readonly ConcurrentDictionary<Type, (PropertyInfo Property, string Name, JsonIgnoreCondition? Ignore)[]> PropertyCache = new();
 
+    private static readonly ConcurrentDictionary<Type, bool> ConverterCache = new();
+
     private readonly Dictionary<string, object?> fields = [];
 
     /// <summary>
@@ -153,6 +155,7 @@ public sealed class FilterValue
         // would replace with its properties (`valueKind`, `rawText`, …).
         JsonElement element => element,
         JsonDocument document => document.RootElement,
+        object converted when HasConverter(converted.GetType()) => Serialize(converted),
         object scalar when IsScalar(scalar.GetType()) => scalar,
         object dictionary when TryGetEntries(dictionary, out var entries) => NormalizeDictionary(entries!, strict),
         IEnumerable enumerable => NormalizeEnumerable(enumerable, strict),
@@ -226,6 +229,24 @@ public sealed class FilterValue
 
         return normalized.Count == 0 ? null : normalized;
     }
+
+    /// <summary>
+    /// Gets whether a type declares its own <see cref="JsonConverter"/>, so its shape is System.Text.Json's
+    /// to decide rather than something reflection can reproduce.
+    /// </summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <returns>Whether the type declares a converter.</returns>
+    private static bool HasConverter(Type type)
+        => ConverterCache.GetOrAdd(type, static t => t.GetCustomAttribute<JsonConverterAttribute>(inherit: false) is not null);
+
+    /// <summary>
+    /// Serialises a value with System.Text.Json and keeps the result, so whatever its converter writes is
+    /// what reaches the wire — including shapes reflection could not infer, such as a scalar spelled out
+    /// from an object.
+    /// </summary>
+    /// <param name="value">The value to serialise.</param>
+    /// <returns>The serialised value as a <see cref="JsonElement"/>.</returns>
+    private static JsonElement Serialize(object value) => JsonSerializer.SerializeToElement(value, value.GetType());
 
     /// <summary>
     /// Gets whether a property is left out of the payload, either always or because its value counts as

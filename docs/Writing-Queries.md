@@ -241,8 +241,9 @@ translated — the value is attached as an argument, nothing more.
 Argument values are sent in the shape GraphQL variables take rather than their CLR shape: input
 object fields are camelCased (or use their `[JsonPropertyName]` when the type declares one),
 properties marked `[JsonIgnore]` are left out, enums go out by name, unset fields are dropped, a
-dictionary stays a JSON object with its keys unchanged, and a `JsonElement` is written as the JSON it
-already holds, so `new ProductSortInput { Price = SortEnumType.DESC }` becomes `{"price":"DESC"}`.
+dictionary stays a JSON object with its keys unchanged, a type that declares `[JsonConverter]` is
+written by that converter, and a `JsonElement` is written as the JSON it already holds, so
+`new ProductSortInput { Price = SortEnumType.DESC }` becomes `{"price":"DESC"}`.
 
 #### Only the operations you set are sent
 
