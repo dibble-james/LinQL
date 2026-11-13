@@ -76,10 +76,7 @@ internal class ComplexTypeClass : IClassFactory
             .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
 
     protected virtual Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(IDictionary<string, Scalar> knownScalars)
-        => f => [.. this.CreateOperationMembers(f, knownScalars)];
-
-    protected virtual IEnumerable<MemberDeclarationSyntax> CreateOperationMembers(FieldDefinitionNode f, IDictionary<string, Scalar> knownScalars)
-        =>
+        => f =>
         [
             PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
@@ -115,67 +112,4 @@ internal class ComplexTypeClass : IClassFactory
 
     internal static string FilterBuilderName(string filterTypeName)
         => filterTypeName + "Builder";
-
-    /// <summary>
-    /// Gets the parameters that forward the field's arguments other than the filter.
-    /// </summary>
-    /// <remarks>
-    /// A filterable field may also take ordering, paging or custom arguments, and dropping them from the
-    /// companion would send a document the server rejects. Optional GraphQL arguments stay optional (as a
-    /// <c>null</c> default, which the translator does not send) unless a required argument follows them,
-    /// because C# does not allow a required parameter after an optional one.
-    /// </remarks>
-    private static IEnumerable<ParameterSyntax> CreateCompanionArguments(FieldDefinitionNode field, InputValueDefinitionNode filterArgument, IDictionary<string, Scalar> knownScalars)
-    {
-        var arguments = field.Arguments.Where(x => x.Name.Value != filterArgument.Name.Value).ToList();
-
-        for (var i = 0; i < arguments.Count; i++)
-        {
-            var argument = arguments[i];
-
-            var parameter = Parameter(IdentifierFor(argument.Name.Value))
-                .WithType(ParseTypeName(TypeName(argument.Type, knownScalars)))
-                .AddAttributeLists(AttributeList(SeparatedList(
-                [
-                    Attribute(
-                        IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()),
-                        AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression($@"GQLType = ""{argument.Type}""")))))
-                ])));
-
-            yield return argument.Type.IsNonNullType() || arguments.Skip(i + 1).Any(x => x.Type.IsNonNullType())
-                ? parameter
-                : parameter.WithDefault(EqualsValueClause(ParseExpression("null")));
-        }
-    }
-
-    protected static MethodDeclarationSyntax CreateFilterCompanionMember(FieldDefinitionNode field, InputValueDefinitionNode filterArgument, IDictionary<string, Scalar> knownScalars, bool withBody)
-    {
-        var builder = FilterBuilderName(filterArgument.Type.NamedType().Name.Value);
-
-        var companion = MethodDeclaration(ParseTypeName(TypeName(field.Type, knownScalars)), Identifier("Filter" + FieldName(field.Name.Value)))
-            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-            .AddAttributeLists(AttributeList(SeparatedList(
-            [
-                Attribute(
-                    IdentifierName(nameof(GraphQLFilterAttribute).AttributeName()),
-                    AttributeArgumentList(SeparatedList(
-                    [
-                        AttributeArgument(ParseExpression($@"Field = ""{field.Name.Value}""")),
-                        AttributeArgument(ParseExpression($@"Argument = ""{filterArgument.Name.Value}""")),
-                        AttributeArgument(ParseExpression($@"GQLType = ""{filterArgument.Type}""")),
-                    ])))
-            ])))
-            .AddParameterListParameters(
-                [
-                    Parameter(Identifier("_")).WithType(ParseTypeName($"System.Linq.Expressions.Expression<System.Func<{builder}, {builder}>>")),
-                    .. CreateCompanionArguments(field, filterArgument, knownScalars),
-                ]);
-
-        // An interface member has no body: the implementing types declare the companion themselves.
-        return withBody
-            ? companion
-                .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(field.Name.Value))))
-                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
-            : companion.WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
-    }
 }
