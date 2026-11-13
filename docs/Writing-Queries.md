@@ -215,6 +215,11 @@ public static Product[] Sort(this Product[] source, ProductSortInput[]? order = 
 both attach the same `order` argument. The other arguments keep the schema's spelling, so the call
 site still names what the field declares.
 
+There is no fixed list of paging names: every argument a *filterable* field declares gets a method,
+so `first`, `after`, `last`, `before` or a custom name all arrive on their own — the small schema
+above simply declares only `first`. A field with no filter argument gets no extensions at all, so a
+paged field that takes no `where` has to be queried through its `Execute…` method.
+
 ```csharp
 client.SendAsync((Root q) => q
     .Featured
@@ -308,9 +313,9 @@ for shaping results you already have.
 
 #### Not covered
 
-- Translating sorting (`order`) and paging (`first`, `after`, `last`, `before`). The generated
-  extensions attach them as arguments, but the values are passed through as given; the `Connection`
-  shape that paging middleware returns needs its own design.
+- Translating sorting (`order`) and paging. Any argument a filterable field declares can be attached
+  — `first`, `after`, `last`, `before`, `order` — but the values are passed through as given, and the
+  `…Connection` shape that cursor paging middleware returns has no selection support yet.
 - Filtering an interface-typed field by its implementations' fields. Hot Chocolate generates the
   filter input from the interface itself (`SearchResultFilterInput`, holding only the interface's
   fields), and the generator follows the SDL. A filter *is* accepted on an interface-returning
