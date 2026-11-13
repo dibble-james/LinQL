@@ -172,7 +172,10 @@ type named exactly `FilterInput` is treated as an ordinary input); a custom conv
 the input type needs its companion and builders added by hand for now.
 
 The generated input objects still work too: pass one to the companion and it is normalised the
-same way as a builder, with unset operations dropped.
+same way as a builder, with unset operations dropped. That only works because the generated input
+types declare every operation nullable. A hand-written filter type has to do the same — a
+non-nullable value type (`decimal`, `bool`) cannot say "not set", so normalising one throws rather
+than silently filtering on `0` or `false`.
 
 #### Fields with other arguments
 

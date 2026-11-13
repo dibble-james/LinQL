@@ -3,10 +3,12 @@
 namespace LinQL.Tests.Translation;
 
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text.Json;
 using FluentAssertions;
 using LinQL.Description;
+using LinQL.Filters;
 using LinQL.Translation;
 using Xunit;
 
@@ -67,6 +69,35 @@ public partial class TranslationProviderTests
             Tags = new PocoTagListFilterInput { Some = new PocoTagFilterInput { Label = new PocoStringOperationFilterInput { Eq = "new" } } },
         }).Select(p => new { p.Name }));
 
+    [Fact]
+    public void FilterFromInputObjectWithValueTypeOperationThrows()
+    {
+        // A hand-written filter type with a non-nullable operation cannot express "not set", so sending
+        // its default would silently filter on false instead of not filtering.
+        Expression<Func<ValueTypeFilterRootType, object>> expression = x => x
+            .FilterProducts(new ValueTypeFilterInput { Any = true })
+            .Select(p => new { p.Name });
+
+        var act = () => TranslationProvider.ToRequest(expression, new LinQLOptions());
+
+        act.Should()
+            .Throw<InvalidOperationException>()
+            .WithMessage("*ValueTypeFilterInput.Any*Boolean?*");
+    }
+
+    [Fact]
+    public void OnlyFilterValuesRejectValueTypeProperties()
+    {
+        // Forwarded arguments are not strict: a value the caller passed is always meaningful there, so a
+        // non-nullable int on a sort or paging input is fine.
+        FilterValue.Normalize(new { Count = 3 })
+            .Should().BeEquivalentTo(new Dictionary<string, object?> { ["count"] = 3 });
+
+        var act = () => FilterValue.From(new { Count = 3 });
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     private void TestFilter(Expression<Func<FilterRootType, object>> expression)
         => this.SnapshotRequest(expression);
 
@@ -100,6 +131,20 @@ public partial class TranslationProviderTests
 
         [GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
         public FilterProduct[] FilterProducts(PocoProductFilterInput _) => this.Products;
+    }
+
+    [OperationType]
+    private class ValueTypeFilterRootType : RootType<ValueTypeFilterRootType>
+    {
+        public FilterProduct[] Products { get; set; } = [];
+
+        [GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
+        public FilterProduct[] FilterProducts(ValueTypeFilterInput _) => this.Products;
+    }
+
+    private sealed class ValueTypeFilterInput
+    {
+        public bool Any { get; set; }
     }
 
     private sealed class PocoProductFilterInput

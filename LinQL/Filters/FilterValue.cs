@@ -40,11 +40,15 @@ public sealed class FilterValue
     /// </summary>
     /// <param name="filter">The filter input object.</param>
     /// <returns>The equivalent <see cref="FilterValue"/>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// The filter input object has a non-nullable value-type property, so an operation that was never set
+    /// cannot be told apart from its default value.
+    /// </exception>
     public static FilterValue From(object? filter)
     {
         var value = Create();
 
-        if (Normalize(filter) is IReadOnlyDictionary<string, object?> normalized)
+        if (Normalize(filter, strict: true) is IReadOnlyDictionary<string, object?> normalized)
         {
             foreach (var field in normalized)
             {
@@ -124,7 +128,7 @@ public sealed class FilterValue
     /// <returns>The filter value.</returns>
     public IReadOnlyDictionary<string, object?> ToDictionary()
         => this.fields
-            .Select(field => (field.Key, Value: Normalize(field.Value)))
+            .Select(field => (field.Key, Value: Normalize(field.Value, strict: false)))
             .Where(field => field.Value is not null)
             .ToDictionary(field => field.Key, field => field.Value);
 
@@ -134,26 +138,28 @@ public sealed class FilterValue
     /// </summary>
     /// <param name="value">The value to convert.</param>
     /// <returns>The value as GraphQL variables expect it.</returns>
-    internal static object? Normalize(object? value) => value switch
+    internal static object? Normalize(object? value) => Normalize(value, strict: false);
+
+    private static object? Normalize(object? value, bool strict) => value switch
     {
         null => null,
         FilterValue filter => filter.ToDictionary() is { Count: > 0 } dictionary ? dictionary : null,
         string text => text,
         Enum enumValue => enumValue.ToString(),
         object scalar when IsScalar(scalar.GetType()) => scalar,
-        IDictionary<string, object?> dictionary => NormalizeDictionary(dictionary),
-        IReadOnlyDictionary<string, object?> readOnlyDictionary => NormalizeDictionary(readOnlyDictionary),
-        IEnumerable enumerable => NormalizeEnumerable(enumerable),
-        object other => NormalizeObject(other),
+        IDictionary<string, object?> dictionary => NormalizeDictionary(dictionary, strict),
+        IReadOnlyDictionary<string, object?> readOnlyDictionary => NormalizeDictionary(readOnlyDictionary, strict),
+        IEnumerable enumerable => NormalizeEnumerable(enumerable, strict),
+        object other => NormalizeObject(other, strict),
     };
 
-    private static Dictionary<string, object?>? NormalizeDictionary(IEnumerable<KeyValuePair<string, object?>> dictionary)
+    private static Dictionary<string, object?>? NormalizeDictionary(IEnumerable<KeyValuePair<string, object?>> dictionary, bool strict)
     {
         var normalized = new Dictionary<string, object?>();
 
         foreach (var field in dictionary)
         {
-            if (Normalize(field.Value) is { } value)
+            if (Normalize(field.Value, strict) is { } value)
             {
                 normalized[field.Key] = value;
             }
@@ -162,14 +168,14 @@ public sealed class FilterValue
         return normalized.Count == 0 ? null : normalized;
     }
 
-    private static object? NormalizeEnumerable(IEnumerable enumerable)
+    private static object? NormalizeEnumerable(IEnumerable enumerable, bool strict)
     {
-        var items = enumerable.Cast<object?>().Select(Normalize).Where(item => item is not null).ToList();
+        var items = enumerable.Cast<object?>().Select(item => Normalize(item, strict)).Where(item => item is not null).ToList();
 
         return items.Count == 0 ? null : items;
     }
 
-    private static Dictionary<string, object?>? NormalizeObject(object value)
+    private static Dictionary<string, object?>? NormalizeObject(object value, bool strict)
     {
         var normalized = new Dictionary<string, object?>();
 
@@ -180,7 +186,16 @@ public sealed class FilterValue
                 continue;
             }
 
-            if (Normalize(property.GetValue(value)) is { } fieldValue)
+            // A filter operation expresses "not set" as null, so a value type that cannot hold null has no
+            // way to say it: sending the default would silently filter on 0 or false. Arguments are not
+            // strict about this, because a value the caller passed is always meaningful to them.
+            if (strict && property.PropertyType.IsValueType && Nullable.GetUnderlyingType(property.PropertyType) is null)
+            {
+                throw new InvalidOperationException(
+                    $"'{value.GetType().Name}.{property.Name}' is a non-nullable {property.PropertyType.Name}, so an operation that was never set cannot be told apart from its default value. Declare it as '{property.PropertyType.Name}?' on a filter input type.");
+            }
+
+            if (Normalize(property.GetValue(value), strict) is { } fieldValue)
             {
                 normalized[property.Name.ToCamelCase()] = fieldValue;
             }
