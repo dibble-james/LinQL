@@ -32,3 +32,13 @@ Hot Chocolate only writes the filter input types into the exported SDL when the 
 filtering, and Hot Chocolate 16 disables introspection by default: export the SDL from the running
 server with `GET {url}?sdl`, or use the Hot Chocolate CLI, and make sure the filtering middleware is
 configured on the field.
+
+### Two fields name their filter argument differently
+```
+LINQLGEN06: Filter argument 'filter' on 'recommended' conflicts with 'where' on 'products': both fields return 'Product[]', so the generated Filter extension can only attach one argument name. Rename the arguments to match, or write the extension for one of the fields by hand.
+```
+The generated `Filter` extension is declared on the field's return type, so one method serves every
+field returning that type and it can only carry one argument name — the first such field in the SDL
+decides, and the others would be filtered through the wrong argument. Rename the arguments so they
+agree (Hot Chocolate's convention names them all `where`), or write the extension for the field the
+generator could not cover.

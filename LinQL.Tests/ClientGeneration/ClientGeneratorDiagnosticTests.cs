@@ -50,6 +50,52 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
+    private const string ConflictingFilterArgumentSdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          products(where: ProductFilterInput): [Product!]!
+          recommended(filter: ProductFilterInput): [Product!]!
+        }
+
+        type Product {
+          name: String!
+        }
+
+        input ProductFilterInput {
+          name: StringOperationFilterInput
+        }
+
+        input StringOperationFilterInput {
+          eq: String
+        }
+        """;
+
+    private const string AgreeingFilterArgumentSdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          products(where: ProductFilterInput): [Product!]!
+          recommended(where: ProductFilterInput): [Product!]!
+        }
+
+        type Product {
+          name: String!
+        }
+
+        input ProductFilterInput {
+          name: StringOperationFilterInput
+        }
+
+        input StringOperationFilterInput {
+          eq: String
+        }
+        """;
+
     [Fact]
     public void MissingFilterInputTypeIsReported()
     {
@@ -71,6 +117,32 @@ public class ClientGeneratorDiagnosticTests
     [Fact]
     public void DeclaredFilterInputTypeIsNotReported()
         => Assert.DoesNotContain(Generate(DeclaredFilterInputSdl), x => x.Id == "LINQLGEN05");
+
+    [Fact]
+    public void ConflictingFilterArgumentNameIsReported()
+    {
+        // Both fields return Product[], so one generated Filter method serves both: the second field's
+        // argument name cannot be expressed and would be silently ignored.
+        var diagnostics = Generate(ConflictingFilterArgumentSdl);
+
+        var diagnostic = Assert.Single(diagnostics, x => x.Id == "LINQLGEN06");
+
+        Assert.Contains("'filter'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'recommended'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'where'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'products'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Product[]'", diagnostic.GetMessage(), StringComparison.Ordinal);
+
+        // The diagnostic points at the argument that is ignored, not at the file.
+        var position = diagnostic.Location.GetLineSpan().StartLinePosition;
+
+        Assert.Equal(6, position.Line);
+        Assert.Equal(14, position.Character);
+    }
+
+    [Fact]
+    public void AgreeingFilterArgumentNamesAreNotReported()
+        => Assert.DoesNotContain(Generate(AgreeingFilterArgumentSdl), x => x.Id == "LINQLGEN06");
 
     private static ImmutableArray<Diagnostic> Generate(string sdl)
     {

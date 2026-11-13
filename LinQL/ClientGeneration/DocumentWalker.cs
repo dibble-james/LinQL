@@ -32,6 +32,14 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    private static readonly DiagnosticDescriptor ConflictingFilterArgument = new(
+        id: "LINQLGEN06",
+        title: "Conflicting filter argument names",
+        messageFormat: "Filter argument '{0}' on '{1}' conflicts with '{2}' on '{3}': both fields return '{4}', so the generated Filter extension can only attach one argument name. Rename the arguments to match, or write the extension for one of the fields by hand.",
+        category: "LinQLClientGenerator",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
     private readonly HashSet<string> inputObjectTypes = new(StringComparer.Ordinal);
 
     protected override ISyntaxVisitorAction VisitChildren(DocumentNode node, DocumentWalkerContext context)
@@ -41,6 +49,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         // The filter input types may be declared after the fields that use them, so the check runs
         // once the whole document has been walked.
         this.ReportMissingFilterInputTypes(node, context);
+        ReportConflictingFilterExtensions(node, context);
 
         return action;
     }
@@ -156,6 +165,76 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
 
         return base.VisitChildren(node, context);
+    }
+
+    /// <summary>
+    /// Reports a field whose filter argument name is ignored, because another field returning the same
+    /// type was seen first.
+    /// </summary>
+    /// <remarks>
+    /// An extension only knows the type it extends, so the generated <c>Filter</c> method takes the
+    /// argument name and filter input type of the first field in document order. A second field returning
+    /// the same type with a different argument name cannot be expressed by that method, and silently
+    /// filtering through the wrong argument would produce a document the server rejects.
+    /// </remarks>
+    private static void ReportConflictingFilterExtensions(DocumentNode document, DocumentWalkerContext context)
+    {
+        var scalars = context.Scalars.ToDictionary(x => x.Name, StringComparer.InvariantCultureIgnoreCase);
+        var chosen = new Dictionary<string, (string Field, string Argument)>(StringComparer.Ordinal);
+
+        foreach (var definition in document.Definitions)
+        {
+            var fields = definition switch
+            {
+                ObjectTypeDefinitionNode objectType => objectType.Fields,
+                InterfaceTypeDefinitionNode interfaceType => interfaceType.Fields,
+                _ => null,
+            };
+
+            if (fields is null)
+            {
+                continue;
+            }
+
+            foreach (var field in fields)
+            {
+                var filterArgument = field.Arguments.FirstOrDefault(x => ComplexTypeClass.IsFilterInputType(x.Type.NamedType().Name.Value));
+
+                if (filterArgument is null)
+                {
+                    continue;
+                }
+
+                var receiver = ComplexTypeClass.TypeName(field.Type, scalars);
+                var key = $"{receiver}|{filterArgument.Type.NamedType().Name.Value}";
+
+                if (!chosen.TryGetValue(key, out var first))
+                {
+                    chosen[key] = (Field: field.Name.Value, Argument: filterArgument.Name.Value);
+                    continue;
+                }
+
+                if (first.Argument == filterArgument.Name.Value)
+                {
+                    continue;
+                }
+
+                context.Context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        ConflictingFilterArgument,
+                        Microsoft.CodeAnalysis.Location.Create(
+                            context.File,
+                            TextSpan.FromBounds(filterArgument.Location!.Start, filterArgument.Location!.End),
+                            new LinePositionSpan(
+                                new LinePosition(filterArgument.Location!.Line - 1, filterArgument.Location!.Column - 1),
+                                new LinePosition(filterArgument.Location!.Line - 1, filterArgument.Location!.Column - 1))),
+                        filterArgument.Name.Value,
+                        field.Name.Value,
+                        first.Argument,
+                        first.Field,
+                        receiver));
+            }
+        }
     }
 
     /// <summary>

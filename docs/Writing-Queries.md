@@ -177,6 +177,11 @@ still works, and every filter input type in the SDL gets a builder named `<TypeN
 type named exactly `FilterInput` is treated as an ordinary input); a custom convention that renames
 the input type needs the extension and builders added by hand for now.
 
+Because the extension is declared on the field's type rather than on the field, one `Filter` method
+serves every field returning that type, so those fields have to name the filter argument the same
+way. Hot Chocolate's convention does that schema-wide; when an SDL disagrees the generator reports
+`LINQLGEN06` on the argument that would be ignored.
+
 The generated input objects still work too: pass one to `Filter` instead of a lambda and it is
 normalised the same way as a builder, with unset operations dropped. That only works because the generated input
 types declare every operation nullable. A hand-written filter type has to do the same — a
