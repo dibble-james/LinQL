@@ -22,6 +22,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LinQL.GraphQL.Client\LinQL.GraphQL.Client.csproj" />
+    <!-- Runs the generator so FilterTests can use the generated client against a real server. -->
+    <ProjectReference Include="..\LinQL\LinQL.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+  </ItemGroup>
+
+  <Import Project="..\LinQL\LinQL.props" />
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\LinQL.Generated.Tests\SDLs\Filtering.graphql" LinQLClientNamespace="LinQL.GraphQL.Client.Tests.Filtering" Link="SDLs\Filtering.graphql" />
   </ItemGroup>
 
 </Project>
