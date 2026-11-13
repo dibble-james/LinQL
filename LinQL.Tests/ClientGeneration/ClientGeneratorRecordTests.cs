@@ -77,11 +77,32 @@ public class ClientGeneratorRecordTests
     }
 
     [Fact]
-    public void RecordModeChangesOnlyTheTypeKeyword()
-        // The members are rendered identically in both modes: the difference is the declaration keyword
-        // and the record semantics (value equality, with expressions, ToString) that come with it.
+    public void RecordsInitialiseThroughInit()
+    {
+        var generated = Generate(FilteringSdl, LinQLTypesAs.Record);
+
+        Assert.Contains("get; init;", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain("get; set;", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ClassesKeepSettableProperties()
+    {
+        var generated = Generate(FilteringSdl);
+
+        Assert.Contains("get; set;", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain("get; init;", generated, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RecordModeChangesOnlyTheDeclarationAndAccessors()
+        // Nothing else about a member changes between the modes: the difference is the declaration
+        // keyword, the mutating accessor, and the record semantics (value equality, with, ToString)
+        // that follow from them.
         => Assert.Equal(
-            Generate(PlainSdl).Replace("partial class", "partial record", StringComparison.Ordinal),
+            Generate(PlainSdl)
+                .Replace("partial class", "partial record", StringComparison.Ordinal)
+                .Replace("get; set;", "get; init;", StringComparison.Ordinal),
             Generate(PlainSdl, LinQLTypesAs.Record));
 
     private static string Generate(string sdl, LinQLTypesAs typesAs = LinQLTypesAs.Class)

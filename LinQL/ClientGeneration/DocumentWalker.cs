@@ -87,14 +87,14 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
     {
         CollectFieldExtensions(node.Fields, context);
 
-        context.Types.Add(new InterfaceTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value)));
+        context.Types.Add(new InterfaceTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
 
         return base.VisitChildren(node, context);
     }
 
     protected override ISyntaxVisitorAction VisitChildren(UnionTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        context.Types.Add(new InterfaceTypeClass(node.Name.Value, [], []));
+        context.Types.Add(new InterfaceTypeClass(node.Name.Value, [], [], context.TypesAs));
 
         return base.VisitChildren(node, context);
     }

@@ -43,9 +43,8 @@ internal class ComplexTypeClass : IClassFactory
                 Attribute(IdentifierName(nameof(GraphQLTypeAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{this.Name}""")))))
             ]));
 
-            // Properties keep get/set either way: a generated response is materialised by System.Text.Json and
-            // an input object is built with an object initialiser, so init-only accessors would only be safe
-            // if every consumer's target framework also had IsExternalInit.
+            // Record mode swaps the declaration keyword and the mutating accessor (see MutatorAccessor);
+            // the members themselves are rendered the same way.
             if (this.TypesAs == LinQLTypesAs.Record)
             {
                 return this.RecordType().AddAttributeLists(attributes);
@@ -113,11 +112,24 @@ internal class ComplexTypeClass : IClassFactory
     internal static string FieldName(string field)
         => char.ToUpperInvariant(field.First()) + field.ToCamelCase().Substring(1);
 
+    /// <summary>
+    /// Gets the property's mutating accessor: <c>set</c> for a class and <c>init</c> for a record, so a
+    /// generated record is only assigned while it is constructed, deserialised or copied with <c>with</c>.
+    /// </summary>
+    /// <remarks>
+    /// <c>init</c> resolves to <c>System.Runtime.CompilerServices.IsExternalInit</c>, which .NET 5+ and the
+    /// usual polyfill packages provide. Interface members get the same accessor, because a record with an
+    /// init-only property cannot implement an interface that declares a setter.
+    /// </remarks>
+    protected AccessorDeclarationSyntax MutatorAccessor
+        => AccessorDeclaration(this.TypesAs == LinQLTypesAs.Record ? SyntaxKind.InitAccessorDeclaration : SyntaxKind.SetAccessorDeclaration)
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+
     protected virtual Func<FieldDefinitionNode, PropertyDeclarationSyntax> CreateField(IDictionary<string, Scalar> knownScalars)
         => f => PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
             .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
             .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
-            .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
+            .AddAccessorListAccessors(this.MutatorAccessor);
 
     protected virtual Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(IDictionary<string, Scalar> knownScalars)
         => f =>
@@ -125,7 +137,7 @@ internal class ComplexTypeClass : IClassFactory
             PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
-                    .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
+                    .AddAccessorListAccessors(this.MutatorAccessor)
                     .WithInitializer(EqualsValueClause(ParseExpression("null!")))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
             MethodDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier("Execute" + FieldName(f.Name.Value)))

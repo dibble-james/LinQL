@@ -10,10 +10,17 @@ generate `partial record`s instead, which brings value equality, `with` expressi
 ```
 
 Only the schema's object types, input objects and root types change. GraphQL interfaces stay C#
-interfaces, the fluent filter builders stay classes, and the properties keep `{ get; set; }`, so
-System.Text.Json deserialisation and object initialisers behave exactly as they did. Any `partial`
-declaration you add yourself has to be a `record` as well once the setting is on. A value other than
-`Class` or `Record` is reported as `LINQLGEN07` and generation falls back to classes.
+interfaces and the fluent filter builders stay classes. Any `partial` declaration you add yourself has
+to be a `record` as well once the setting is on. A value other than `Class` or `Record` is reported as
+`LINQLGEN07` and generation falls back to classes.
+
+Properties become `{ get; init; }` rather than `{ get; set; }`, so a deserialised or constructed result
+is immutable and a `with` expression is the way to change one. GraphQL interfaces get the same
+accessor, because a record with an init-only property cannot implement an interface that declares a
+setter. Two things follow: `init` needs `System.Runtime.CompilerServices.IsExternalInit`, which .NET 5+
+and the usual polyfill packages (PolySharp and friends) provide; and deserialisation relies on
+System.Text.Json 5.0 or later, which is the first version that populates init-only properties. Object
+initialisers already work, so `new ProductSortInput { Price = SortEnumType.DESC }` still compiles.
 
 ### `<AdditionalFiles LinQLExtraNamespaces="" />`
 If you have any custom scalars or types defined outside of the client that require an import, you can
