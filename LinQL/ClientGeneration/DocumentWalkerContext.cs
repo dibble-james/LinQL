@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-internal class DocumentWalkerContext(string file, SourceProductionContext context, string graphNamespace, string[] extraUsings)
+internal class DocumentWalkerContext(string file, SourceProductionContext context, string graphNamespace, string[] extraUsings, LinQLTypesAs typesAs)
 {
     public List<RootTypeClass> RootOperations { get; } = [];
 
@@ -17,6 +17,8 @@ internal class DocumentWalkerContext(string file, SourceProductionContext contex
     public List<Scalar> Scalars { get; } = [.. Scalar.NativeScalars];
 
     public string File { get; } = file;
+
+    public LinQLTypesAs TypesAs { get; } = typesAs;
 
     public SourceProductionContext Context { get; } = context;
 

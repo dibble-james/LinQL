@@ -8,6 +8,9 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <!-- Keep the generated client on disk so a failing snapshot can be traced to the code under test. -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <!-- This project's generated client is emitted as records, so record mode has to compile and
+         translate like class mode does. LinQL.GraphQL.Client.Tests covers the class default. -->
+    <LinQLTypesAs>Record</LinQLTypesAs>
   </PropertyGroup>
 
   <ItemGroup>

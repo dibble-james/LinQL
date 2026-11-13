@@ -144,18 +144,58 @@ public class ClientGeneratorDiagnosticTests
     public void AgreeingFilterArgumentNamesAreNotReported()
         => Assert.DoesNotContain(Generate(AgreeingFilterArgumentSdl), x => x.Id == "LINQLGEN06");
 
-    private static ImmutableArray<Diagnostic> Generate(string sdl)
+    [Fact]
+    public void TypesAsBuildPropertySelectsRecordGeneration()
     {
-        var driver = CSharpGeneratorDriver.Create(
+        // Asserts the property reaches the generator through the same build_property channel
+        // LinQL.props declares, rather than only being reachable from Generate. The schema has no
+        // filter inputs, so every generated type declaration is a schema type.
+        var source = string.Join("\n", Run(PlainSdl, "Record").GeneratedTrees.Select(x => x.ToString()));
+
+        Assert.Contains("public partial record Character", source, StringComparison.Ordinal);
+        Assert.Contains("public partial record Query : RootType<Query>", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("public partial class", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void UnknownTypesAsValueIsReported()
+    {
+        var diagnostic = Assert.Single(Generate(DeclaredFilterInputSdl, "Structs"), x => x.Id == "LINQLGEN07");
+
+        Assert.Contains("'Structs'", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void KnownTypesAsValuesAreNotReported()
+    {
+        Assert.DoesNotContain(Generate(DeclaredFilterInputSdl, "Class"), x => x.Id == "LINQLGEN07");
+        Assert.DoesNotContain(Generate(DeclaredFilterInputSdl, "record"), x => x.Id == "LINQLGEN07");
+    }
+
+    private const string PlainSdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          hero: Character
+        }
+
+        type Character {
+          name: String!
+        }
+        """;
+
+    private static ImmutableArray<Diagnostic> Generate(string sdl, string? typesAs = null)
+        => [.. Run(sdl, typesAs).Diagnostics];
+
+    private static GeneratorDriverRunResult Run(string sdl, string? typesAs = null)
+        => CSharpGeneratorDriver.Create(
             generators: [new ClientGenerator().AsSourceGenerator()],
             additionalTexts: [new SdlFile("SDLs/Filtering.graphql", sdl)],
-            optionsProvider: new NamespaceOptions());
-
-        return [.. driver
-            .RunGenerators(CSharpCompilation.Create("Filtering"))
-            .GetRunResult()
-            .Diagnostics];
-    }
+            optionsProvider: new NamespaceOptions(typesAs))
+        .RunGenerators(CSharpCompilation.Create("Filtering"))
+        .GetRunResult();
 
     private sealed class SdlFile(string path, string content) : AdditionalText
     {
@@ -168,25 +208,37 @@ public class ClientGeneratorDiagnosticTests
     /// <summary>
     /// Supplies the additional-file metadata <c>LinQL.props</c> would add to the csproj.
     /// </summary>
-    private sealed class NamespaceOptions : AnalyzerConfigOptionsProvider
+    private sealed class NamespaceOptions(string? typesAs) : AnalyzerConfigOptionsProvider
     {
-        private static readonly TestOptions Options = new();
+        private readonly TestOptions options = new(typesAs);
 
-        public override AnalyzerConfigOptions GlobalOptions => Options;
+        public override AnalyzerConfigOptions GlobalOptions => this.options;
 
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => Options;
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => this.options;
 
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Options;
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => this.options;
     }
 
-    private sealed class TestOptions : AnalyzerConfigOptions
+    private sealed class TestOptions(string? typesAs) : AnalyzerConfigOptions
     {
-        private static readonly Dictionary<string, string> Values = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["build_metadata.additionalfiles.LinQLClientNamespace"] = "Filtering",
-        };
+        private readonly Dictionary<string, string> values = Create(typesAs);
 
         public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
-            => Values.TryGetValue(key, out value);
+            => this.values.TryGetValue(key, out value);
+
+        private static Dictionary<string, string> Create(string? typesAs)
+        {
+            var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["build_metadata.additionalfiles.LinQLClientNamespace"] = "Filtering",
+            };
+
+            if (typesAs is not null)
+            {
+                values["build_property.LinQLTypesAs"] = typesAs;
+            }
+
+            return values;
+        }
     }
 }
