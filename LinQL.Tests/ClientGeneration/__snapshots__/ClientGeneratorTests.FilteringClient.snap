@@ -18,7 +18,7 @@ namespace Filtering
         [GraphQLOperation, GraphQLField(Name = "products")]
         public Product[] ExecuteProducts([GraphQLArgument(GQLType = "ProductFilterInput")] ProductFilterInput? where, [GraphQLArgument(GQLType = "Int")] int? @in) => Products;
         [GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
-        public Product[] FilterProducts(System.Linq.Expressions.Expression<System.Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> _) => Products;
+        public Product[] FilterProducts(System.Linq.Expressions.Expression<System.Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> _, [GraphQLArgument(GQLType = "Int")] int? @in = null) => Products;
     }
 
     [GraphQLType(Name = "Product")]

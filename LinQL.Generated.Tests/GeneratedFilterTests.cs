@@ -59,6 +59,18 @@ public class GeneratedFilterTests
             .Select(p => new { p.Name }));
 
     [Fact]
+    public void CompanionForwardsOtherArguments()
+        => Translate(q => q
+            .FilterProducts(f => f.Name(n => n.Eq("widget")), 1)
+            .Select(p => new { p.Name }));
+
+    [Fact]
+    public void CompanionRequiresRequiredArguments()
+        => Translate(q => q
+            .FilterFeatured(f => f.Price(p => p.Gt(10)), 5)
+            .Select(p => new { p.Name }));
+
+    [Fact]
     public void InterfaceCompanion()
         => Translate(q => q
             .Results

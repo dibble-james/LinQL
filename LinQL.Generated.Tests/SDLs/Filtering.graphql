@@ -4,6 +4,7 @@ schema {
 
 type Query {
   products(where: ProductFilterInput, in: Int): [Product!]!
+  featured(first: Int!, where: ProductFilterInput): [Product!]!
   results: [SearchResult!]!
 }
 

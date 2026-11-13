@@ -121,6 +121,38 @@ internal class ComplexTypeClass : IClassFactory
     internal static string FilterBuilderName(string filterTypeName)
         => filterTypeName + "Builder";
 
+    /// <summary>
+    /// Gets the parameters that forward the field's arguments other than the filter.
+    /// </summary>
+    /// <remarks>
+    /// A filterable field may also take ordering, paging or custom arguments, and dropping them from the
+    /// companion would send a document the server rejects. Optional GraphQL arguments stay optional (as a
+    /// <c>null</c> default, which the translator does not send) unless a required argument follows them,
+    /// because C# does not allow a required parameter after an optional one.
+    /// </remarks>
+    private static IEnumerable<ParameterSyntax> CreateCompanionArguments(FieldDefinitionNode field, InputValueDefinitionNode filterArgument, IDictionary<string, Scalar> knownScalars)
+    {
+        var arguments = field.Arguments.Where(x => x.Name.Value != filterArgument.Name.Value).ToList();
+
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            var argument = arguments[i];
+
+            var parameter = Parameter(IdentifierFor(argument.Name.Value))
+                .WithType(ParseTypeName(TypeName(argument.Type, knownScalars)))
+                .AddAttributeLists(AttributeList(SeparatedList(
+                [
+                    Attribute(
+                        IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()),
+                        AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression($@"GQLType = ""{argument.Type}""")))))
+                ])));
+
+            yield return argument.Type.IsNonNullType() || arguments.Skip(i + 1).Any(x => x.Type.IsNonNullType())
+                ? parameter
+                : parameter.WithDefault(EqualsValueClause(ParseExpression("null")));
+        }
+    }
+
     protected static MethodDeclarationSyntax CreateFilterCompanionMember(FieldDefinitionNode field, InputValueDefinitionNode filterArgument, IDictionary<string, Scalar> knownScalars, bool withBody)
     {
         var builder = FilterBuilderName(filterArgument.Type.NamedType().Name.Value);
@@ -139,7 +171,10 @@ internal class ComplexTypeClass : IClassFactory
                     ])))
             ])))
             .AddParameterListParameters(
-                Parameter(Identifier("_")).WithType(ParseTypeName($"System.Linq.Expressions.Expression<System.Func<{builder}, {builder}>>")));
+                [
+                    Parameter(Identifier("_")).WithType(ParseTypeName($"System.Linq.Expressions.Expression<System.Func<{builder}, {builder}>>")),
+                    .. CreateCompanionArguments(field, filterArgument, knownScalars),
+                ]);
 
         // An interface member has no body: the implementing types declare the companion themselves.
         return withBody

@@ -174,6 +174,48 @@ the input type needs its companion and builders added by hand for now.
 The generated input objects still work too: pass one to the companion and it is normalised the
 same way as a builder, with unset operations dropped.
 
+#### Fields with other arguments
+
+A filterable field usually takes more than the filter — `products(where:, order:, first:)` under
+Hot Chocolate's paging conventions. The companion forwards those arguments in schema order, after
+the builder, so the document it produces is one the server accepts:
+
+```graphql
+type Query {
+  products(where: ProductFilterInput, order: [ProductSortInput!], first: Int!): [Product!]!
+}
+```
+
+```csharp
+[GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
+public Product[] FilterProducts(
+    Expression<Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> _,
+    [GraphQLArgument(GQLType = "[ProductSortInput!]")] ProductSortInput[]? order,
+    [GraphQLArgument(GQLType = "Int!")] int first) => Products;
+```
+
+Optional GraphQL arguments are optional in C# too (`in: Int` becomes `int? @in = null`), unless a
+required argument follows them, since C# does not allow a required parameter after an optional one.
+An argument left at `null` is not sent, so the document only carries what was asked for:
+
+```csharp
+client.SendAsync((Root q) => q
+    .FilterProducts(f => f.Price(p => p.Gt(10)), null, 10)
+    .Select(p => new { p.Name }));
+```
+
+```graphql
+query linql($var1: ProductFilterInput, $var2: Int!) {
+  products(where: $var1, first: $var2) {
+    name
+  }
+}
+```
+
+A required GraphQL argument is a required parameter, so a companion cannot produce a document the
+server rejects for a missing argument. Ordering and paging themselves are not translated — whatever
+you pass is forwarded as an argument, nothing more.
+
 #### Only the operations you set are sent
 
 The builder records only the operations you call, and a generated input object passed to the

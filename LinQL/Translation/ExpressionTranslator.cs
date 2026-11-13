@@ -194,14 +194,31 @@ public class ExpressionTranslator : ExpressionVisitor
         var field = (TypeFieldExpression)parent.WithField(
             new TypeFieldExpression(filter.Field, node.Method.ReturnType, node.Method.DeclaringType, this.expression.Root));
 
-        var value = FilterExpressionTranslator.Translate(node.Arguments.Single());
-
-        if (value.IsEmpty)
+        // The filter itself is the argument without a [GraphQLArgument]: everything else the companion
+        // takes is part of the document as an ordinary field argument.
+        foreach (var (parameter, argument) in node.Method.GetParameters().Zip(node.Arguments, (p, a) => (Parameter: p, Argument: a)))
         {
-            throw new InvalidOperationException($"The filter on '{filter.Field}' has no operations. Omit the filter to query without one.");
-        }
+            if (parameter.GetCustomAttribute<GraphQLArgumentAttribute>() is null)
+            {
+                var value = FilterExpressionTranslator.Translate(argument);
 
-        field.WithArgument(filter.Argument, filter.GQLType, value.ToDictionary());
+                if (value.IsEmpty)
+                {
+                    throw new InvalidOperationException($"The filter on '{filter.Field}' has no operations. Omit the filter to query without one.");
+                }
+
+                field.WithArgument(filter.Argument, filter.GQLType, value.ToDictionary());
+
+                continue;
+            }
+
+            // An optional argument left at its default is not part of the document, the same way an
+            // unset filter operation is not.
+            if (ArgumentVistor.GetValue(argument) is { } forwarded)
+            {
+                field.WithArgument(parameter.Name, parameter.GetArgumentType(), forwarded);
+            }
+        }
 
         return field;
     }
