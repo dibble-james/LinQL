@@ -187,7 +187,9 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
                             Microsoft.CodeAnalysis.Location.Create(
                                 context.File,
                                 TextSpan.FromBounds(argument.Location!.Start, argument.Location!.End),
-                                new LinePositionSpan(new LinePosition(argument.Location!.Line, argument.Location!.Start), new LinePosition(argument.Location!.Line, argument.Location!.End))),
+                                new LinePositionSpan(
+                                    new LinePosition(argument.Location!.Line - 1, argument.Location!.Column - 1),
+                                    new LinePosition(argument.Location!.Line - 1, argument.Location!.Column - 1))),
                             argument.Name.Value,
                             field.Name.Value,
                             typeName));

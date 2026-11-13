@@ -60,6 +60,12 @@ public class ClientGeneratorDiagnosticTests
         Assert.Contains("'where'", diagnostic.GetMessage(), StringComparison.Ordinal);
         Assert.Contains("'products'", diagnostic.GetMessage(), StringComparison.Ordinal);
         Assert.Contains("'ProductFilterInput'", diagnostic.GetMessage(), StringComparison.Ordinal);
+
+        // The diagnostic points at the argument itself, not at the file.
+        var position = diagnostic.Location.GetLineSpan().StartLinePosition;
+
+        Assert.Equal(5, position.Line);
+        Assert.Equal(11, position.Character);
     }
 
     [Fact]
