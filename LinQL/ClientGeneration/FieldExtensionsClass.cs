@@ -33,18 +33,35 @@ internal class FieldExtensionsClass(IEnumerable<FieldExtension> extensions) : IC
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
             .AddMembers([.. extensions
                 .Where(x => !knownScalars.ContainsKey(x.Field.Type.NamedType().Name.Value))
-                .Select(x => new
+                .SelectMany(x => MethodNames(x).Select(method => new
                 {
                     Extension = x,
                     Receiver = ComplexTypeClass.TypeName(x.Field.Type, knownScalars),
-                    Method = MethodName(x),
+                    Method = method,
                     Parameter = ParameterType(x, knownScalars),
-                })
+                }))
                 .GroupBy(x => $"{x.Receiver}|{x.Method}|{x.Parameter}", StringComparer.Ordinal)
-                .Select(g => CreateMember(g.First().Extension, g.First().Receiver, knownScalars))]);
+                .Select(g => CreateMember(g.First().Extension, g.First().Method, g.First().Receiver, knownScalars))]);
 
-    private static string MethodName(FieldExtension extension)
-        => extension.IsFilter ? "Filter" : ComplexTypeClass.FieldName(extension.Argument.Name.Value);
+    /// <summary>
+    /// Gets the method names an argument is attached by.
+    /// </summary>
+    /// <remarks>
+    /// The schema's own name always comes first. <c>order</c> also gets <c>Sort</c>, because ordering is
+    /// the one argument every call site reads as a verb (`q.Products.Sort(...)`), while the rest keep the
+    /// schema spelling.
+    /// </remarks>
+    private static IEnumerable<string> MethodNames(FieldExtension extension)
+    {
+        if (extension.IsFilter)
+        {
+            return ["Filter"];
+        }
+
+        var name = ComplexTypeClass.FieldName(extension.Argument.Name.Value);
+
+        return name == "Order" ? [name, "Sort"] : [name];
+    }
 
     private static string ParameterType(FieldExtension extension, IDictionary<string, Scalar> knownScalars)
         => extension.IsFilter
@@ -54,7 +71,7 @@ internal class FieldExtensionsClass(IEnumerable<FieldExtension> extensions) : IC
     private static string BuilderLambda(string filterType)
         => $"System.Linq.Expressions.Expression<System.Func<{ComplexTypeClass.FilterBuilderName(filterType)}, {ComplexTypeClass.FilterBuilderName(filterType)}>>";
 
-    private static MethodDeclarationSyntax CreateMember(FieldExtension extension, string receiver, IDictionary<string, Scalar> knownScalars)
+    private static MethodDeclarationSyntax CreateMember(FieldExtension extension, string method, string receiver, IDictionary<string, Scalar> knownScalars)
     {
         var argument = extension.Argument;
         var parameterType = ParameterType(extension, knownScalars);
@@ -85,7 +102,7 @@ internal class FieldExtensionsClass(IEnumerable<FieldExtension> extensions) : IC
             parameter = parameter.WithDefault(EqualsValueClause(ParseExpression("null")));
         }
 
-        return MethodDeclaration(ParseTypeName(receiver), Identifier(MethodName(extension)))
+        return MethodDeclaration(ParseTypeName(receiver), Identifier(method))
             .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(attribute)))
             .AddParameterListParameters(

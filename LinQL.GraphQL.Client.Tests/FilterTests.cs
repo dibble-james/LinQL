@@ -118,7 +118,7 @@ public class FilterTests : IDisposable
                 .Featured
                 .First(3)
                 .Filter(f => f.Price(p => p.Gt(10)))
-                .Order(PriceDescending)
+                .Sort(PriceDescending)
                 .Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 

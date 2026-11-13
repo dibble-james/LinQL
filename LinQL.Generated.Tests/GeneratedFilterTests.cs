@@ -94,6 +94,14 @@ public class GeneratedFilterTests
             .Select(p => new { p.Name }));
 
     [Fact]
+    public void SortAliasForOrderArgument()
+        => Translate(q => q
+            .Featured
+            .First(3)
+            .Sort(PriceDescending)
+            .Select(p => new { p.Name }));
+
+    [Fact]
     public void InterfaceFieldFilter()
         => Translate(q => q
             .Results

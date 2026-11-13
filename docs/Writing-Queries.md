@@ -206,14 +206,21 @@ public static Product[] First(this Product[] source, int first) => source;
 
 [GraphQLArgument(Name = "order", GQLType = "[ProductSortInput!]")]
 public static Product[] Order(this Product[] source, ProductSortInput[]? order = null) => source;
+
+[GraphQLArgument(Name = "order", GQLType = "[ProductSortInput!]")]
+public static Product[] Sort(this Product[] source, ProductSortInput[]? order = null) => source;
 ```
+
+`order` also gets a `Sort` alias, because ordering is the one argument every call site reads as a verb;
+both attach the same `order` argument. The other arguments keep the schema's spelling, so the call
+site still names what the field declares.
 
 ```csharp
 client.SendAsync((Root q) => q
     .Featured
     .First(10)
     .Filter(f => f.Price(p => p.Gt(10)))
-    .Order(sorts)
+    .Sort(sorts)
     .Select(p => new { p.Name }));
 ```
 
