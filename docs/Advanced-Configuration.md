@@ -1,3 +1,20 @@
+### `<LinQLTypesAs>Class|Record</LinQLTypesAs>`
+The generated client's types are `partial class`es by default. Set `LinQLTypesAs` to `Record` to
+generate `partial record`s instead, which brings value equality, `with` expressions and a generated
+`ToString`:
+
+```xml
+<PropertyGroup>
+  <LinQLTypesAs>Record</LinQLTypesAs>
+</PropertyGroup>
+```
+
+Only the schema's object types, input objects and root types change. GraphQL interfaces stay C#
+interfaces, the fluent filter builders stay classes, and the properties keep `{ get; set; }`, so
+System.Text.Json deserialisation and object initialisers behave exactly as they did. Any `partial`
+declaration you add yourself has to be a `record` as well once the setting is on. A value other than
+`Class` or `Record` is reported as `LINQLGEN07` and generation falls back to classes.
+
 ### `<AdditionalFiles LinQLExtraNamespaces="" />`
 If you have any custom scalars or types defined outside of the client that require an import, you can
 add these namespaces as a `;` delimited list on the file include in the csproj.  Eg `LinQLExtraNamespaces="NodaTime;System.Spatial"`

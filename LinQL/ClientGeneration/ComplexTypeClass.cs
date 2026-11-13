@@ -19,21 +19,65 @@ internal class ComplexTypeClass : IClassFactory
     {
     }
 
-    public ComplexTypeClass(string name, IEnumerable<FieldDefinitionNode> fields, IEnumerable<string> interfaces)
-        => (this.Name, this.fields, this.Interfaces) = (name, fields.ToList(), interfaces);
+    public ComplexTypeClass(string name, IEnumerable<FieldDefinitionNode> fields, IEnumerable<string> interfaces, LinQLTypesAs typesAs = LinQLTypesAs.Class)
+        => (this.Name, this.fields, this.Interfaces, this.TypesAs) = (name, fields.ToList(), interfaces, typesAs);
 
     public string Name { get; }
 
     public IEnumerable<string> Interfaces { get; }
 
+    /// <summary>
+    /// Gets the kind of declaration this type is emitted as.
+    /// </summary>
+    public LinQLTypesAs TypesAs { get; }
+
     public void WithFields(IReadOnlyList<FieldDefinitionNode> fields)
         => this.fields.AddRange(fields);
 
-    protected virtual TypeDeclarationSyntax Type => ClassDeclaration(Identifier(this.Name))
-            .AddAttributeLists([AttributeList(SeparatedList(
+    protected virtual TypeDeclarationSyntax Type
+    {
+        get
+        {
+            var attributes = AttributeList(SeparatedList(
             [
                 Attribute(IdentifierName(nameof(GraphQLTypeAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{this.Name}""")))))
-            ]))]);
+            ]));
+
+            // Properties keep get/set either way: a generated response is materialised by System.Text.Json and
+            // an input object is built with an object initialiser, so init-only accessors would only be safe
+            // if every consumer's target framework also had IsExternalInit.
+            if (this.TypesAs == LinQLTypesAs.Record)
+            {
+                return this.RecordType().AddAttributeLists(attributes);
+            }
+
+            return ClassDeclaration(Identifier(this.Name)).AddAttributeLists(attributes);
+        }
+    }
+
+    /// <summary>
+    /// Creates an empty <c>record</c> declaration for this type.
+    /// </summary>
+    /// <remarks>
+    /// The brace tokens are supplied explicitly: the short factory overloads produce a declaration with
+    /// missing tokens, which renders without a body once members are added.
+    /// </remarks>
+    private TypeDeclarationSyntax RecordType()
+        => RecordDeclaration(
+            kind: SyntaxKind.RecordDeclaration,
+            attributeLists: default,
+            modifiers: default,
+            keyword: Token(SyntaxKind.RecordKeyword),
+            classOrStructKeyword: default,
+            identifier: Identifier(this.Name),
+            typeParameterList: null,
+            parameterList: null,
+            baseList: null,
+            constraintClauses: default,
+            openBraceToken: Token(SyntaxKind.OpenBraceToken),
+            members: default,
+            closeBraceToken: Token(SyntaxKind.CloseBraceToken),
+            semicolonToken: default);
 
     public virtual MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars)
     {
