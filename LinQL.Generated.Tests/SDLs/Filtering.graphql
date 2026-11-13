@@ -3,13 +3,18 @@ schema {
 }
 
 type Query {
-  products(where: ProductFilterInput): [Product!]!
+  products(where: ProductFilterInput, in: Int): [Product!]!
 }
 
 type Product {
   id: ID!
   name: String!
   price: Float!
+  tags: [Tag!]!
+}
+
+type Tag {
+  label: String!
 }
 
 input ProductFilterInput {
@@ -17,6 +22,7 @@ input ProductFilterInput {
   or: [ProductFilterInput!]
   name: StringOperationFilterInput
   price: NumberOperationFilterInput
+  tags: ListFilterInputTypeOfTagFilterInput
 }
 
 input StringOperationFilterInput {
@@ -27,6 +33,18 @@ input StringOperationFilterInput {
 }
 
 input NumberOperationFilterInput {
+  eq: Float
   gt: Float
   lt: Float
+}
+
+input TagFilterInput {
+  label: StringOperationFilterInput
+}
+
+input ListFilterInputTypeOfTagFilterInput {
+  some: TagFilterInput
+  all: TagFilterInput
+  none: TagFilterInput
+  any: Boolean
 }
