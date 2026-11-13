@@ -6,6 +6,16 @@ type Query {
   products(where: ProductFilterInput, in: Int): [Product!]!
   featured(first: Int!, after: String, last: Int, where: ProductFilterInput, order: [ProductSortInput!]): [Product!]!
   results(where: SearchResultFilterInput): [SearchResult!]!
+  search(criteria: SearchCriteriaInput!, channel: Channel, where: ProductFilterInput, order: [ProductSortInput!]): [Product!]!
+}
+
+input SearchCriteriaInput {
+  term: String
+}
+
+enum Channel {
+  WEB
+  MOBILE
 }
 
 input ProductSortInput {

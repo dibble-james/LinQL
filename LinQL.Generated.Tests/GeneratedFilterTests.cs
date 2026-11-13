@@ -112,6 +112,16 @@ public class GeneratedFilterTests
             .Select(p => new { p.Name }));
 
     [Fact]
+    public void CustomArgumentsComposeWithFilterAndSort()
+        => Translate(q => q
+            .Search
+            .Criteria(new Client.SearchCriteriaInput { Term = "widget" })
+            .Channel(Client.Channel.WEB)
+            .Filter(f => f.Price(p => p.Gt(10)))
+            .Order(PriceDescending)
+            .Select(p => new { p.Name }));
+
+    [Fact]
     public void InterfaceFieldFilter()
         => Translate(q => q
             .Results

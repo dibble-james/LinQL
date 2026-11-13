@@ -1,0 +1,19 @@
+﻿query linql(
+  $var1: SearchCriteriaInput!,
+  $var2: Channel,
+  $var3: ProductFilterInput,
+  $var4: [ProductSortInput!]
+)
+ {
+  search(
+    criteria: $var1,
+    channel: $var2,
+    where: $var3,
+    order: $var4
+  ) {
+    name
+  }
+}
+
+--- variables ---
+{"var1":{"term":"widget"},"var2":"WEB","var3":{"price":{"gt":10}},"var4":[{"price":"DESC"}]}
