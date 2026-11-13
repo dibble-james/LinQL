@@ -73,6 +73,7 @@ public class ExpressionTranslator : ExpressionVisitor
         { Method.Name: nameof(Enumerable.OfType) } => this.TraverseExtensionMethodCall(node).WithField(new SpreadExpression(node.Method.GetGenericArguments()[0], this.expression.Root)),
         { Method.Name: nameof(Enumerable.Select) } => this.TraverseSelect(node),
         { Method.Name: nameof(SelectExtentions.SelectAll), Method.DeclaringType.Name: nameof(SelectExtentions) } => this.TraverseSelectAll(node),
+        { Method: var method } when method.GetCustomAttribute<GraphQLFilterAttribute>() is not null => this.TraverseFilter(node),
         { Arguments: var args } when args.Any(x => x.UnwrapLambdaFromQuote() is not null) => this.VisitLambdas(node),
         _ => base.VisitMethodCall(node),
     };
@@ -182,6 +183,27 @@ public class ExpressionTranslator : ExpressionVisitor
         parent.WithField(field);
 
         return parent;
+    }
+
+    private Expression TraverseFilter(MethodCallExpression node)
+    {
+        var filter = node.Method.GetCustomAttribute<GraphQLFilterAttribute>()
+            ?? throw new InvalidOperationException($"'{node.Method.Name}' is not a filter companion.");
+        var parent = node.Object is null ? this.expression : this.TraverseMember(node.Object);
+
+        var field = (TypeFieldExpression)parent.WithField(
+            new TypeFieldExpression(filter.Field, node.Method.ReturnType, node.Method.DeclaringType, this.expression.Root));
+
+        var value = FilterExpressionTranslator.Translate(node.Arguments.Single());
+
+        if (value.IsEmpty)
+        {
+            throw new InvalidOperationException($"The filter on '{filter.Field}' has no operations. Omit the filter to query without one.");
+        }
+
+        field.WithArgument(filter.Argument, filter.GQLType, value.ToDictionary());
+
+        return field;
     }
 
     private static FieldExpression VisitFieldWithArguments(MethodCallExpression node, IRootExpression root)

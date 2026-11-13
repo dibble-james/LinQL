@@ -12,6 +12,7 @@
 -   [x] Mutations
 -   [x] Input Types
 -   [x] Arguments
+-   [x] Hot Chocolate filtering (`where` arguments)
 -   [x] Interfaces/Unions
 -   [x] Auto-generating types via introspection
 -   [x] Subscriptions
@@ -95,6 +96,38 @@ Some things are not supported by this integration yet:
 -   `SendAsync` always goes to the network. `Watch` honours the configured `ExecutionStrategy`; subscriptions always go to the network.
 
 See the [Strawberry Shake guide](https://github.com/dibble-james/LinQL/blob/main/docs/StrawberryShake.md) for usage, strategies and the cache boundary.
+
+### Filtering
+
+When the endpoint exposes Hot Chocolate filter arguments (`products(where: ProductFilterInput)`),
+the generator adds a `Filter{Field}` companion, and LinQL sends your filter as the `where`
+variable:
+
+```csharp
+var products = await client.SendAsync((Root q) => q
+    .FilterProducts(new ProductFilterInput
+    {
+        Price = new DecimalOperationFilterInput { Gt = 10 },
+        Name = new StringOperationFilterInput { Contains = "widget" },
+    })
+    .Select(p => new { p.Id, p.Name }));
+
+// query linql($var1: ProductFilterInput) { products(where: $var1) { id name } }
+// $var1 = { "price": { "gt": 10 }, "name": { "contains": "widget" } }
+```
+
+The operations are the schema's own (`gt`, `contains`, `some`, `all`, `none`, `and`, `or`, …),
+so anything the endpoint advertises works and anything it doesn't is rejected. Only the operations
+you set are sent: unset properties are dropped, and a filter with nothing set throws rather than
+sending `{}`, which Hot Chocolate treats as an error on some versions and as no filter on others.
+
+`.Where` is **not** mapped onto this. It is applied client-side after the response today, and
+mapping it would silently change results: its C# semantics are not Hot Chocolate's, and it would
+move work to the server without the caller asking. Filtering stays explicit and one-to-one with
+the schema.
+
+See [Writing Queries](https://github.com/dibble-james/LinQL/blob/main/docs/Writing-Queries.md#filtering)
+for nested, `and`/`or` and collection filters, and the null rules.
 
 ### What can I do with it?
 A range of expressions can be converted as demonstrated by [the `TranslationProviderTests`](https://github.com/dibble-james/LinQL/blob/interface-support/LinQL.Tests/Translation/TranslationProviderTests.cs). 

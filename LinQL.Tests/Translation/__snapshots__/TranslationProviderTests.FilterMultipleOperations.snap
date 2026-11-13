@@ -1,0 +1,14 @@
+﻿query linql(
+  $var1: ProductFilterInput
+)
+ {
+  products(
+    where: $var1
+  ) {
+    name
+    price
+  }
+}
+
+--- variables ---
+{"var1":{"price":{"gt":10,"lt":30}}}

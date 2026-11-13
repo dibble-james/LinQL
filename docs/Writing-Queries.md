@@ -106,3 +106,148 @@ Another scenario is where you have the results of an operation or a nested type 
 ```csharp
 (await Query((Root x) => new { Number = x.ExampleType.Number, Obj = x.ExampleType.GetByNumber(123).Project(y => new { y.Number, y.Text }) });
 ```
+
+### Filtering
+
+Hot Chocolate filtering is a resolver *argument* (`products(where: ProductFilterInput)`), not a
+selection modifier, so LinQL exposes it as its own operation rather than translating `Where`.
+The reasoning is covered in [Why not `Where`](#why-not-where).
+
+#### The generated companion
+
+When an SDL field takes an argument whose input type is named `<Something>FilterInput`, the
+generated root type gets a companion named `Filter{Field}`. For this SDL:
+
+```graphql
+type Query {
+  products(where: ProductFilterInput): [Product!]!
+}
+```
+
+the generator produces:
+
+```csharp
+[GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
+public Product[] FilterProducts(ProductFilterInput? filter) => Products;
+```
+
+Pass the generated input object and LinQL sends the filter as a variable:
+
+```csharp
+var products = await client.SendAsync((Root q) => q
+    .FilterProducts(new ProductFilterInput
+    {
+        Price = new DecimalOperationFilterInput { Gt = 10 },
+        Name = new StringOperationFilterInput { Contains = "widget" },
+    })
+    .Select(p => new { p.Id, p.Name, p.Price }));
+```
+
+```graphql
+query linql($var1: ProductFilterInput) {
+  products(where: $var1) {
+    id
+    name
+    price
+  }
+}
+```
+
+```json
+{ "var1": { "price": { "gt": 10 }, "name": { "contains": "widget" } } }
+```
+
+The argument name and type come from the SDL, so a filter convention that renames the argument
+still works. The `<Something>FilterInput` name is Hot Chocolate's convention and is what the
+generator looks for (a type named exactly `FilterInput` is treated as an ordinary input); a custom
+convention that renames the input type needs its companion added by hand for now.
+
+#### Only the operations you set are sent
+
+The generated input types have nullable properties, and LinQL normalises the object before it
+serialises: unset properties (including empty nested objects) are dropped, so only the operations
+you actually set appear in the variable. Enums are sent by name.
+
+This matters because Hot Chocolate treats `null` as a **value**, not as absence: on a nullable
+property `{ "eq": null }` means `IS NULL` and silently narrows the results, and on a non-nullable
+property it is an error. An entirely empty filter (`{}`) is worse: Hot Chocolate 13 throws and
+Hot Chocolate 16 silently returns every row. LinQL refuses to send either — a filter with no
+operations throws an `InvalidOperationException` instead, so omit the argument (or the companion)
+to query without a filter.
+
+#### Nested objects, `and`/`or` and collections
+
+Nested inputs work exactly like scalar ones:
+
+```csharp
+.FilterProducts(new ProductFilterInput
+{
+    Brand = new BrandFilterInput { Name = new StringOperationFilterInput { Eq = "acme" } },
+})
+// => { "brand": { "name": { "eq": "acme" } } }
+```
+
+`And` and `Or` take further filter inputs. Anything already set on the filter is folded into the
+first branch of the combinator, because sibling fields are `AND` in Hot Chocolate:
+
+```csharp
+.FilterProducts(new ProductFilterInput
+{
+    Price = new DecimalOperationFilterInput { Gt = 10 },
+    Or = [new ProductFilterInput { Name = new StringOperationFilterInput { Eq = "widget" } }],
+})
+// => { "or": [ { "price": { "gt": 10 } }, { "name": { "eq": "widget" } } ] }
+```
+
+Collection filters use the wrapper Hot Chocolate generates for the element type. It has `some`,
+`all`, `none` and `any` and nothing else:
+
+```csharp
+.FilterProducts(new ProductFilterInput
+{
+    Tags = new ListFilterInputTypeOfTagFilterInput
+    {
+        Some = new TagFilterInput { Label = new StringOperationFilterInput { Eq = "new" } },
+    },
+})
+// => { "tags": { "some": { "label": { "eq": "new" } } } }
+```
+
+`some` is `Any`, `all` is `All` (vacuously true on an empty list), `none` is `!Any` and
+`any: false` matches empty lists. `in`/`nin` belong to the element filter, so "has any of" is
+`Some = new TagFilterInput { ... }` with `In` set on the operation input. There is no `not` field
+anywhere in the schema; use the negated operations (`neq`, `nin`, `ncontains`, `ngt`, …).
+
+#### Why not `Where`
+
+`.Where(p => p.Price > 10)` is **not** translated into a filter argument. `ExpressionTranslator`
+has no case for it, so the predicate stays in `OriginalQuery` and is applied by the adapter
+*after* the response arrives: the full result set is still fetched and then filtered in memory.
+There is no plan to map it onto `where`, because the two are not the same operation:
+
+- Hot Chocolate's vocabulary is per schema (`gt`, `contains`, `some`, `in`, negated variants …),
+  while a C# predicate is arbitrary. Any automatic mapping would silently change results —
+  `p.Price > 10` and `price.gt(10)` already differ for nulls.
+- `Where` cannot express `or` at the top level without rewriting the expression, and rewriting a
+  predicate into the server's vocabulary is exactly the lossy translation this design avoids.
+- It would move evaluation from the client to the server without the caller asking, which changes
+  both the number of rows fetched and which rows are returned.
+
+Filtering is therefore explicit and one-to-one with the schema. `Where` keeps working as before
+for shaping results you already have.
+
+#### Not covered
+
+- Sorting (`order`) and paging (`first`, `after`, `last`, `before`). Both change the query shape or
+  the result type and need their own design.
+- Companions on interface-typed fields; only object and root types get one today.
+- A typed builder surface (`f => f.Price(p => p.Gt(10))`) is in progress; today the companion takes
+  the generated input object. See [ADR-0005](https://github.com/dibble-james/LinQL/issues/46).
+
+#### Prerequisites
+
+The SDL must contain the filter input types, so export it from a server with `AddFiltering()` or
+`[UseFiltering]`. Hot Chocolate 16 disables introspection by default; use `GET /graphql?sdl` or
+the Hot Chocolate CLI to produce the SDL.
+
+Filtering lives in `LinQL` itself, so the Strawberry Shake adapter supports it the same way.

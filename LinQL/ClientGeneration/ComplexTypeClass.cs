@@ -10,6 +10,8 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 internal class ComplexTypeClass : IClassFactory
 {
+    private const string FilterInputSuffix = "FilterInput";
+
     private readonly List<FieldDefinitionNode> fields;
 
     public ComplexTypeClass(string name)
@@ -74,7 +76,10 @@ internal class ComplexTypeClass : IClassFactory
             .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
 
     protected virtual Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(IDictionary<string, Scalar> knownScalars)
-        => f =>
+        => f => [.. this.CreateOperationMembers(f, knownScalars), .. this.CreateFilterCompanion(f, knownScalars)];
+
+    protected virtual IEnumerable<MemberDeclarationSyntax> CreateOperationMembers(FieldDefinitionNode f, IDictionary<string, Scalar> knownScalars)
+        =>
         [
             PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
@@ -90,7 +95,7 @@ internal class ComplexTypeClass : IClassFactory
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
                     ])))
                     .AddParameterListParameters(
-                        [.. f.Arguments.Select(p => Parameter(Identifier(p.Name.Value))
+                        [.. f.Arguments.Select(p => Parameter(IdentifierFor(p.Name.Value))
                             .WithType(ParseTypeName(TypeName(p.Type, knownScalars)))
                             .AddAttributeLists(AttributeList(SeparatedList(
                             [
@@ -99,4 +104,36 @@ internal class ComplexTypeClass : IClassFactory
                     .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(f.Name.Value))))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
         ];
+
+    private static SyntaxToken IdentifierFor(string name)
+        => Microsoft.CodeAnalysis.CSharp.SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None
+            ? VerbatimIdentifier(SyntaxTriviaList.Empty, name, name, SyntaxTriviaList.Empty)
+            : Identifier(name);
+
+    private IEnumerable<MemberDeclarationSyntax> CreateFilterCompanion(FieldDefinitionNode field, IDictionary<string, Scalar> knownScalars)
+        => field.Arguments.FirstOrDefault(x => IsFilterInputType(x.Type.NamedType().Name.Value)) is { } filterArgument
+            ? [CreateFilterCompanionMember(field, filterArgument, knownScalars)]
+            : [];
+
+    private static bool IsFilterInputType(string typeName)
+        => typeName.Length > FilterInputSuffix.Length && typeName.EndsWith(FilterInputSuffix, StringComparison.Ordinal);
+
+    private static MethodDeclarationSyntax CreateFilterCompanionMember(FieldDefinitionNode field, InputValueDefinitionNode filterArgument, IDictionary<string, Scalar> knownScalars)
+        => MethodDeclaration(ParseTypeName(TypeName(field.Type, knownScalars)), Identifier("Filter" + FieldName(field.Name.Value)))
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+            .AddAttributeLists(AttributeList(SeparatedList(
+            [
+                Attribute(
+                    IdentifierName(nameof(GraphQLFilterAttribute).AttributeName()),
+                    AttributeArgumentList(SeparatedList(
+                    [
+                        AttributeArgument(ParseExpression($@"Field = ""{field.Name.Value}""")),
+                        AttributeArgument(ParseExpression($@"Argument = ""{filterArgument.Name.Value}""")),
+                        AttributeArgument(ParseExpression($@"GQLType = ""{filterArgument.Type}""")),
+                    ])))
+            ])))
+            .AddParameterListParameters(
+                Parameter(Identifier("filter")).WithType(ParseTypeName(TypeName(filterArgument.Type, knownScalars))))
+            .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(field.Name.Value))))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 }

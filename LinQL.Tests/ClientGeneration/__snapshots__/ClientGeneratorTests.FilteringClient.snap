@@ -1,0 +1,98 @@
+﻿#nullable enable
+#pragma warning disable CS8618
+namespace Filtering
+{
+    using System.Text.Json;
+    using LinQL;
+    using LinQL.Description;
+    using LinQL.Translation;
+    using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.DependencyInjection;
+
+    [GraphQLType(Name = "Query")]
+    [OperationType(RootOperationType.Query)]
+    public partial class Query : RootType<Query>
+    {
+        public Product[] Products { get; set; } = null !;
+
+        [GraphQLOperation, GraphQLField(Name = "products")]
+        public Product[] ExecuteProducts([GraphQLArgument(GQLType = "ProductFilterInput")] ProductFilterInput? where, [GraphQLArgument(GQLType = "Int")] int? @in) => Products;
+        [GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
+        public Product[] FilterProducts(ProductFilterInput? filter) => Products;
+    }
+
+    [GraphQLType(Name = "Product")]
+    public partial class Product
+    {
+        public string Name { get; set; }
+        public float Price { get; set; }
+        public Tag[] Tags { get; set; }
+    }
+
+    [GraphQLType(Name = "Tag")]
+    public partial class Tag
+    {
+        public string Label { get; set; }
+    }
+
+    [GraphQLType(Name = "ProductFilterInput")]
+    public partial class ProductFilterInput
+    {
+        public ProductFilterInput[]? And { get; set; }
+        public ProductFilterInput[]? Or { get; set; }
+        public StringOperationFilterInput? Name { get; set; }
+        public NumberOperationFilterInput? Price { get; set; }
+        public ListFilterInputTypeOfTagFilterInput? Tags { get; set; }
+    }
+
+    [GraphQLType(Name = "StringOperationFilterInput")]
+    public partial class StringOperationFilterInput
+    {
+        public string? Eq { get; set; }
+        public string? Contains { get; set; }
+    }
+
+    [GraphQLType(Name = "NumberOperationFilterInput")]
+    public partial class NumberOperationFilterInput
+    {
+        public float? Eq { get; set; }
+        public float? Gt { get; set; }
+        public float? Lt { get; set; }
+    }
+
+    [GraphQLType(Name = "TagFilterInput")]
+    public partial class TagFilterInput
+    {
+        public StringOperationFilterInput? Label { get; set; }
+    }
+
+    [GraphQLType(Name = "ListFilterInputTypeOfTagFilterInput")]
+    public partial class ListFilterInputTypeOfTagFilterInput
+    {
+        public TagFilterInput? Some { get; set; }
+        public TagFilterInput? All { get; set; }
+        public TagFilterInput? None { get; set; }
+        public bool? Any { get; set; }
+    }
+
+    public static class LinQLOptionExtensions
+    {
+        public static LinQLOptions WithKnownScalars(this LinQLOptions options)
+        {
+            options.Scalars.Add(new("Int", "int"));
+            options.Scalars.Add(new("Float", "float"));
+            options.Scalars.Add(new("String", "string"));
+            options.Scalars.Add(new("Id", "string"));
+            options.Scalars.Add(new("Boolean", "bool"));
+            return options;
+        }
+    }
+
+    public static class JsonSerializerOptionsExtensions
+    {
+        public static JsonSerializerOptions WithKnownInterfaces(this JsonSerializerOptions options)
+        {
+            return options;
+        }
+    }
+}

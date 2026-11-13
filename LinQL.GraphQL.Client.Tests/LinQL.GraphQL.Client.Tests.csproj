@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="HotChocolate.AspNetCore" />
+    <PackageReference Include="HotChocolate.Data" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" />
     <PackageReference Include="System.Linq.Async" />
     <PackageReference Include="xunit.v3" />
