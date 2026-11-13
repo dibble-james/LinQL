@@ -77,6 +77,11 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
         context.Types.Add(new ComplexTypeClass(node.Name.Value, fields, []));
 
+        if (ComplexTypeClass.IsFilterInputType(node.Name.Value))
+        {
+            context.Types.Add(new FilterInputBuilderClass(node.Name.Value, [.. fields]));
+        }
+
         return base.VisitChildren(node, context);
     }
 

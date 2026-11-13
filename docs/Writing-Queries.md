@@ -124,22 +124,30 @@ type Query {
 }
 ```
 
-the generator produces:
+the generator produces a companion that takes a builder for the filter, plus a builder class for
+every filter input type:
 
 ```csharp
 [GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
-public Product[] FilterProducts(ProductFilterInput? filter) => Products;
+public Product[] FilterProducts(Expression<Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> _) => Products;
+
+public partial class ProductFilterInputBuilder
+{
+    [GraphQLFilterField(Name = "price")]
+    public ProductFilterInputBuilder Price(Func<DecimalOperationFilterInputBuilder, DecimalOperationFilterInputBuilder> price) => this;
+
+    [GraphQLFilterField(Name = "name")]
+    public ProductFilterInputBuilder Name(Func<StringOperationFilterInputBuilder, StringOperationFilterInputBuilder> name) => this;
+}
 ```
 
-Pass the generated input object and LinQL sends the filter as a variable:
+Calling the companion sends the filter as a variable:
 
 ```csharp
 var products = await client.SendAsync((Root q) => q
-    .FilterProducts(new ProductFilterInput
-    {
-        Price = new DecimalOperationFilterInput { Gt = 10 },
-        Name = new StringOperationFilterInput { Contains = "widget" },
-    })
+    .FilterProducts(f => f
+        .Price(p => p.Gt(10))
+        .Name(n => n.Contains("widget")))
     .Select(p => new { p.Id, p.Name, p.Price }));
 ```
 
@@ -158,15 +166,19 @@ query linql($var1: ProductFilterInput) {
 ```
 
 The argument name and type come from the SDL, so a filter convention that renames the argument
-still works. The `<Something>FilterInput` name is Hot Chocolate's convention and is what the
-generator looks for (a type named exactly `FilterInput` is treated as an ordinary input); a custom
-convention that renames the input type needs its companion added by hand for now.
+still works, and every filter input type in the SDL gets a builder named `<TypeName>Builder`. The
+`<Something>FilterInput` name is Hot Chocolate's convention and is what the generator looks for (a
+type named exactly `FilterInput` is treated as an ordinary input); a custom convention that renames
+the input type needs its companion and builders added by hand for now.
+
+The generated input objects still work too: pass one to the companion and it is normalised the
+same way as a builder, with unset operations dropped.
 
 #### Only the operations you set are sent
 
-The generated input types have nullable properties, and LinQL normalises the object before it
-serialises: unset properties (including empty nested objects) are dropped, so only the operations
-you actually set appear in the variable. Enums are sent by name.
+The builder records only the operations you call, and a generated input object passed to the
+companion is normalised the same way: unset properties, including empty nested objects, are
+dropped, so only what you set appears in the variable. Enums are sent by name.
 
 This matters because Hot Chocolate treats `null` as a **value**, not as absence: on a nullable
 property `{ "eq": null }` means `IS NULL` and silently narrows the results, and on a non-nullable
@@ -180,10 +192,7 @@ to query without a filter.
 Nested inputs work exactly like scalar ones:
 
 ```csharp
-.FilterProducts(new ProductFilterInput
-{
-    Brand = new BrandFilterInput { Name = new StringOperationFilterInput { Eq = "acme" } },
-})
+.FilterProducts(f => f.Brand(b => b.Name(n => n.Eq("acme"))))
 // => { "brand": { "name": { "eq": "acme" } } }
 ```
 
@@ -191,11 +200,7 @@ Nested inputs work exactly like scalar ones:
 first branch of the combinator, because sibling fields are `AND` in Hot Chocolate:
 
 ```csharp
-.FilterProducts(new ProductFilterInput
-{
-    Price = new DecimalOperationFilterInput { Gt = 10 },
-    Or = [new ProductFilterInput { Name = new StringOperationFilterInput { Eq = "widget" } }],
-})
+.FilterProducts(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("widget"))))
 // => { "or": [ { "price": { "gt": 10 } }, { "name": { "eq": "widget" } } ] }
 ```
 
@@ -203,20 +208,14 @@ Collection filters use the wrapper Hot Chocolate generates for the element type.
 `all`, `none` and `any` and nothing else:
 
 ```csharp
-.FilterProducts(new ProductFilterInput
-{
-    Tags = new ListFilterInputTypeOfTagFilterInput
-    {
-        Some = new TagFilterInput { Label = new StringOperationFilterInput { Eq = "new" } },
-    },
-})
+.FilterProducts(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new")))))
 // => { "tags": { "some": { "label": { "eq": "new" } } } }
 ```
 
 `some` is `Any`, `all` is `All` (vacuously true on an empty list), `none` is `!Any` and
 `any: false` matches empty lists. `in`/`nin` belong to the element filter, so "has any of" is
-`Some = new TagFilterInput { ... }` with `In` set on the operation input. There is no `not` field
-anywhere in the schema; use the negated operations (`neq`, `nin`, `ncontains`, `ngt`, …).
+`Some(s => s.Label(l => l.In(values)))`. There is no `not` field anywhere in the schema; use the
+negated operations (`neq`, `nin`, `ncontains`, `ngt`, …).
 
 #### Why not `Where`
 
@@ -241,8 +240,6 @@ for shaping results you already have.
 - Sorting (`order`) and paging (`first`, `after`, `last`, `before`). Both change the query shape or
   the result type and need their own design.
 - Companions on interface-typed fields; only object and root types get one today.
-- A typed builder surface (`f => f.Price(p => p.Gt(10))`) is in progress; today the companion takes
-  the generated input object. See [ADR-0005](https://github.com/dibble-james/LinQL/issues/46).
 
 #### Prerequisites
 

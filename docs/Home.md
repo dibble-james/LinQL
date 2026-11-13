@@ -106,11 +106,9 @@ variable:
 
 ```csharp
 var products = await client.SendAsync((Root q) => q
-    .FilterProducts(new ProductFilterInput
-    {
-        Price = new DecimalOperationFilterInput { Gt = 10 },
-        Name = new StringOperationFilterInput { Contains = "widget" },
-    })
+    .FilterProducts(f => f
+        .Price(p => p.Gt(10))
+        .Name(n => n.Contains("widget")))
     .Select(p => new { p.Id, p.Name }));
 
 // query linql($var1: ProductFilterInput) { products(where: $var1) { id name } }

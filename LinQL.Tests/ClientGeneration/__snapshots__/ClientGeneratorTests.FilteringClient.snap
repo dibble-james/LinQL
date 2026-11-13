@@ -18,7 +18,7 @@ namespace Filtering
         [GraphQLOperation, GraphQLField(Name = "products")]
         public Product[] ExecuteProducts([GraphQLArgument(GQLType = "ProductFilterInput")] ProductFilterInput? where, [GraphQLArgument(GQLType = "Int")] int? @in) => Products;
         [GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
-        public Product[] FilterProducts(ProductFilterInput? filter) => Products;
+        public Product[] FilterProducts(System.Linq.Expressions.Expression<System.Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> _) => Products;
     }
 
     [GraphQLType(Name = "Product")]
@@ -45,11 +45,33 @@ namespace Filtering
         public ListFilterInputTypeOfTagFilterInput? Tags { get; set; }
     }
 
+    public partial class ProductFilterInputBuilder
+    {
+        [GraphQLFilterField(Name = "and", IsList = true)]
+        public ProductFilterInputBuilder And(System.Func<ProductFilterInputBuilder, ProductFilterInputBuilder> and) => this;
+        [GraphQLFilterField(Name = "or", IsList = true)]
+        public ProductFilterInputBuilder Or(System.Func<ProductFilterInputBuilder, ProductFilterInputBuilder> or) => this;
+        [GraphQLFilterField(Name = "name")]
+        public ProductFilterInputBuilder Name(System.Func<StringOperationFilterInputBuilder, StringOperationFilterInputBuilder> name) => this;
+        [GraphQLFilterField(Name = "price")]
+        public ProductFilterInputBuilder Price(System.Func<NumberOperationFilterInputBuilder, NumberOperationFilterInputBuilder> price) => this;
+        [GraphQLFilterField(Name = "tags")]
+        public ProductFilterInputBuilder Tags(System.Func<ListFilterInputTypeOfTagFilterInputBuilder, ListFilterInputTypeOfTagFilterInputBuilder> tags) => this;
+    }
+
     [GraphQLType(Name = "StringOperationFilterInput")]
     public partial class StringOperationFilterInput
     {
         public string? Eq { get; set; }
         public string? Contains { get; set; }
+    }
+
+    public partial class StringOperationFilterInputBuilder
+    {
+        [GraphQLFilterField(Name = "eq")]
+        public StringOperationFilterInputBuilder Eq(string? eq) => this;
+        [GraphQLFilterField(Name = "contains")]
+        public StringOperationFilterInputBuilder Contains(string? contains) => this;
     }
 
     [GraphQLType(Name = "NumberOperationFilterInput")]
@@ -60,10 +82,26 @@ namespace Filtering
         public float? Lt { get; set; }
     }
 
+    public partial class NumberOperationFilterInputBuilder
+    {
+        [GraphQLFilterField(Name = "eq")]
+        public NumberOperationFilterInputBuilder Eq(float? eq) => this;
+        [GraphQLFilterField(Name = "gt")]
+        public NumberOperationFilterInputBuilder Gt(float? gt) => this;
+        [GraphQLFilterField(Name = "lt")]
+        public NumberOperationFilterInputBuilder Lt(float? lt) => this;
+    }
+
     [GraphQLType(Name = "TagFilterInput")]
     public partial class TagFilterInput
     {
         public StringOperationFilterInput? Label { get; set; }
+    }
+
+    public partial class TagFilterInputBuilder
+    {
+        [GraphQLFilterField(Name = "label")]
+        public TagFilterInputBuilder Label(System.Func<StringOperationFilterInputBuilder, StringOperationFilterInputBuilder> label) => this;
     }
 
     [GraphQLType(Name = "ListFilterInputTypeOfTagFilterInput")]
@@ -73,6 +111,18 @@ namespace Filtering
         public TagFilterInput? All { get; set; }
         public TagFilterInput? None { get; set; }
         public bool? Any { get; set; }
+    }
+
+    public partial class ListFilterInputTypeOfTagFilterInputBuilder
+    {
+        [GraphQLFilterField(Name = "some")]
+        public ListFilterInputTypeOfTagFilterInputBuilder Some(System.Func<TagFilterInputBuilder, TagFilterInputBuilder> some) => this;
+        [GraphQLFilterField(Name = "all")]
+        public ListFilterInputTypeOfTagFilterInputBuilder All(System.Func<TagFilterInputBuilder, TagFilterInputBuilder> all) => this;
+        [GraphQLFilterField(Name = "none")]
+        public ListFilterInputTypeOfTagFilterInputBuilder None(System.Func<TagFilterInputBuilder, TagFilterInputBuilder> none) => this;
+        [GraphQLFilterField(Name = "any")]
+        public ListFilterInputTypeOfTagFilterInputBuilder Any(bool? any) => this;
     }
 
     public static class LinQLOptionExtensions

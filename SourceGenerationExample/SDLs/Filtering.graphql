@@ -1,0 +1,32 @@
+schema {
+  query: Query
+}
+
+type Query {
+  products(where: ProductFilterInput): [Product!]!
+}
+
+type Product {
+  id: ID!
+  name: String!
+  price: Float!
+}
+
+input ProductFilterInput {
+  and: [ProductFilterInput!]
+  or: [ProductFilterInput!]
+  name: StringOperationFilterInput
+  price: NumberOperationFilterInput
+}
+
+input StringOperationFilterInput {
+  eq: String
+  contains: String
+  in: [String!]
+  ncontains: String
+}
+
+input NumberOperationFilterInput {
+  gt: Float
+  lt: Float
+}
