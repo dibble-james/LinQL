@@ -24,6 +24,27 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    private static readonly DiagnosticDescriptor MissingFilterInputType = new(
+        id: "LINQLGEN05",
+        title: "Missing filter input type",
+        messageFormat: "Filter argument '{0}' on '{1}' has type '{2}', but the SDL does not define that as an input object. Export the SDL from a server with filtering configured so the filter input types are included.",
+        category: "LinQLClientGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private readonly HashSet<string> inputObjectTypes = new(StringComparer.Ordinal);
+
+    protected override ISyntaxVisitorAction VisitChildren(DocumentNode node, DocumentWalkerContext context)
+    {
+        var action = base.VisitChildren(node, context);
+
+        // The filter input types may be declared after the fields that use them, so the check runs
+        // once the whole document has been walked.
+        this.ReportMissingFilterInputTypes(node, context);
+
+        return action;
+    }
+
     protected override ISyntaxVisitorAction VisitChildren(OperationTypeDefinitionNode node, DocumentWalkerContext context)
     {
         context.RootOperations.Add(
@@ -73,6 +94,8 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(InputObjectTypeDefinitionNode node, DocumentWalkerContext context)
     {
+        this.inputObjectTypes.Add(node.Name.Value);
+
         var fields = node.Fields.Select(x => new FieldDefinitionNode(x.Location, x.Name, x.Description, [], x.Type, x.Directives));
 
         context.Types.Add(new ComplexTypeClass(node.Name.Value, fields, []));
@@ -129,5 +152,47 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
 
         return base.VisitChildren(node, context);
+    }
+
+    private void ReportMissingFilterInputTypes(DocumentNode document, DocumentWalkerContext context)
+    {
+        foreach (var definition in document.Definitions)
+        {
+            var fields = definition switch
+            {
+                ObjectTypeDefinitionNode objectType => objectType.Fields,
+                InterfaceTypeDefinitionNode interfaceType => interfaceType.Fields,
+                _ => null,
+            };
+
+            if (fields is null)
+            {
+                continue;
+            }
+
+            foreach (var field in fields)
+            {
+                foreach (var argument in field.Arguments.Where(x => ComplexTypeClass.IsFilterInputType(x.Type.NamedType().Name.Value)))
+                {
+                    var typeName = argument.Type.NamedType().Name.Value;
+
+                    if (this.inputObjectTypes.Contains(typeName))
+                    {
+                        continue;
+                    }
+
+                    context.Context.ReportDiagnostic(
+                        Diagnostic.Create(
+                            MissingFilterInputType,
+                            Microsoft.CodeAnalysis.Location.Create(
+                                context.File,
+                                TextSpan.FromBounds(argument.Location!.Start, argument.Location!.End),
+                                new LinePositionSpan(new LinePosition(argument.Location!.Line, argument.Location!.Start), new LinePosition(argument.Location!.Line, argument.Location!.End))),
+                            argument.Name.Value,
+                            field.Name.Value,
+                            typeName));
+                }
+            }
+        }
     }
 }
