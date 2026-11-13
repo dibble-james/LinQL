@@ -3,9 +3,12 @@
 namespace LinQL.Tests.Translation;
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq.Expressions;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentAssertions;
 using LinQL.Description;
 using LinQL.Filters;
@@ -100,6 +103,30 @@ public partial class TranslationProviderTests
     }
 
     [Fact]
+    public void ArgumentsNormaliseDictionariesAsObjects()
+    {
+        // A dictionary is usually typed more tightly than Dictionary<string, object?>, and a non-generic one
+        // matches no generic arm at all; either would fall through to the enumerable arm and serialise as
+        // [{"key": "filter", "value": "name"}] instead of an object. Keys are the caller's wire names, so
+        // they are passed through as written.
+        FilterValue.Normalize(new Dictionary<string, string> { ["filter"] = "name", ["value"] = "widget" })
+            .Should().BeEquivalentTo(new Dictionary<string, object?> { ["filter"] = "name", ["value"] = "widget" });
+
+        FilterValue.Normalize(new Hashtable { ["count"] = 3 })
+            .Should().BeEquivalentTo(new Dictionary<string, object?> { ["count"] = 3 });
+
+        // A read-only dictionary such as ImmutableDictionary implements no non-generic IDictionary, so it
+        // is recognised by its IReadOnlyDictionary<string, T> interface instead.
+        FilterValue.Normalize(ImmutableDictionary.CreateRange(new Dictionary<string, string> { ["name"] = "widget" }))
+            .Should().BeEquivalentTo(new Dictionary<string, object?> { ["name"] = "widget" });
+    }
+
+    [Fact]
+    public void ArgumentsHonourJsonPropertyName()
+        => FilterValue.Normalize(new RenamedArgument { Text = "widget" })
+            .Should().BeEquivalentTo(new Dictionary<string, object?> { ["query"] = "widget" });
+
+    [Fact]
     public void ArgumentExtensionAddsTheValue()
         => this.TestFilter(x => x.Products.In(3).Select(p => new { p.Name }));
 
@@ -121,6 +148,12 @@ public partial class TranslationProviderTests
     internal sealed class ValueTypeFilterInput
     {
         public bool Any { get; set; }
+    }
+
+    private sealed class RenamedArgument
+    {
+        [JsonPropertyName("query")]
+        public string? Text { get; set; }
     }
 
     internal sealed class PocoProductFilterInput

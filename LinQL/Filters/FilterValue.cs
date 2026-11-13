@@ -4,8 +4,10 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json.Serialization;
 using LinQL.Expressions;
 
 /// <summary>
@@ -20,7 +22,7 @@ using LinQL.Expressions;
 /// </remarks>
 public sealed class FilterValue
 {
-    private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
+    private static readonly ConcurrentDictionary<Type, (PropertyInfo Property, string Name)[]> PropertyCache = new();
 
     private readonly Dictionary<string, object?> fields = [];
 
@@ -147,8 +149,7 @@ public sealed class FilterValue
         string text => text,
         Enum enumValue => enumValue.ToString(),
         object scalar when IsScalar(scalar.GetType()) => scalar,
-        IDictionary<string, object?> dictionary => NormalizeDictionary(dictionary, strict),
-        IReadOnlyDictionary<string, object?> readOnlyDictionary => NormalizeDictionary(readOnlyDictionary, strict),
+        object dictionary when TryGetEntries(dictionary, out var entries) => NormalizeDictionary(entries!, strict),
         IEnumerable enumerable => NormalizeEnumerable(enumerable, strict),
         object other => NormalizeObject(other, strict),
     };
@@ -179,7 +180,14 @@ public sealed class FilterValue
     {
         var normalized = new Dictionary<string, object?>();
 
-        foreach (var property in PropertyCache.GetOrAdd(value.GetType(), static type => type.GetProperties(BindingFlags.Public | BindingFlags.Instance)))
+        foreach (var (property, name) in PropertyCache.GetOrAdd(
+            value.GetType(),
+            static type =>
+            [
+                .. type
+                    .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Select(property => (Property: property, Name: property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? property.Name.ToCamelCase())),
+            ]))
         {
             if (!property.CanRead || property.GetIndexParameters().Length > 0)
             {
@@ -197,12 +205,75 @@ public sealed class FilterValue
 
             if (Normalize(property.GetValue(value), strict) is { } fieldValue)
             {
-                normalized[property.Name.ToCamelCase()] = fieldValue;
+                normalized[name] = fieldValue;
             }
         }
 
         return normalized.Count == 0 ? null : normalized;
     }
+
+    /// <summary>
+    /// Gets the entries of a dictionary, so one is never mistaken for a sequence.
+    /// </summary>
+    /// <param name="value">The value to read.</param>
+    /// <param name="entries">The entries, keyed by the name each one goes out under.</param>
+    /// <returns>Whether the value is a dictionary.</returns>
+    /// <remarks>
+    /// A dictionary is usually typed more tightly than <c>Dictionary&lt;string, object?&gt;</c>
+    /// (<c>Dictionary&lt;string, string&gt;</c> is the common case), and the non-generic implementations
+    /// such as <see cref="Hashtable"/> match no generic arm at all. Without this they would reach the
+    /// enumerable arm and serialise as <c>[{{"key": …}}]</c> instead of a JSON object.
+    /// </remarks>
+    private static bool TryGetEntries(object value, out IEnumerable<KeyValuePair<string, object?>>? entries)
+    {
+        switch (value)
+        {
+            case IDictionary dictionary:
+                entries = Entries(dictionary);
+                return true;
+
+            case IEnumerable enumerable when ReadOnlyDictionaryValueType(value.GetType()) is { } valueType:
+                var pair = typeof(KeyValuePair<,>).MakeGenericType(typeof(string), valueType);
+                var key = pair.GetProperty("Key");
+                var item = pair.GetProperty("Value");
+
+                entries = enumerable
+                    .Cast<object>()
+                    .Select(entry => new KeyValuePair<string, object?>(NameOf(key?.GetValue(entry)), item?.GetValue(entry)));
+                return true;
+
+            default:
+                entries = null;
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Reads the entries of a dictionary through <see cref="IDictionary.GetEnumerator"/>.
+    /// </summary>
+    /// <remarks>
+    /// Casting the dictionary to <c>IEnumerable&lt;DictionaryEntry&gt;</c> does not work: a generic
+    /// dictionary enumerates as <c>KeyValuePair&lt;,&gt;</c> through <see cref="IEnumerable"/>, even when
+    /// it is typed as <see cref="IDictionary"/>, so only the dictionary's own enumerator yields entries.
+    /// </remarks>
+    private static IEnumerable<KeyValuePair<string, object?>> Entries(IDictionary dictionary)
+    {
+        var enumerator = dictionary.GetEnumerator();
+
+        while (enumerator.MoveNext())
+        {
+            yield return new KeyValuePair<string, object?>(NameOf(enumerator.Key), enumerator.Value);
+        }
+    }
+
+    private static Type? ReadOnlyDictionaryValueType(Type type)
+        => type.GetInterfaces()
+            .Where(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IReadOnlyDictionary<,>) && x.GetGenericArguments()[0] == typeof(string))
+            .Select(x => x.GetGenericArguments()[1])
+            .FirstOrDefault();
+
+    private static string NameOf(object? key)
+        => Convert.ToString(key, CultureInfo.InvariantCulture) ?? string.Empty;
 
     private static bool IsScalar(Type type)
     {
