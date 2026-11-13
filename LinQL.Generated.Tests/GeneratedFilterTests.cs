@@ -16,6 +16,8 @@ public class GeneratedFilterTests
 {
     private static readonly string[] WidgetNames = ["widget", "gadget"];
 
+    private static readonly Client.ProductSortInput[] PriceDescending = [new() { Price = Client.SortEnumType.DESC }];
+
     [Fact]
     public void ScalarOperation()
         => Translate(q => q
@@ -68,6 +70,12 @@ public class GeneratedFilterTests
     public void CompanionRequiresRequiredArguments()
         => Translate(q => q
             .FilterFeatured(f => f.Price(p => p.Gt(10)), 5)
+            .Select(p => new { p.Name }));
+
+    [Fact]
+    public void CompanionForwardsInputObjectArguments()
+        => Translate(q => q
+            .FilterFeatured(f => f.Price(p => p.Gt(10)), 3, PriceDescending)
             .Select(p => new { p.Name }));
 
     [Fact]

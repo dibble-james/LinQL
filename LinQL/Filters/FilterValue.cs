@@ -128,7 +128,13 @@ public sealed class FilterValue
             .Where(field => field.Value is not null)
             .ToDictionary(field => field.Key, field => field.Value);
 
-    private static object? Normalize(object? value) => value switch
+    /// <summary>
+    /// Converts a value to the shape GraphQL variables take: camelCased field names, enums by name,
+    /// and nulls dropped.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <returns>The value as GraphQL variables expect it.</returns>
+    internal static object? Normalize(object? value) => value switch
     {
         null => null,
         FilterValue filter => filter.ToDictionary() is { Count: > 0 } dictionary ? dictionary : null,

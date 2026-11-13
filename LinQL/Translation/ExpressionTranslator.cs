@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using LinQL.Description;
 using LinQL.Expressions;
+using LinQL.Filters;
 
 /// <summary>
 /// An <see cref="ExpressionVisitor"/> to convert a <see cref="Expression"/> to a <see cref="GraphQLExpression{TRoot, TResult}"/>.
@@ -213,10 +214,11 @@ public class ExpressionTranslator : ExpressionVisitor
             }
 
             // An optional argument left at its default is not part of the document, the same way an
-            // unset filter operation is not.
+            // unset filter operation is not. A value that was set is normalised to the variable shape:
+            // input objects in camelCase with enums by name, rather than their CLR spelling.
             if (ArgumentVistor.GetValue(argument) is { } forwarded)
             {
-                field.WithArgument(parameter.Name, parameter.GetArgumentType(), forwarded);
+                field.WithArgument(parameter.Name, parameter.GetArgumentType(), FilterValue.Normalize(forwarded));
             }
         }
 

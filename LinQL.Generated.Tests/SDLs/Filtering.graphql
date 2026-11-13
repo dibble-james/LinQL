@@ -4,8 +4,18 @@ schema {
 
 type Query {
   products(where: ProductFilterInput, in: Int): [Product!]!
-  featured(first: Int!, where: ProductFilterInput): [Product!]!
+  featured(first: Int!, where: ProductFilterInput, order: [ProductSortInput!]): [Product!]!
   results: [SearchResult!]!
+}
+
+input ProductSortInput {
+  name: SortEnumType
+  price: SortEnumType
+}
+
+enum SortEnumType {
+  ASC
+  DESC
 }
 
 interface SearchResult {

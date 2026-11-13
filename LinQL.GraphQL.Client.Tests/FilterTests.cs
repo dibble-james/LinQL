@@ -27,6 +27,9 @@ public class FilterTests : IDisposable
 
     private static readonly string[] TaggedNew = ["apple", "banana"];
 
+    // Expression trees cannot contain collection expressions, so the sort input is a static field.
+    private static readonly Client.ProductSortInput[] PriceDescending = [new() { Price = Client.SortEnumType.DESC }];
+
     private readonly WebApplication server;
     private readonly IGraphQLClient client;
 
@@ -34,7 +37,7 @@ public class FilterTests : IDisposable
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
-        builder.Services.AddRouting().AddGraphQLServer().AddQueryType<ProductQueryType>().AddFiltering();
+        builder.Services.AddRouting().AddGraphQLServer().AddQueryType<ProductQueryType>().AddFiltering().AddSorting();
 
         this.server = builder.Build();
         this.server.UseRouting().UseEndpoints(e => e.MapGraphQL());
@@ -81,6 +84,42 @@ public class FilterTests : IDisposable
         result.Data.Select(p => p.Name).Should().BeEquivalentTo(TaggedNew);
     }
 
+    [Fact]
+    public async Task PagingArgumentIsForwarded()
+    {
+        // The resolver takes first from the whole set and the filter is applied to that, so the number
+        // of rows that survive shows the value reached the server: two candidates leave banana, three
+        // also leave cherry. A dropped argument would return all three either way.
+        var two = await this.client.SendAsync(
+            (Client.Query q) => q.FilterFeatured(f => f.Price(p => p.Gt(10)), 2, null).Select(p => new { p.Name }),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        var three = await this.client.SendAsync(
+            (Client.Query q) => q.FilterFeatured(f => f.Price(p => p.Gt(10)), 3, null).Select(p => new { p.Name }),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        two.Errors.Should().BeNull();
+        three.Errors.Should().BeNull();
+        two.Data.Select(p => p.Name).Should().BeEquivalentTo(Banana);
+        three.Data.Select(p => p.Name).Should().BeEquivalentTo(BananaOrCherry);
+    }
+
+    [Fact]
+    public async Task SortingArgumentIsForwarded()
+    {
+        var result = await this.client.SendAsync(
+            (Client.Query q) => q
+                .FilterFeatured(
+                    f => f.Price(p => p.Gt(10)),
+                    3,
+                    PriceDescending)
+                .Select(p => new { p.Name }),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        result.Errors.Should().BeNull();
+        result.Data.Select(p => p.Name).Should().Equal("cherry", "banana");
+    }
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);
@@ -92,6 +131,10 @@ public class FilterTests : IDisposable
     {
         [UseFiltering]
         public IQueryable<Product> GetProducts() => Data.AsQueryable();
+
+        [UseFiltering]
+        [UseSorting]
+        public IQueryable<Product> GetFeatured(int first) => Data.AsQueryable().Take(first);
     }
 
     public class Product

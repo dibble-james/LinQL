@@ -216,6 +216,10 @@ A required GraphQL argument is a required parameter, so a companion cannot produ
 server rejects for a missing argument. Ordering and paging themselves are not translated — whatever
 you pass is forwarded as an argument, nothing more.
 
+Forwarded values are sent in the shape GraphQL variables take rather than their CLR shape: input
+object fields are camelCased, enums go out by name, and unset fields are dropped, so
+`new ProductSortInput { Price = SortEnumType.DESC }` becomes `{"price":"DESC"}`.
+
 #### Only the operations you set are sent
 
 The builder records only the operations you call, and a generated input object passed to the
