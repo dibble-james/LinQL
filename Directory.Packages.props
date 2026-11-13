@@ -17,6 +17,7 @@
     <PackageVersion Include="GraphQL.Client" Version="6.0.2" />
     <PackageVersion Include="GraphQL.Client.Serializer.SystemTextJson" Version="6.0.2" />
     <PackageVersion Include="HotChocolate.AspNetCore" Version="16.7.3" />
+    <PackageVersion Include="HotChocolate.Data" Version="16.7.3" />
     <PackageVersion Include="HotChocolate.Language" Version="16.7.3" />
     <PackageVersion Include="HotChocolate.Language.SyntaxTree" Version="16.7.3" />
     <PackageVersion Include="HotChocolate.Language.Utf8" Version="16.7.3" />

@@ -12,6 +12,8 @@ internal class DocumentWalkerContext(string file, SourceProductionContext contex
 
     public List<IClassFactory> Types { get; } = [];
 
+    public List<FieldExtension> FieldExtensions { get; } = [];
+
     public List<Scalar> Scalars { get; } = [.. Scalar.NativeScalars];
 
     public string File { get; } = file;
@@ -38,8 +40,14 @@ internal class DocumentWalkerContext(string file, SourceProductionContext contex
 
         ns = ns.AddMembers([.. this.RootOperations.Select(x => x.Create(scalars))])
           .AddMembers([.. this.Types.Select(x => x.Create(scalars))])
-          .AddMembers(new OptionExtensionsClass().Create(scalars))
-          .AddMembers(new InterfaceRegistrationExtensionsClass(this.Types.OfType<ComplexTypeClass>()).Create(scalars));
+          .AddMembers(new OptionExtensionsClass().Create(scalars));
+
+        if (this.FieldExtensions.Any())
+        {
+            ns = ns.AddMembers(new FieldExtensionsClass(this.FieldExtensions).Create(scalars));
+        }
+
+        ns = ns.AddMembers(new InterfaceRegistrationExtensionsClass(this.Types.OfType<ComplexTypeClass>()).Create(scalars));
 
         using var clientContent = new StringWriter();
         clientContent.WriteLine("#nullable enable");

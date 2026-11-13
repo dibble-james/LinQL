@@ -20,3 +20,25 @@ LINQLGEN02: GraphQL file {0} does not have a LinQLClientNamespace attribute. Ple
 ```
 This could be related to a Nuget bug where the `LinQL.props` file has not been imported because it won't follow transitive references.
 Install the `LinQL` package individually.
+
+### A filter input type is missing from the SDL
+```
+LINQLGEN05: Filter argument 'where' on 'products' has type 'ProductFilterInput', but the SDL does not define that as an input object. Export the SDL from a server with filtering configured so the filter input types are included.
+```
+The generator found a field argument whose type looks like a filter input, but the SDL it was given
+has no `input` declaration for that type, so the generated extensions and builders would not
+compile.
+Hot Chocolate only writes the filter input types into the exported SDL when the schema actually uses
+filtering, and Hot Chocolate 16 disables introspection by default: export the SDL from the running
+server with `GET {url}?sdl`, or use the Hot Chocolate CLI, and make sure the filtering middleware is
+configured on the field.
+
+### Two fields name their filter argument differently
+```
+LINQLGEN06: Filter argument 'filter' on 'recommended' conflicts with 'where' on 'products': both fields return 'Product[]', so the generated Filter extension can only attach one argument name. Rename the arguments to match, or write the extension for one of the fields by hand.
+```
+The generated `Filter` extension is declared on the field's return type, so one method serves every
+field returning that type and it can only carry one argument name — the first such field in the SDL
+decides, and the others would be filtered through the wrong argument. Rename the arguments so they
+agree (Hot Chocolate's convention names them all `where`), or write the extension for the field the
+generator could not cover.

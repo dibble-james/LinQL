@@ -30,7 +30,7 @@ internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> 
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
                     ])))
                      .AddParameterListParameters(
-                        [.. f.Arguments.Select(p => Parameter(Identifier(p.Name.Value))
+                        [.. f.Arguments.Select(p => Parameter(IdentifierFor(p.Name.Value))
                             .WithType(ParseTypeName(TypeName(p.Type, knownScalars)))
                             .AddAttributeLists(AttributeList(SeparatedList(
                             [

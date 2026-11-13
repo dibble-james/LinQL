@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- xunit.v3 test projects are executables: they host their own runner. -->
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Keep the generated client on disk so a failing snapshot can be traced to the code under test. -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="SDLs\Filtering.graphql" LinQLClientNamespace="LinQL.Generated.Tests.Filtering" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Snapshooter.Xunit3" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OutputItemType=Analyzer is what actually runs the generator; the assembly reference stays so the generated client can link against LinQL. -->
+    <ProjectReference Include="..\LinQL\LinQL.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+  </ItemGroup>
+
+  <!-- Manually reference the generator props because we locally reference the generator. When added via NuGet this happens automatically -->
+  <Import Project="..\LinQL\LinQL.props" />
+
+</Project>

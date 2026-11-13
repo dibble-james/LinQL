@@ -1,5 +1,6 @@
 namespace LinQL.Translation;
 
+using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using FastExpressionCompiler;
@@ -28,7 +29,28 @@ internal class ArgumentVistor : ExpressionVisitor
     {
         this.value = node.Constructor.Invoke([.. node.Arguments.Select(GetValue)]);
 
-        return base.VisitNew(node);
+        // Visiting the children here would overwrite the constructed value with the last of them.
+        return node;
+    }
+
+    /// <summary>
+    /// Evaluates an object initialiser as a whole.
+    /// </summary>
+    /// <remarks>
+    /// Walking one instead of evaluating it leaves whatever was bound last: the constructor is visited
+    /// first, then each assignment overwrites the result. <c>new SearchCriteriaInput { Term = "widget" }</c>
+    /// reached the document as the string <c>widget</c> rather than as the input object.
+    /// </remarks>
+    /// <param name="node">The initialiser.</param>
+    /// <returns>The node, unchanged.</returns>
+    protected override Expression VisitMemberInit(MemberInitExpression node)
+    {
+        var objectMember = Expression.Convert(node, typeof(object));
+        var getter = Expression.Lambda<Func<object>>(objectMember);
+
+        this.value = getter.CompileFast()();
+
+        return node;
     }
 
     protected override Expression VisitMember(MemberExpression node)

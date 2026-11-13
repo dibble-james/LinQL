@@ -1,0 +1,19 @@
+﻿query linql(
+  $var1: Int!,
+  $var2: String,
+  $var3: Int,
+  $var4: ProductFilterInput
+)
+ {
+  featured(
+    first: $var1,
+    after: $var2,
+    last: $var3,
+    where: $var4
+  ) {
+    name
+  }
+}
+
+--- variables ---
+{"var1":10,"var2":"cursor","var3":5,"var4":{"price":{"gt":10}}}

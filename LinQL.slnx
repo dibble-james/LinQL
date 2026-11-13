@@ -4,6 +4,7 @@
     <File Path=".github/workflows/nuget.yml" />
     <File Path="README.md" />
   </Folder>
+  <Project Path="LinQL.Generated.Tests/LinQL.Generated.Tests.csproj" />
   <Project Path="LinQL.GraphQL.Client.Tests/LinQL.GraphQL.Client.Tests.csproj" />
   <Project Path="LinQL.GraphQL.Client/LinQL.GraphQL.Client.csproj" />
   <Project Path="LinQL.StrawberryShake.Tests/LinQL.StrawberryShake.Tests.csproj" />

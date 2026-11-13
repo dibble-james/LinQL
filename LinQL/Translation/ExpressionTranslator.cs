@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using LinQL.Description;
 using LinQL.Expressions;
+using LinQL.Filters;
 
 /// <summary>
 /// An <see cref="ExpressionVisitor"/> to convert a <see cref="Expression"/> to a <see cref="GraphQLExpression{TRoot, TResult}"/>.
@@ -73,6 +74,8 @@ public class ExpressionTranslator : ExpressionVisitor
         { Method.Name: nameof(Enumerable.OfType) } => this.TraverseExtensionMethodCall(node).WithField(new SpreadExpression(node.Method.GetGenericArguments()[0], this.expression.Root)),
         { Method.Name: nameof(Enumerable.Select) } => this.TraverseSelect(node),
         { Method.Name: nameof(SelectExtentions.SelectAll), Method.DeclaringType.Name: nameof(SelectExtentions) } => this.TraverseSelectAll(node),
+        { Method: var method } when method.GetCustomAttribute<GraphQLFilterAttribute>() is not null => this.TraverseFilter(node),
+        { Method: var method } when method.GetCustomAttribute<GraphQLArgumentAttribute>() is not null && method.IsDefined(typeof(ExtensionAttribute)) => this.TraverseArgument(node),
         { Arguments: var args } when args.Any(x => x.UnwrapLambdaFromQuote() is not null) => this.VisitLambdas(node),
         _ => base.VisitMethodCall(node),
     };
@@ -183,6 +186,49 @@ public class ExpressionTranslator : ExpressionVisitor
 
         return parent;
     }
+
+    private Expression TraverseFilter(MethodCallExpression node)
+    {
+        var filter = node.Method.GetCustomAttribute<GraphQLFilterAttribute>()
+            ?? throw new InvalidOperationException($"'{node.Method.Name}' is not a filter extension.");
+
+        var field = this.TraverseField(node);
+
+        var value = FilterExpressionTranslator.Translate(node.Arguments[1]);
+
+        if (value.IsEmpty)
+        {
+            throw new InvalidOperationException($"The filter on '{field.FieldName}' has no operations. Omit the filter to query without one.");
+        }
+
+        field.WithArgument(filter.Argument, filter.GQLType, value.ToDictionary());
+
+        return field;
+    }
+
+    private Expression TraverseArgument(MethodCallExpression node)
+    {
+        var argument = node.Method.GetCustomAttribute<GraphQLArgumentAttribute>()
+            ?? throw new InvalidOperationException($"'{node.Method.Name}' is not a field argument extension.");
+
+        var field = this.TraverseField(node);
+
+        // A value the caller passed is meaningful as given, so this is the lenient normalisation:
+        // input objects reach the wire in camelCase with enums by name rather than in CLR shape.
+        field.WithArgument(
+            argument.Name ?? (char.ToLowerInvariant(node.Method.Name[0]) + node.Method.Name.Substring(1)),
+            argument.GQLType,
+            FilterValue.Normalize(ArgumentVistor.GetValue(node.Arguments[1])));
+
+        return field;
+    }
+
+    /// <summary>
+    /// Gets the field an extension method is extending: its first argument.
+    /// </summary>
+    private TypeFieldExpression TraverseField(MethodCallExpression extension)
+        => this.Visit(extension.Arguments[0]) as TypeFieldExpression
+            ?? throw new InvalidOperationException($"'{extension.Method.Name}' must be called on a field.");
 
     private static FieldExpression VisitFieldWithArguments(MethodCallExpression node, IRootExpression root)
     {

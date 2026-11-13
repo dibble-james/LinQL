@@ -9,3 +9,5 @@ LINQLGEN01 | LinQLClientGenerator | Info | ClientGenerator
 LINQLGEN02 | LinQLClientGenerator | Error | ClientGenerator
 LINQLGEN03 | LinQLClientGenerator | Error | DocumentWalker
 LINQLGEN04 | LinQLClientGenerator | Error | DocumentWalker
+LINQLGEN05 | LinQLClientGenerator | Error | DocumentWalker
+LINQLGEN06 | LinQLClientGenerator | Warning | DocumentWalker

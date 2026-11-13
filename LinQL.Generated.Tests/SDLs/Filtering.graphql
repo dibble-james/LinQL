@@ -1,0 +1,86 @@
+schema {
+  query: Query
+}
+
+type Query {
+  products(where: ProductFilterInput, in: Int): [Product!]!
+  featured(first: Int!, after: String, last: Int, where: ProductFilterInput, order: [ProductSortInput!]): [Product!]!
+  results(where: SearchResultFilterInput): [SearchResult!]!
+  search(criteria: SearchCriteriaInput!, channel: Channel, where: ProductFilterInput, order: [ProductSortInput!]): [Product!]!
+}
+
+input SearchCriteriaInput {
+  term: String
+}
+
+enum Channel {
+  WEB
+  MOBILE
+}
+
+input ProductSortInput {
+  name: SortEnumType
+  price: SortEnumType
+}
+
+enum SortEnumType {
+  ASC
+  DESC
+}
+
+interface SearchResult {
+  id: ID!
+  name: String!
+  related(where: ProductFilterInput): [Product!]!
+}
+
+type Product implements SearchResult {
+  id: ID!
+  name: String!
+  price: Float!
+  tags: [Tag!]!
+  related(where: ProductFilterInput): [Product!]!
+}
+
+type Tag {
+  label: String!
+}
+
+input SearchResultFilterInput {
+  and: [SearchResultFilterInput!]
+  or: [SearchResultFilterInput!]
+  id: StringOperationFilterInput
+  name: StringOperationFilterInput
+}
+
+input ProductFilterInput {
+  and: [ProductFilterInput!]
+  or: [ProductFilterInput!]
+  name: StringOperationFilterInput
+  price: NumberOperationFilterInput
+  tags: ListFilterInputTypeOfTagFilterInput
+}
+
+input StringOperationFilterInput {
+  eq: String
+  contains: String
+  in: [String!]
+  ncontains: String
+}
+
+input NumberOperationFilterInput {
+  eq: Float
+  gt: Float
+  lt: Float
+}
+
+input TagFilterInput {
+  label: StringOperationFilterInput
+}
+
+input ListFilterInputTypeOfTagFilterInput {
+  some: TagFilterInput
+  all: TagFilterInput
+  none: TagFilterInput
+  any: Boolean
+}

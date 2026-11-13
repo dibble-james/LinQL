@@ -1,0 +1,15 @@
+﻿query linql(
+  $var1: Int!,
+  $var2: [ProductSortInput!]
+)
+ {
+  featured(
+    first: $var1,
+    order: $var2
+  ) {
+    name
+  }
+}
+
+--- variables ---
+{"var1":3,"var2":[{"price":"DESC"}]}

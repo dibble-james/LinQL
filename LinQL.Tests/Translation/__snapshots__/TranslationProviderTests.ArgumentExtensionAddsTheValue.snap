@@ -1,0 +1,13 @@
+﻿query linql(
+  $var1: Int
+)
+ {
+  products(
+    in: $var1
+  ) {
+    name
+  }
+}
+
+--- variables ---
+{"var1":3}

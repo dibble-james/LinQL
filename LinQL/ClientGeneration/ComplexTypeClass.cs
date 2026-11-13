@@ -10,6 +10,8 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 internal class ComplexTypeClass : IClassFactory
 {
+    internal const string FilterInputSuffix = "FilterInput";
+
     private readonly List<FieldDefinitionNode> fields;
 
     public ComplexTypeClass(string name)
@@ -54,7 +56,7 @@ internal class ComplexTypeClass : IClassFactory
     private IEnumerable<FieldDefinitionNode> Methods
         => this.fields.Where(x => x.Arguments.Any());
 
-    protected static string TypeName(ITypeNode type, IDictionary<string, Scalar> knownScalars)
+    internal static string TypeName(ITypeNode type, IDictionary<string, Scalar> knownScalars)
     {
         var typeName = knownScalars.TryGetValue(type.NamedType().Name.Value, out var mapped)
             ? mapped.RuntimeType : type.NamedType().Name.Value;
@@ -64,7 +66,7 @@ internal class ComplexTypeClass : IClassFactory
         return type.IsNonNullType() ? typeName : typeName + "?";
     }
 
-    protected static string FieldName(string field)
+    internal static string FieldName(string field)
         => char.ToUpperInvariant(field.First()) + field.ToCamelCase().Substring(1);
 
     protected virtual Func<FieldDefinitionNode, PropertyDeclarationSyntax> CreateField(IDictionary<string, Scalar> knownScalars)
@@ -90,7 +92,7 @@ internal class ComplexTypeClass : IClassFactory
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
                     ])))
                     .AddParameterListParameters(
-                        [.. f.Arguments.Select(p => Parameter(Identifier(p.Name.Value))
+                        [.. f.Arguments.Select(p => Parameter(IdentifierFor(p.Name.Value))
                             .WithType(ParseTypeName(TypeName(p.Type, knownScalars)))
                             .AddAttributeLists(AttributeList(SeparatedList(
                             [
@@ -99,4 +101,15 @@ internal class ComplexTypeClass : IClassFactory
                     .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(f.Name.Value))))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
         ];
+
+    internal static SyntaxToken IdentifierFor(string name)
+        => Microsoft.CodeAnalysis.CSharp.SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None
+            ? VerbatimIdentifier(SyntaxTriviaList.Empty, name, name, SyntaxTriviaList.Empty)
+            : Identifier(name);
+
+    internal static bool IsFilterInputType(string typeName)
+        => typeName.Length > FilterInputSuffix.Length && typeName.EndsWith(FilterInputSuffix, StringComparison.Ordinal);
+
+    internal static string FilterBuilderName(string filterTypeName)
+        => filterTypeName + "Builder";
 }
