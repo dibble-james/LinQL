@@ -127,6 +127,25 @@ public partial class TranslationProviderTests
             .Should().BeEquivalentTo(new Dictionary<string, object?> { ["query"] = "widget" });
 
     [Fact]
+    public void ArgumentsHonourJsonIgnore()
+        => FilterValue.Normalize(new PartlyIgnoredArgument { Text = "widget", Present = "kept" })
+            .Should().BeEquivalentTo(new Dictionary<string, object?> { ["text"] = "widget", ["present"] = "kept" });
+
+    [Fact]
+    public void ArgumentsPassJsonElementsThrough()
+    {
+        // A JsonElement is already wire-shaped: reflecting over it would send `valueKind`/`rawText`
+        // instead of the JSON it holds.
+        using var document = JsonDocument.Parse("""{"a":1}""");
+
+        FilterValue.Normalize(document.RootElement)
+            .Should().Be(document.RootElement);
+
+        JsonSerializer.Serialize(FilterValue.Normalize(document))
+            .Should().Be("""{"a":1}""");
+    }
+
+    [Fact]
     public void ArgumentExtensionAddsTheValue()
         => this.TestFilter(x => x.Products.In(3).Select(p => new { p.Name }));
 
@@ -154,6 +173,20 @@ public partial class TranslationProviderTests
     {
         [JsonPropertyName("query")]
         public string? Text { get; set; }
+    }
+
+    private sealed class PartlyIgnoredArgument
+    {
+        public string? Text { get; set; }
+
+        [JsonIgnore]
+        public string? Hidden { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Present { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Missing { get; set; }
     }
 
     internal sealed class PocoProductFilterInput

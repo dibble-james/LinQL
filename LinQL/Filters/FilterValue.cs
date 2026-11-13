@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using LinQL.Expressions;
 
@@ -22,7 +23,7 @@ using LinQL.Expressions;
 /// </remarks>
 public sealed class FilterValue
 {
-    private static readonly ConcurrentDictionary<Type, (PropertyInfo Property, string Name)[]> PropertyCache = new();
+    private static readonly ConcurrentDictionary<Type, (PropertyInfo Property, string Name, JsonIgnoreCondition? Ignore)[]> PropertyCache = new();
 
     private readonly Dictionary<string, object?> fields = [];
 
@@ -148,6 +149,10 @@ public sealed class FilterValue
         FilterValue filter => filter.ToDictionary() is { Count: > 0 } dictionary ? dictionary : null,
         string text => text,
         Enum enumValue => enumValue.ToString(),
+        // Already wire-shaped: serialising one of these writes its own JSON, which reflecting over it
+        // would replace with its properties (`valueKind`, `rawText`, …).
+        JsonElement element => element,
+        JsonDocument document => document.RootElement,
         object scalar when IsScalar(scalar.GetType()) => scalar,
         object dictionary when TryGetEntries(dictionary, out var entries) => NormalizeDictionary(entries!, strict),
         IEnumerable enumerable => NormalizeEnumerable(enumerable, strict),
@@ -180,16 +185,26 @@ public sealed class FilterValue
     {
         var normalized = new Dictionary<string, object?>();
 
-        foreach (var (property, name) in PropertyCache.GetOrAdd(
+        foreach (var (property, name, ignore) in PropertyCache.GetOrAdd(
             value.GetType(),
             static type =>
             [
                 .. type
                     .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                    .Select(property => (Property: property, Name: property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? property.Name.ToCamelCase())),
+                    .Select(property => (
+                        Property: property,
+                        Name: property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? property.Name.ToCamelCase(),
+                        Ignore: property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition)),
             ]))
         {
             if (!property.CanRead || property.GetIndexParameters().Length > 0)
+            {
+                continue;
+            }
+
+            var raw = property.GetValue(value);
+
+            if (IsIgnored(ignore, property.PropertyType, raw))
             {
                 continue;
             }
@@ -203,7 +218,7 @@ public sealed class FilterValue
                     $"'{value.GetType().Name}.{property.Name}' is a non-nullable {property.PropertyType.Name}, so an operation that was never set cannot be told apart from its default value. Declare it as '{property.PropertyType.Name}?' on a filter input type.");
             }
 
-            if (Normalize(property.GetValue(value), strict) is { } fieldValue)
+            if (Normalize(raw, strict) is { } fieldValue)
             {
                 normalized[name] = fieldValue;
             }
@@ -211,6 +226,25 @@ public sealed class FilterValue
 
         return normalized.Count == 0 ? null : normalized;
     }
+
+    /// <summary>
+    /// Gets whether a property is left out of the payload, either always or because its value counts as
+    /// unset for the condition it declares.
+    /// </summary>
+    /// <param name="condition">The declared <see cref="JsonIgnoreAttribute.Condition"/>.</param>
+    /// <param name="type">The property type.</param>
+    /// <param name="value">The property value.</param>
+    /// <returns>Whether the property is left out.</returns>
+    private static bool IsIgnored(JsonIgnoreCondition? condition, Type type, object? value) => condition switch
+    {
+        JsonIgnoreCondition.Always or JsonIgnoreCondition.WhenWriting => true,
+        JsonIgnoreCondition.WhenWritingNull => value is null,
+        JsonIgnoreCondition.WhenWritingDefault => value is null || (type.IsValueType && value.Equals(Activator.CreateInstance(type))),
+        JsonIgnoreCondition.Never or JsonIgnoreCondition.WhenReading => false,
+
+        // null and any unnamed value keep the property.
+        _ => false,
+    };
 
     /// <summary>
     /// Gets the entries of a dictionary, so one is never mistaken for a sequence.
