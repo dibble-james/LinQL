@@ -59,6 +59,16 @@ public class GeneratedFilterTests
             .Select(p => new { p.Name }));
 
     [Fact]
+    public void InterfaceCompanion()
+        => Translate(q => q
+            .Results
+            .Select(r => new
+            {
+                r.Id,
+                Related = r.FilterRelated(f => f.Name(n => n.Eq("widget"))).Select(p => new { p.Name }),
+            }));
+
+    [Fact]
     public void ScalarListOperationOnQueryArgument()
         => Translate(q => q.ExecuteProducts(null, 1).Select(p => new { p.Name }));
 

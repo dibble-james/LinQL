@@ -110,9 +110,9 @@ internal class ComplexTypeClass : IClassFactory
             ? VerbatimIdentifier(SyntaxTriviaList.Empty, name, name, SyntaxTriviaList.Empty)
             : Identifier(name);
 
-    private static IEnumerable<MemberDeclarationSyntax> CreateFilterCompanion(FieldDefinitionNode field, IDictionary<string, Scalar> knownScalars)
+    protected static IEnumerable<MemberDeclarationSyntax> CreateFilterCompanion(FieldDefinitionNode field, IDictionary<string, Scalar> knownScalars, bool withBody = true)
         => field.Arguments.FirstOrDefault(x => IsFilterInputType(x.Type.NamedType().Name.Value)) is { } filterArgument
-            ? [CreateFilterCompanionMember(field, filterArgument, knownScalars)]
+            ? [CreateFilterCompanionMember(field, filterArgument, knownScalars, withBody)]
             : [];
 
     internal static bool IsFilterInputType(string typeName)
@@ -121,8 +121,11 @@ internal class ComplexTypeClass : IClassFactory
     internal static string FilterBuilderName(string filterTypeName)
         => filterTypeName + "Builder";
 
-    private static MethodDeclarationSyntax CreateFilterCompanionMember(FieldDefinitionNode field, InputValueDefinitionNode filterArgument, IDictionary<string, Scalar> knownScalars)
-        => MethodDeclaration(ParseTypeName(TypeName(field.Type, knownScalars)), Identifier("Filter" + FieldName(field.Name.Value)))
+    protected static MethodDeclarationSyntax CreateFilterCompanionMember(FieldDefinitionNode field, InputValueDefinitionNode filterArgument, IDictionary<string, Scalar> knownScalars, bool withBody)
+    {
+        var builder = FilterBuilderName(filterArgument.Type.NamedType().Name.Value);
+
+        var companion = MethodDeclaration(ParseTypeName(TypeName(field.Type, knownScalars)), Identifier("Filter" + FieldName(field.Name.Value)))
             .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
             .AddAttributeLists(AttributeList(SeparatedList(
             [
@@ -136,7 +139,13 @@ internal class ComplexTypeClass : IClassFactory
                     ])))
             ])))
             .AddParameterListParameters(
-                Parameter(Identifier("_")).WithType(ParseTypeName($"System.Linq.Expressions.Expression<System.Func<{FilterBuilderName(filterArgument.Type.NamedType().Name.Value)}, {FilterBuilderName(filterArgument.Type.NamedType().Name.Value)}>>")))
-            .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(field.Name.Value))))
-            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+                Parameter(Identifier("_")).WithType(ParseTypeName($"System.Linq.Expressions.Expression<System.Func<{builder}, {builder}>>")));
+
+        // An interface member has no body: the implementing types declare the companion themselves.
+        return withBody
+            ? companion
+                .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(field.Name.Value))))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            : companion.WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+    }
 }

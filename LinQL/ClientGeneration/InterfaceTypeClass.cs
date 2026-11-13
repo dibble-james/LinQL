@@ -30,12 +30,13 @@ internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> 
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
                     ])))
                      .AddParameterListParameters(
-                        [.. f.Arguments.Select(p => Parameter(Identifier(p.Name.Value))
+                        [.. f.Arguments.Select(p => Parameter(IdentifierFor(p.Name.Value))
                             .WithType(ParseTypeName(TypeName(p.Type, knownScalars)))
                             .AddAttributeLists(AttributeList(SeparatedList(
                             [
                                 Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type}""")))))
                             ]))))])
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
+            .. CreateFilterCompanion(f, knownScalars, withBody: false),
         ];
 }

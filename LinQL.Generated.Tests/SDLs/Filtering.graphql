@@ -4,13 +4,20 @@ schema {
 
 type Query {
   products(where: ProductFilterInput, in: Int): [Product!]!
+  results: [SearchResult!]!
 }
 
-type Product {
+interface SearchResult {
+  id: ID!
+  related(where: ProductFilterInput): [Product!]!
+}
+
+type Product implements SearchResult {
   id: ID!
   name: String!
   price: Float!
   tags: [Tag!]!
+  related(where: ProductFilterInput): [Product!]!
 }
 
 type Tag {
