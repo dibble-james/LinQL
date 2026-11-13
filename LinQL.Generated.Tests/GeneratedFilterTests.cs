@@ -85,6 +85,16 @@ public class GeneratedFilterTests
             .Select(p => new { p.Name }));
 
     [Fact]
+    public void EveryPagingArgumentGetsAnExtension()
+        => Translate(q => q
+            .Featured
+            .First(10)
+            .After("cursor")
+            .Last(5)
+            .Filter(f => f.Price(p => p.Gt(10)))
+            .Select(p => new { p.Name }));
+
+    [Fact]
     public void InputObjectArgumentExtension()
         => Translate(q => q
             .Featured
