@@ -5,7 +5,7 @@ schema {
 type Query {
   products(where: ProductFilterInput, in: Int): [Product!]!
   featured(first: Int!, where: ProductFilterInput, order: [ProductSortInput!]): [Product!]!
-  results: [SearchResult!]!
+  results(where: SearchResultFilterInput): [SearchResult!]!
 }
 
 input ProductSortInput {
@@ -20,6 +20,7 @@ enum SortEnumType {
 
 interface SearchResult {
   id: ID!
+  name: String!
   related(where: ProductFilterInput): [Product!]!
 }
 
@@ -33,6 +34,13 @@ type Product implements SearchResult {
 
 type Tag {
   label: String!
+}
+
+input SearchResultFilterInput {
+  and: [SearchResultFilterInput!]
+  or: [SearchResultFilterInput!]
+  id: StringOperationFilterInput
+  name: StringOperationFilterInput
 }
 
 input ProductFilterInput {

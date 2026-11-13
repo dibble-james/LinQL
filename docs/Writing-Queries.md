@@ -288,7 +288,10 @@ for shaping results you already have.
 
 - Sorting (`order`) and paging (`first`, `after`, `last`, `before`). Both change the query shape or
   the result type and need their own design.
-- Companions on interface-typed fields; only object and root types get one today.
+- Filtering an interface-typed field by its implementations' fields. Hot Chocolate generates the
+  filter input from the interface itself (`SearchResultFilterInput`, holding only the interface's
+  fields), and the generator follows the SDL. A filter *is* accepted on an interface-returning
+  resolver — the end-to-end tests cover exactly that — but only that input type can be sent.
 
 #### Prerequisites
 

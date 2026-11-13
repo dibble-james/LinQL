@@ -3,7 +3,9 @@ namespace LinQL.GraphQL.Client.Tests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using LinQL;
 using global::GraphQL.Client.Abstractions;
 using global::GraphQL.Client.Http;
 using global::GraphQL.Client.Serializer.SystemTextJson;
@@ -22,6 +24,8 @@ using Client = LinQL.GraphQL.Client.Tests.Filtering;
 public class FilterTests : IDisposable
 {
     private static readonly string[] Banana = ["banana"];
+
+    private static readonly string[] BananaId = ["2"];
 
     private static readonly string[] BananaOrCherry = ["banana", "cherry"];
 
@@ -47,7 +51,8 @@ public class FilterTests : IDisposable
 
         this.client = new GraphQLHttpClient(
             new GraphQLHttpClientOptions { HttpMessageHandler = testServer.CreateHandler(), EndPoint = new Uri(testServer.BaseAddress, "/graphql") },
-            new SystemTextJsonSerializer())
+            // results returns an interface, so its implementation has to be registered for deserialisation.
+            new SystemTextJsonSerializer(new JsonSerializerOptions().RegisterInterface<Client.SearchResult>(typeof(Client.Product))))
             .WithLinQL(new LinQLOptions());
     }
 
@@ -127,17 +132,39 @@ public class FilterTests : IDisposable
         this.server.DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
+    [Fact]
+    public async Task FilterOnInterfaceResolverFiltersRows()
+    {
+        // The filter is a field argument, so whether the resolver returns an interface should not matter.
+        var result = await this.client.SendAsync(
+            (Client.Query q) => q.FilterResults(f => f.Name(n => n.Contains("an"))).Select(r => new { r.Id }),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        result.Errors.Should().BeNull();
+        result.Data.Select(r => r.Id).Should().BeEquivalentTo(BananaId);
+    }
+
     public class ProductQueryType
     {
         [UseFiltering]
         public IQueryable<Product> GetProducts() => Data.AsQueryable();
 
         [UseFiltering]
+        public IQueryable<SearchResult> GetResults() => Data.AsQueryable();
+
+        [UseFiltering]
         [UseSorting]
         public IQueryable<Product> GetFeatured(int first) => Data.AsQueryable().Take(first);
     }
 
-    public class Product
+    public interface SearchResult
+    {
+        string Id { get; }
+
+        string Name { get; }
+    }
+
+    public class Product : SearchResult
     {
         public string Id { get; set; } = string.Empty;
 
