@@ -113,10 +113,10 @@ Hot Chocolate filtering is a resolver *argument* (`products(where: ProductFilter
 selection modifier, so LinQL exposes it as its own operation rather than translating `Where`.
 The reasoning is covered in [Why not `Where`](#why-not-where).
 
-#### The generated companion
+#### The generated extensions
 
 When an SDL field takes an argument whose input type is named `<Something>FilterInput`, the
-generated root type gets a companion named `Filter{Field}`. For this SDL:
+generated client gets a `Filter` extension method for the field's type. For this SDL:
 
 ```graphql
 type Query {
@@ -124,12 +124,17 @@ type Query {
 }
 ```
 
-the generator produces a companion that takes a builder for the filter, plus a builder class for
+the generator produces an extension that takes a builder for the filter, plus a builder class for
 every filter input type:
 
 ```csharp
-[GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
-public Product[] FilterProducts(Expression<Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> _) => Products;
+public static class FieldExtensions
+{
+    [GraphQLFilter(Argument = "where", GQLType = "ProductFilterInput")]
+    public static Product[] Filter(
+        this Product[] source,
+        Expression<Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> filter) => source;
+}
 
 public partial class ProductFilterInputBuilder
 {
@@ -141,11 +146,12 @@ public partial class ProductFilterInputBuilder
 }
 ```
 
-Calling the companion sends the filter as a variable:
+Calling it sends the filter as a variable:
 
 ```csharp
 var products = await client.SendAsync((Root q) => q
-    .FilterProducts(f => f
+    .Products
+    .Filter(f => f
         .Price(p => p.Gt(10))
         .Name(n => n.Contains("widget")))
     .Select(p => new { p.Id, p.Name, p.Price }));
@@ -169,10 +175,10 @@ The argument name and type come from the SDL, so a filter convention that rename
 still works, and every filter input type in the SDL gets a builder named `<TypeName>Builder`. The
 `<Something>FilterInput` name is Hot Chocolate's convention and is what the generator looks for (a
 type named exactly `FilterInput` is treated as an ordinary input); a custom convention that renames
-the input type needs its companion and builders added by hand for now.
+the input type needs the extension and builders added by hand for now.
 
-The generated input objects still work too: pass one to the companion and it is normalised the
-same way as a builder, with unset operations dropped. That only works because the generated input
+The generated input objects still work too: pass one to `Filter` instead of a lambda and it is
+normalised the same way as a builder, with unset operations dropped. That only works because the generated input
 types declare every operation nullable. A hand-written filter type has to do the same — a
 non-nullable value type (`decimal`, `bool`) cannot say "not set", so normalising one throws rather
 than silently filtering on `0` or `false`.
@@ -180,68 +186,69 @@ than silently filtering on `0` or `false`.
 #### Fields with other arguments
 
 A filterable field usually takes more than the filter — `products(where:, order:, first:)` under
-Hot Chocolate's paging conventions. The companion forwards those arguments in schema order, after
-the builder, so the document it produces is one the server accepts:
+Hot Chocolate's paging conventions. Each of those arguments gets an extension method of its own,
+named after the argument, so the call site reads like the field's argument list:
 
 ```graphql
 type Query {
-  products(where: ProductFilterInput, order: [ProductSortInput!], first: Int!): [Product!]!
+  featured(first: Int!, where: ProductFilterInput, order: [ProductSortInput!]): [Product!]!
 }
 ```
 
 ```csharp
-[GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
-public Product[] FilterProducts(
-    Expression<Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> _,
-    [GraphQLArgument(GQLType = "[ProductSortInput!]")] ProductSortInput[]? order,
-    [GraphQLArgument(GQLType = "Int!")] int first) => Products;
-```
+[GraphQLArgument(Name = "first", GQLType = "Int!")]
+public static Product[] First(this Product[] source, int first) => source;
 
-Optional GraphQL arguments are optional in C# too (`in: Int` becomes `int? @in = null`), unless a
-required argument follows them, since C# does not allow a required parameter after an optional one.
-An argument left at `null` is not sent, so the document only carries what was asked for:
+[GraphQLArgument(Name = "order", GQLType = "[ProductSortInput!]")]
+public static Product[] Order(this Product[] source, ProductSortInput[]? order = null) => source;
+```
 
 ```csharp
 client.SendAsync((Root q) => q
-    .FilterProducts(f => f.Price(p => p.Gt(10)), null, 10)
+    .Featured
+    .First(10)
+    .Filter(f => f.Price(p => p.Gt(10)))
+    .Order(sorts)
     .Select(p => new { p.Name }));
 ```
 
 ```graphql
-query linql($var1: ProductFilterInput, $var2: Int!) {
-  products(where: $var1, first: $var2) {
+query linql($var1: Int!, $var2: ProductFilterInput, $var3: [ProductSortInput!]) {
+  featured(first: $var1, where: $var2, order: $var3) {
     name
   }
 }
 ```
 
-A required GraphQL argument is a required parameter, so a companion cannot produce a document the
-server rejects for a missing argument. Ordering and paging themselves are not translated — whatever
-you pass is forwarded as an argument, nothing more.
+The order of the calls does not matter: each one adds an argument to the field the expression
+selects, so a filter can be applied to a paged field without a special signature for every
+combination. A required GraphQL argument is a required parameter, so a document the server would
+reject for a missing argument does not compile. Sorting and paging themselves are still not
+translated — the value is attached as an argument, nothing more.
 
-Forwarded values are sent in the shape GraphQL variables take rather than their CLR shape: input
+Argument values are sent in the shape GraphQL variables take rather than their CLR shape: input
 object fields are camelCased, enums go out by name, and unset fields are dropped, so
 `new ProductSortInput { Price = SortEnumType.DESC }` becomes `{"price":"DESC"}`.
 
 #### Only the operations you set are sent
 
-The builder records only the operations you call, and a generated input object passed to the
-companion is normalised the same way: unset properties, including empty nested objects, are
+The builder records only the operations you call, and a generated input object passed to `Filter`
+is normalised the same way: unset properties, including empty nested objects, are
 dropped, so only what you set appears in the variable. Enums are sent by name.
 
 This matters because Hot Chocolate treats `null` as a **value**, not as absence: on a nullable
 property `{ "eq": null }` means `IS NULL` and silently narrows the results, and on a non-nullable
 property it is an error. An entirely empty filter (`{}`) is worse: Hot Chocolate 13 throws and
 Hot Chocolate 16 silently returns every row. LinQL refuses to send either — a filter with no
-operations throws an `InvalidOperationException` instead, so omit the argument (or the companion)
-to query without a filter.
+operations throws an `InvalidOperationException` instead, so omit the extension to query without a
+filter.
 
 #### Nested objects, `and`/`or` and collections
 
 Nested inputs work exactly like scalar ones:
 
 ```csharp
-.FilterProducts(f => f.Brand(b => b.Name(n => n.Eq("acme"))))
+.Filter(f => f.Brand(b => b.Name(n => n.Eq("acme"))))
 // => { "brand": { "name": { "eq": "acme" } } }
 ```
 
@@ -249,7 +256,7 @@ Nested inputs work exactly like scalar ones:
 first branch of the combinator, because sibling fields are `AND` in Hot Chocolate:
 
 ```csharp
-.FilterProducts(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("widget"))))
+.Filter(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("widget"))))
 // => { "or": [ { "price": { "gt": 10 } }, { "name": { "eq": "widget" } } ] }
 ```
 
@@ -257,7 +264,7 @@ Collection filters use the wrapper Hot Chocolate generates for the element type.
 `all`, `none` and `any` and nothing else:
 
 ```csharp
-.FilterProducts(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new")))))
+.Filter(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new")))))
 // => { "tags": { "some": { "label": { "eq": "new" } } } }
 ```
 
@@ -286,8 +293,9 @@ for shaping results you already have.
 
 #### Not covered
 
-- Sorting (`order`) and paging (`first`, `after`, `last`, `before`). Both change the query shape or
-  the result type and need their own design.
+- Translating sorting (`order`) and paging (`first`, `after`, `last`, `before`). The generated
+  extensions attach them as arguments, but the values are passed through as given; the `Connection`
+  shape that paging middleware returns needs its own design.
 - Filtering an interface-typed field by its implementations' fields. Hot Chocolate generates the
   filter input from the interface itself (`SearchResultFilterInput`, holding only the interface's
   fields), and the generator follows the SDL. A filter *is* accepted on an interface-returning

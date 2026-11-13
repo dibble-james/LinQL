@@ -37,6 +37,5 @@ internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> 
                                 Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type}""")))))
                             ]))))])
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-            .. CreateFilterCompanion(f, knownScalars, withBody: false),
         ];
 }

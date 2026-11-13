@@ -17,8 +17,6 @@ namespace Filtering
 
         [GraphQLOperation, GraphQLField(Name = "products")]
         public Product[] ExecuteProducts([GraphQLArgument(GQLType = "ProductFilterInput")] ProductFilterInput? where, [GraphQLArgument(GQLType = "Int")] int? @in) => Products;
-        [GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
-        public Product[] FilterProducts(System.Linq.Expressions.Expression<System.Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> _, [GraphQLArgument(GQLType = "Int")] int? @in = null) => Products;
     }
 
     [GraphQLType(Name = "Product")]
@@ -136,6 +134,14 @@ namespace Filtering
             options.Scalars.Add(new("Boolean", "bool"));
             return options;
         }
+    }
+
+    public static class FieldExtensions
+    {
+        [GraphQLFilter(Argument = "where", GQLType = "ProductFilterInput")]
+        public static Product[] Filter(this Product[] source, System.Linq.Expressions.Expression<System.Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> filter) => source;
+        [GraphQLArgument(Name = "in", GQLType = "Int")]
+        public static Product[] In(this Product[] source, int? @in = null) => source;
     }
 
     public static class JsonSerializerOptionsExtensions

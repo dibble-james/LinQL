@@ -5,12 +5,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using LinQL;
+using LinQL.Generated.Tests.Filtering;
 using LinQL.Translation;
 using Client = LinQL.Generated.Tests.Filtering;
 
 /// <summary>
-/// Translates expressions built from the generated client, so the builder methods the generator emits
-/// are exercised rather than the hand-written fixtures in LinQL.Tests.
+/// Translates expressions built from the generated client, so the builder methods and field extensions
+/// the generator emits are exercised rather than the hand-written fixtures in LinQL.Tests.
 /// </summary>
 public class GeneratedFilterTests
 {
@@ -21,71 +22,85 @@ public class GeneratedFilterTests
     [Fact]
     public void ScalarOperation()
         => Translate(q => q
-            .FilterProducts(f => f.Name(n => n.Contains("widget")).Price(p => p.Gt(10)))
+            .Products
+            .Filter(f => f.Name(n => n.Contains("widget")).Price(p => p.Gt(10)))
             .Select(p => new { p.Id, p.Name }));
 
     [Fact]
     public void OrFoldsIntoTheFirstBranch()
         => Translate(q => q
-            .FilterProducts(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("widget"))))
+            .Products
+            .Filter(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("widget"))))
             .Select(p => new { p.Name }));
 
     [Fact]
     public void CollectionQuantifier()
         => Translate(q => q
-            .FilterProducts(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new")))))
+            .Products
+            .Filter(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new")))))
             .Select(p => new { p.Name }));
 
     [Fact]
     public void AndFoldsIntoTheFirstBranch()
         => Translate(q => q
-            .FilterProducts(f => f.Name(n => n.Contains("w")).And(a => a.Price(p => p.Lt(5))))
+            .Products
+            .Filter(f => f.Name(n => n.Contains("w")).And(a => a.Price(p => p.Lt(5))))
             .Select(p => new { p.Name }));
 
     [Fact]
     public void NoneWithNegatedOperation()
         => Translate(q => q
-            .FilterProducts(f => f.Tags(t => t.None(s => s.Label(l => l.Ncontains("new")))))
+            .Products
+            .Filter(f => f.Tags(t => t.None(s => s.Label(l => l.Ncontains("new")))))
             .Select(p => new { p.Name }));
 
     [Fact]
     public void QuantifierValue()
         => Translate(q => q
-            .FilterProducts(f => f.Tags(t => t.Any(false)))
+            .Products
+            .Filter(f => f.Tags(t => t.Any(false)))
             .Select(p => new { p.Name }));
 
     [Fact]
     public void ScalarListOperation()
         => Translate(q => q
-            .FilterProducts(f => f.Name(n => n.In(WidgetNames)))
+            .Products
+            .Filter(f => f.Name(n => n.In(WidgetNames)))
             .Select(p => new { p.Name }));
 
     [Fact]
-    public void CompanionForwardsOtherArguments()
+    public void ArgumentExtensionAddsTheValue()
         => Translate(q => q
-            .FilterProducts(f => f.Name(n => n.Eq("widget")), 1)
+            .Products
+            .Filter(f => f.Name(n => n.Eq("widget")))
+            .In(1)
             .Select(p => new { p.Name }));
 
     [Fact]
-    public void CompanionRequiresRequiredArguments()
+    public void RequiredArgumentExtension()
         => Translate(q => q
-            .FilterFeatured(f => f.Price(p => p.Gt(10)), 5)
+            .Featured
+            .First(5)
+            .Filter(f => f.Price(p => p.Gt(10)))
             .Select(p => new { p.Name }));
 
     [Fact]
-    public void CompanionForwardsInputObjectArguments()
+    public void InputObjectArgumentExtension()
         => Translate(q => q
-            .FilterFeatured(f => f.Price(p => p.Gt(10)), 3, PriceDescending)
+            .Featured
+            .First(3)
+            .Filter(f => f.Price(p => p.Gt(10)))
+            .Order(PriceDescending)
             .Select(p => new { p.Name }));
 
     [Fact]
-    public void InterfaceCompanion()
+    public void InterfaceFieldFilter()
         => Translate(q => q
             .Results
             .Select(r => new
             {
                 r.Id,
-                Related = r.FilterRelated(f => f.Name(n => n.Eq("widget"))).Select(p => new { p.Name }),
+                Related = r.Related.Filter(f => f.Name(n => n.Eq("widget"))).Select(p => new { p.Name }),
             }));
 
     [Fact]

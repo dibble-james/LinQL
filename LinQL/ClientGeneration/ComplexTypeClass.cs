@@ -76,7 +76,7 @@ internal class ComplexTypeClass : IClassFactory
             .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
 
     protected virtual Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(IDictionary<string, Scalar> knownScalars)
-        => f => [.. this.CreateOperationMembers(f, knownScalars), .. CreateFilterCompanion(f, knownScalars)];
+        => f => [.. this.CreateOperationMembers(f, knownScalars)];
 
     protected virtual IEnumerable<MemberDeclarationSyntax> CreateOperationMembers(FieldDefinitionNode f, IDictionary<string, Scalar> knownScalars)
         =>
@@ -109,11 +109,6 @@ internal class ComplexTypeClass : IClassFactory
         => Microsoft.CodeAnalysis.CSharp.SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None
             ? VerbatimIdentifier(SyntaxTriviaList.Empty, name, name, SyntaxTriviaList.Empty)
             : Identifier(name);
-
-    protected static IEnumerable<MemberDeclarationSyntax> CreateFilterCompanion(FieldDefinitionNode field, IDictionary<string, Scalar> knownScalars, bool withBody = true)
-        => field.Arguments.FirstOrDefault(x => IsFilterInputType(x.Type.NamedType().Name.Value)) is { } filterArgument
-            ? [CreateFilterCompanionMember(field, filterArgument, knownScalars, withBody)]
-            : [];
 
     internal static bool IsFilterInputType(string typeName)
         => typeName.Length > FilterInputSuffix.Length && typeName.EndsWith(FilterInputSuffix, StringComparison.Ordinal);

@@ -57,6 +57,8 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(ObjectTypeDefinitionNode node, DocumentWalkerContext context)
     {
+        CollectFieldExtensions(node.Fields, context);
+
         var rootNode = context.RootOperations.FirstOrDefault(x => x.Name == node.Name.Value);
 
         if (rootNode is not null)
@@ -73,6 +75,8 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(InterfaceTypeDefinitionNode node, DocumentWalkerContext context)
     {
+        CollectFieldExtensions(node.Fields, context);
+
         context.Types.Add(new InterfaceTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value)));
 
         return base.VisitChildren(node, context);
@@ -152,6 +156,26 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
 
         return base.VisitChildren(node, context);
+    }
+
+    /// <summary>
+    /// Records the field arguments that get an extension method. Only a list of arguments is kept: the
+    /// types are rendered once the whole document has been walked and the scalars are known.
+    /// </summary>
+    /// <remarks>
+    /// Only filterable fields take part. The extensions exist so a filter composes with the field's other
+    /// arguments (<c>q.Featured.First(2).Filter(…)</c>); a field with no filter argument has no reason to
+    /// grow an extension per argument.
+    /// </remarks>
+    private static void CollectFieldExtensions(IReadOnlyList<FieldDefinitionNode> fields, DocumentWalkerContext context)
+    {
+        foreach (var field in fields.Where(x => x.Arguments.Any(a => ComplexTypeClass.IsFilterInputType(a.Type.NamedType().Name.Value))))
+        {
+            foreach (var argument in field.Arguments)
+            {
+                context.FieldExtensions.Add(new FieldExtension(field, argument, ComplexTypeClass.IsFilterInputType(argument.Type.NamedType().Name.Value)));
+            }
+        }
     }
 
     private void ReportMissingFilterInputTypes(DocumentNode document, DocumentWalkerContext context)

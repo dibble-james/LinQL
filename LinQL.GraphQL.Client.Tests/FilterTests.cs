@@ -10,6 +10,7 @@ using global::GraphQL.Client.Abstractions;
 using global::GraphQL.Client.Http;
 using global::GraphQL.Client.Serializer.SystemTextJson;
 using HotChocolate.Data;
+using LinQL.GraphQL.Client.Tests.Filtering;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -19,7 +20,7 @@ using Client = LinQL.GraphQL.Client.Tests.Filtering;
 
 /// <summary>
 /// Sends filters built from the generated client to a real Hot Chocolate server with
-/// <c>AddFiltering()</c>, so the generated builders are exercised end to end.
+/// <c>AddFiltering()</c>, so the generated extensions are exercised end to end.
 /// </summary>
 public class FilterTests : IDisposable
 {
@@ -60,7 +61,7 @@ public class FilterTests : IDisposable
     public async Task ScalarOperationFiltersRows()
     {
         var result = await this.client.SendAsync(
-            (Client.Query q) => q.FilterProducts(f => f.Name(n => n.Contains("an"))).Select(p => new { p.Name }),
+            (Client.Query q) => q.Products.Filter(f => f.Name(n => n.Contains("an"))).Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
@@ -71,7 +72,7 @@ public class FilterTests : IDisposable
     public async Task OrKeepsOrSemantics()
     {
         var result = await this.client.SendAsync(
-            (Client.Query q) => q.FilterProducts(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("banana")))).Select(p => new { p.Name }),
+            (Client.Query q) => q.Products.Filter(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("banana")))).Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
@@ -82,7 +83,7 @@ public class FilterTests : IDisposable
     public async Task SomeOnCollectionFiltersRows()
     {
         var result = await this.client.SendAsync(
-            (Client.Query q) => q.FilterProducts(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new"))))).Select(p => new { p.Name }),
+            (Client.Query q) => q.Products.Filter(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new"))))).Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
@@ -96,11 +97,11 @@ public class FilterTests : IDisposable
         // of rows that survive shows the value reached the server: two candidates leave banana, three
         // also leave cherry. A dropped argument would return all three either way.
         var two = await this.client.SendAsync(
-            (Client.Query q) => q.FilterFeatured(f => f.Price(p => p.Gt(10)), 2, null).Select(p => new { p.Name }),
+            (Client.Query q) => q.Featured.First(2).Filter(f => f.Price(p => p.Gt(10))).Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         var three = await this.client.SendAsync(
-            (Client.Query q) => q.FilterFeatured(f => f.Price(p => p.Gt(10)), 3, null).Select(p => new { p.Name }),
+            (Client.Query q) => q.Featured.First(3).Filter(f => f.Price(p => p.Gt(10))).Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         two.Errors.Should().BeNull();
@@ -114,10 +115,10 @@ public class FilterTests : IDisposable
     {
         var result = await this.client.SendAsync(
             (Client.Query q) => q
-                .FilterFeatured(
-                    f => f.Price(p => p.Gt(10)),
-                    3,
-                    PriceDescending)
+                .Featured
+                .First(3)
+                .Filter(f => f.Price(p => p.Gt(10)))
+                .Order(PriceDescending)
                 .Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
@@ -125,23 +126,23 @@ public class FilterTests : IDisposable
         result.Data.Select(p => p.Name).Should().Equal("cherry", "banana");
     }
 
-    public void Dispose()
-    {
-        GC.SuppressFinalize(this);
-        this.server.StopAsync().GetAwaiter().GetResult();
-        this.server.DisposeAsync().AsTask().GetAwaiter().GetResult();
-    }
-
     [Fact]
     public async Task FilterOnInterfaceResolverFiltersRows()
     {
         // The filter is a field argument, so whether the resolver returns an interface should not matter.
         var result = await this.client.SendAsync(
-            (Client.Query q) => q.FilterResults(f => f.Name(n => n.Contains("an"))).Select(r => new { r.Id }),
+            (Client.Query q) => q.Results.Filter(f => f.Name(n => n.Contains("an"))).Select(r => new { r.Id }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
         result.Data.Select(r => r.Id).Should().BeEquivalentTo(BananaId);
+    }
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        this.server.StopAsync().GetAwaiter().GetResult();
+        this.server.DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
     public class ProductQueryType

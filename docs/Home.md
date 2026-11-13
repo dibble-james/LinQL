@@ -101,12 +101,13 @@ See the [Strawberry Shake guide](https://github.com/dibble-james/LinQL/blob/main
 ### Filtering
 
 When the endpoint exposes Hot Chocolate filter arguments (`products(where: ProductFilterInput)`),
-the generator adds a `Filter{Field}` companion, and LinQL sends your filter as the `where`
-variable:
+the generator adds a `Filter` extension method for the field, and LinQL sends your filter as the
+`where` variable:
 
 ```csharp
 var products = await client.SendAsync((Root q) => q
-    .FilterProducts(f => f
+    .Products
+    .Filter(f => f
         .Price(p => p.Gt(10))
         .Name(n => n.Contains("widget")))
     .Select(p => new { p.Id, p.Name }));
@@ -119,6 +120,9 @@ The operations are the schema's own (`gt`, `contains`, `some`, `all`, `none`, `a
 so anything the endpoint advertises works and anything it doesn't is rejected. Only the operations
 you set are sent: unset properties are dropped, and a filter with nothing set throws rather than
 sending `{}`, which Hot Chocolate treats as an error on some versions and as no filter on others.
+
+Other arguments of the field get extensions too, named after them, so a paged or sorted field stays
+readable: `q.Featured.First(10).Filter(f => f.Price(p => p.Gt(10))).Select(p => new { p.Name })`.
 
 `.Where` is **not** mapped onto this. It is applied client-side after the response today, and
 mapping it would silently change results: its C# semantics are not Hot Chocolate's, and it would

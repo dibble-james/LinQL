@@ -16,44 +16,44 @@ public partial class TranslationProviderTests
 {
     [Fact]
     public void FilterScalarOperation()
-        => this.TestFilter(x => x.FilterProducts(f => f.Name(n => n.Contains("widget"))).Select(p => new { p.Name }));
+        => this.TestFilter(x => x.Products.Filter(f => f.Name(n => n.Contains("widget"))).Select(p => new { p.Name }));
 
     [Fact]
     public void FilterMultipleOperations()
-        => this.TestFilter(x => x.FilterProducts(f => f.Price(p => p.Gt(10).Lt(30))).Select(p => new { p.Name, p.Price }));
+        => this.TestFilter(x => x.Products.Filter(f => f.Price(p => p.Gt(10).Lt(30))).Select(p => new { p.Name, p.Price }));
 
     [Fact]
     public void FilterNestedObject()
-        => this.TestFilter(x => x.FilterProducts(f => f.Brand(b => b.Name(n => n.Eq("acme")))).Select(p => new { p.Name }));
+        => this.TestFilter(x => x.Products.Filter(f => f.Brand(b => b.Name(n => n.Eq("acme")))).Select(p => new { p.Name }));
 
     [Fact]
     public void FilterSome()
-        => this.TestFilter(x => x.FilterProducts(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new"))))).Select(p => new { p.Name }));
+        => this.TestFilter(x => x.Products.Filter(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new"))))).Select(p => new { p.Name }));
 
     [Fact]
     public void FilterAll()
-        => this.TestFilter(x => x.FilterProducts(f => f.Tags(t => t.All(s => s.Label(l => l.Eq("new"))))).Select(p => new { p.Name }));
+        => this.TestFilter(x => x.Products.Filter(f => f.Tags(t => t.All(s => s.Label(l => l.Eq("new"))))).Select(p => new { p.Name }));
 
     [Fact]
     public void FilterNone()
-        => this.TestFilter(x => x.FilterProducts(f => f.Tags(t => t.None(s => s.Label(l => l.Eq("new"))))).Select(p => new { p.Name }));
+        => this.TestFilter(x => x.Products.Filter(f => f.Tags(t => t.None(s => s.Label(l => l.Eq("new"))))).Select(p => new { p.Name }));
 
     [Fact]
     public void FilterAny()
-        => this.TestFilter(x => x.FilterProducts(f => f.Tags(t => t.Any(true))).Select(p => new { p.Name }));
+        => this.TestFilter(x => x.Products.Filter(f => f.Tags(t => t.Any(true))).Select(p => new { p.Name }));
 
     [Fact]
     public void FilterAnd()
-        => this.TestFilter(x => x.FilterProducts(f => f.Price(p => p.Gt(10)).And(a => a.Name(n => n.Eq("widget")))).Select(p => new { p.Name }));
+        => this.TestFilter(x => x.Products.Filter(f => f.Price(p => p.Gt(10)).And(a => a.Name(n => n.Eq("widget")))).Select(p => new { p.Name }));
 
     [Fact]
     public void FilterOr()
-        => this.TestFilter(x => x.FilterProducts(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("widget")))).Select(p => new { p.Name }));
+        => this.TestFilter(x => x.Products.Filter(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("widget")))).Select(p => new { p.Name }));
 
     [Fact]
     public void FilterWithoutOperationsThrows()
     {
-        Expression<Func<FilterRootType, object>> expression = x => x.FilterProducts(f => f).Select(p => new { p.Name });
+        Expression<Func<FilterRootType, object>> expression = x => x.Products.Filter(f => f).Select(p => new { p.Name });
 
         var act = () => TranslationProvider.ToRequest(expression, new LinQLOptions());
 
@@ -62,7 +62,7 @@ public partial class TranslationProviderTests
 
     [Fact]
     public void FilterFromInputObject()
-        => this.TestPocoFilter(x => x.FilterProducts(new PocoProductFilterInput
+        => this.TestFilter(x => x.Products.Filter(new PocoProductFilterInput
         {
             Name = new PocoStringOperationFilterInput { Contains = "widget" },
             Price = new PocoNumberOperationFilterInput { Gt = 10 },
@@ -74,8 +74,9 @@ public partial class TranslationProviderTests
     {
         // A hand-written filter type with a non-nullable operation cannot express "not set", so sending
         // its default would silently filter on false instead of not filtering.
-        Expression<Func<ValueTypeFilterRootType, object>> expression = x => x
-            .FilterProducts(new ValueTypeFilterInput { Any = true })
+        Expression<Func<FilterRootType, object>> expression = x => x
+            .Products
+            .Filter(new ValueTypeFilterInput { Any = true })
             .Select(p => new { p.Name });
 
         var act = () => TranslationProvider.ToRequest(expression, new LinQLOptions());
@@ -98,14 +99,11 @@ public partial class TranslationProviderTests
         act.Should().Throw<InvalidOperationException>();
     }
 
+    [Fact]
+    public void ArgumentExtensionAddsTheValue()
+        => this.TestFilter(x => x.Products.In(3).Select(p => new { p.Name }));
+
     private void TestFilter(Expression<Func<FilterRootType, object>> expression)
-        => this.SnapshotRequest(expression);
-
-    private void TestPocoFilter(Expression<Func<PocoFilterRootType, object>> expression)
-        => this.SnapshotRequest(expression);
-
-    private void SnapshotRequest<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
-        where TRoot : RootType<TRoot>
     {
         var request = TranslationProvider.ToRequest(expression, new LinQLOptions());
 
@@ -117,37 +115,15 @@ public partial class TranslationProviderTests
     {
         public FilterProduct[] Products { get; set; } = [];
 
-        [GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
-        public FilterProduct[] FilterProducts(Expression<Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> filter)
-            => IgnoreFilter(filter, this.Products);
-
-        private static FilterProduct[] IgnoreFilter(Expression<Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> _, FilterProduct[] products) => products;
+        public FilterProduct[] Recommended { get; set; } = [];
     }
 
-    [OperationType]
-    private class PocoFilterRootType : RootType<PocoFilterRootType>
-    {
-        public FilterProduct[] Products { get; set; } = [];
-
-        [GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
-        public FilterProduct[] FilterProducts(PocoProductFilterInput _) => this.Products;
-    }
-
-    [OperationType]
-    private class ValueTypeFilterRootType : RootType<ValueTypeFilterRootType>
-    {
-        public FilterProduct[] Products { get; set; } = [];
-
-        [GraphQLFilter(Field = "products", Argument = "where", GQLType = "ProductFilterInput")]
-        public FilterProduct[] FilterProducts(ValueTypeFilterInput _) => this.Products;
-    }
-
-    private sealed class ValueTypeFilterInput
+    internal sealed class ValueTypeFilterInput
     {
         public bool Any { get; set; }
     }
 
-    private sealed class PocoProductFilterInput
+    internal sealed class PocoProductFilterInput
     {
         public PocoProductFilterInput[]? And { get; set; }
 
@@ -160,26 +136,26 @@ public partial class TranslationProviderTests
         public PocoTagListFilterInput? Tags { get; set; }
     }
 
-    private sealed class PocoStringOperationFilterInput
+    internal sealed class PocoStringOperationFilterInput
     {
         public string? Eq { get; set; }
 
         public string? Contains { get; set; }
     }
 
-    private sealed class PocoNumberOperationFilterInput
+    internal sealed class PocoNumberOperationFilterInput
     {
         public decimal? Gt { get; set; }
 
         public decimal? Lt { get; set; }
     }
 
-    private sealed class PocoTagFilterInput
+    internal sealed class PocoTagFilterInput
     {
         public PocoStringOperationFilterInput? Label { get; set; }
     }
 
-    private sealed class PocoTagListFilterInput
+    internal sealed class PocoTagListFilterInput
     {
         public PocoTagFilterInput? Some { get; set; }
 
@@ -190,7 +166,7 @@ public partial class TranslationProviderTests
         public bool? Any { get; set; }
     }
 
-    private sealed class FilterProduct
+    internal sealed class FilterProduct
     {
         public string Name { get; set; } = string.Empty;
 
@@ -201,17 +177,17 @@ public partial class TranslationProviderTests
         public FilterTag[] Tags { get; set; } = [];
     }
 
-    private sealed class FilterBrand
+    internal sealed class FilterBrand
     {
         public string? Name { get; set; }
     }
 
-    private sealed class FilterTag
+    internal sealed class FilterTag
     {
         public string Label { get; set; } = string.Empty;
     }
 
-    private sealed class ProductFilterInputBuilder
+    internal sealed class ProductFilterInputBuilder
     {
         [GraphQLFilterField(Name = "name")]
         public ProductFilterInputBuilder Name(Func<StringFilterInputBuilder, StringFilterInputBuilder> _) => this;
@@ -232,7 +208,7 @@ public partial class TranslationProviderTests
         public ProductFilterInputBuilder Or(Func<ProductFilterInputBuilder, ProductFilterInputBuilder> _) => this;
     }
 
-    private sealed class StringFilterInputBuilder
+    internal sealed class StringFilterInputBuilder
     {
         [GraphQLFilterField(Name = "eq")]
         public StringFilterInputBuilder Eq(string _) => this;
@@ -241,7 +217,7 @@ public partial class TranslationProviderTests
         public StringFilterInputBuilder Contains(string _) => this;
     }
 
-    private sealed class NumberFilterInputBuilder
+    internal sealed class NumberFilterInputBuilder
     {
         [GraphQLFilterField(Name = "gt")]
         public NumberFilterInputBuilder Gt(decimal _) => this;
@@ -250,19 +226,19 @@ public partial class TranslationProviderTests
         public NumberFilterInputBuilder Lt(decimal _) => this;
     }
 
-    private sealed class BrandFilterInputBuilder
+    internal sealed class BrandFilterInputBuilder
     {
         [GraphQLFilterField(Name = "name")]
         public BrandFilterInputBuilder Name(Func<StringFilterInputBuilder, StringFilterInputBuilder> _) => this;
     }
 
-    private sealed class TagFilterInputBuilder
+    internal sealed class TagFilterInputBuilder
     {
         [GraphQLFilterField(Name = "label")]
         public TagFilterInputBuilder Label(Func<StringFilterInputBuilder, StringFilterInputBuilder> _) => this;
     }
 
-    private sealed class TagListFilterInputBuilder
+    internal sealed class TagListFilterInputBuilder
     {
         [GraphQLFilterField(Name = "some")]
         public TagListFilterInputBuilder Some(Func<TagFilterInputBuilder, TagFilterInputBuilder> _) => this;
@@ -276,4 +252,26 @@ public partial class TranslationProviderTests
         [GraphQLFilterField(Name = "any")]
         public TagListFilterInputBuilder Any(bool _) => this;
     }
+}
+
+/// <summary>
+/// The extensions the generator emits, hand-written here so the translator is covered without a client.
+/// </summary>
+internal static class FilterExtensions
+{
+    [GraphQLFilter(Argument = "where", GQLType = "ProductFilterInput")]
+    public static TranslationProviderTests.FilterProduct[] Filter(this TranslationProviderTests.FilterProduct[] source, Expression<Func<TranslationProviderTests.ProductFilterInputBuilder, TranslationProviderTests.ProductFilterInputBuilder>> filter)
+        => source;
+
+    [GraphQLFilter(Argument = "where", GQLType = "ProductFilterInput")]
+    public static TranslationProviderTests.FilterProduct[] Filter(this TranslationProviderTests.FilterProduct[] source, TranslationProviderTests.PocoProductFilterInput filter)
+        => source;
+
+    [GraphQLFilter(Argument = "where", GQLType = "ProductFilterInput")]
+    public static TranslationProviderTests.FilterProduct[] Filter(this TranslationProviderTests.FilterProduct[] source, TranslationProviderTests.ValueTypeFilterInput filter)
+        => source;
+
+    [GraphQLArgument(Name = "in", GQLType = "Int")]
+    public static TranslationProviderTests.FilterProduct[] In(this TranslationProviderTests.FilterProduct[] source, int? @in = null)
+        => source;
 }
