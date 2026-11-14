@@ -46,8 +46,8 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
         // The filter input types may be declared after the fields that use them, so the check runs
         // once the whole document has been walked.
-        ReportMissingFilterInputTypes(node, context);
-        ReportConflictingFilterExtensions(node, context);
+        ReportMissingFilterInputTypes(context);
+        ReportConflictingFilterExtensions(context);
 
         return action;
     }
@@ -65,6 +65,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(ObjectTypeDefinitionNode node, DocumentWalkerContext context)
     {
+        context.Model.DeclaredTypes.Add(new(node.Name.Value, node.Fields));
         CollectFieldExtensions(node.Fields, context);
 
         var rootNode = context.Model.RootOperations.FirstOrDefault(x => x.Name == node.Name.Value);
@@ -83,6 +84,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(InterfaceTypeDefinitionNode node, DocumentWalkerContext context)
     {
+        context.Model.DeclaredTypes.Add(new(node.Name.Value, node.Fields));
         CollectFieldExtensions(node.Fields, context);
 
         context.Model.Types.Add(new InterfaceTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
@@ -178,25 +180,13 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
     /// the same type with a different argument name cannot be expressed by that method, and silently
     /// filtering through the wrong argument would produce a document the server rejects.
     /// </remarks>
-    private static void ReportConflictingFilterExtensions(DocumentNode document, DocumentWalkerContext context)
+    private static void ReportConflictingFilterExtensions(DocumentWalkerContext context)
     {
         var chosen = new Dictionary<string, (string Field, string Argument)>(StringComparer.Ordinal);
 
-        foreach (var definition in document.Definitions)
+        foreach (var type in context.Model.DeclaredTypes)
         {
-            var fields = definition switch
-            {
-                ObjectTypeDefinitionNode objectType => objectType.Fields,
-                InterfaceTypeDefinitionNode interfaceType => interfaceType.Fields,
-                _ => null,
-            };
-
-            if (fields is null)
-            {
-                continue;
-            }
-
-            foreach (var field in fields)
+            foreach (var field in type.Fields)
             {
                 var filterArgument = field.Arguments.FirstOrDefault(x => SchemaModel.IsFilterInputType(x.Type.NamedType().Name.Value));
 
@@ -257,23 +247,11 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
     }
 
-    private static void ReportMissingFilterInputTypes(DocumentNode document, DocumentWalkerContext context)
+    private static void ReportMissingFilterInputTypes(DocumentWalkerContext context)
     {
-        foreach (var definition in document.Definitions)
+        foreach (var type in context.Model.DeclaredTypes)
         {
-            var fields = definition switch
-            {
-                ObjectTypeDefinitionNode objectType => objectType.Fields,
-                InterfaceTypeDefinitionNode interfaceType => interfaceType.Fields,
-                _ => null,
-            };
-
-            if (fields is null)
-            {
-                continue;
-            }
-
-            foreach (var field in fields)
+            foreach (var field in type.Fields)
             {
                 foreach (var argument in field.Arguments.Where(x => SchemaModel.IsFilterInputType(x.Type.NamedType().Name.Value)))
                 {

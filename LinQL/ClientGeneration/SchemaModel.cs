@@ -46,6 +46,15 @@ internal sealed class SchemaModel
     public List<FieldExtension> FieldExtensions { get; } = [];
 
     /// <summary>
+    /// Gets the object and interface types the document declares, in document order.
+    /// </summary>
+    /// <remarks>
+    /// The filter diagnostics run once the whole document has been walked, and they read these
+    /// declarations instead of walking the document a second time.
+    /// </remarks>
+    public List<DeclaredType> DeclaredTypes { get; } = [];
+
+    /// <summary>
     /// Gets every scalar a document can use: the built-in ones first, then the ones the document
     /// extends the schema with, in document order.
     /// </summary>
@@ -118,3 +127,10 @@ internal sealed class SchemaModel
             ? SyntaxFactory.VerbatimIdentifier(SyntaxTriviaList.Empty, name, name, SyntaxTriviaList.Empty)
             : SyntaxFactory.Identifier(name);
 }
+
+/// <summary>
+/// An object or interface type a document declares.
+/// </summary>
+/// <param name="Name">The type's name.</param>
+/// <param name="Fields">The fields it declares, in document order.</param>
+internal sealed record DeclaredType(string Name, IReadOnlyList<FieldDefinitionNode> Fields);
