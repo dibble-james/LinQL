@@ -10,5 +10,9 @@ public class LinQLOptions
     /// <summary>
     /// Gets the scalar types discovered in the schema
     /// </summary>
-    public ICollection<Scalar> Scalars { get; } = Scalar.NativeScalars;
+    /// <remarks>
+    /// The native scalars are copied rather than shared, so generated <c>WithKnownScalars</c> calls
+    /// only affect the options they are made on.
+    /// </remarks>
+    public ICollection<Scalar> Scalars { get; } = [.. Scalar.NativeScalars];
 }

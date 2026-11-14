@@ -18,7 +18,7 @@ public record struct Scalar(string Name, string RuntimeType)
     public Scalar(string name, string runtimeType, string originalPrimitive)
         : this(name, runtimeType) => this.OriginalPrimitive = originalPrimitive;
 
-    internal static readonly List<Scalar> NativeScalars =
+    internal static readonly IReadOnlyList<Scalar> NativeScalars =
     [
         new Scalar("Int", "int", "System.Int32"),
         new Scalar("Float", "float", "System.Single"),
