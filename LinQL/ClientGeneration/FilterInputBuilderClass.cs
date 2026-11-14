@@ -1,6 +1,5 @@
 namespace LinQL.ClientGeneration;
 
-using System.Collections.Generic;
 using System.Linq;
 using HotChocolate.Language;
 using LinQL.Description;
@@ -12,22 +11,22 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 /// Generates the fluent builder for a filter input type, so filters can be written as
 /// <c>f => f.Price(p => p.Gt(10))</c> instead of object initialisers.
 /// </summary>
-internal class FilterInputBuilderClass(string name, IReadOnlyList<FieldDefinitionNode> fields) : IClassFactory
+internal class FilterInputBuilderClass(string name) : IClassFactory
 {
-    public MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars)
-        => ClassDeclaration(Identifier(ComplexTypeClass.FilterBuilderName(name)))
+    public MemberDeclarationSyntax Create(SchemaModel model)
+        => ClassDeclaration(Identifier(SchemaNames.FilterBuilderName(name)))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
-            .AddMembers([.. fields.Select(x => CreateField(name, x, knownScalars))]);
+            .AddMembers([.. model.FieldsOf(name).Select(x => CreateField(name, x, model))]);
 
-    private static MethodDeclarationSyntax CreateField(string builder, FieldDefinitionNode field, IDictionary<string, Scalar> knownScalars)
+    private static MethodDeclarationSyntax CreateField(string builder, FieldDefinitionNode field, SchemaModel model)
     {
         var nestedType = field.Type.NamedType().Name.Value;
-        var isNested = ComplexTypeClass.IsFilterInputType(nestedType);
+        var isNested = SchemaNames.IsFilterInputType(nestedType);
         var isList = isNested && (field.Type.IsListType() || (field.Type.IsNonNullType() && field.Type.InnerType().IsListType()));
 
         var parameterType = isNested
-            ? $"System.Func<{ComplexTypeClass.FilterBuilderName(nestedType)}, {ComplexTypeClass.FilterBuilderName(nestedType)}>"
-            : ComplexTypeClass.TypeName(field.Type, knownScalars);
+            ? $"System.Func<{SchemaNames.FilterBuilderName(nestedType)}, {SchemaNames.FilterBuilderName(nestedType)}>"
+            : model.TypeName(field.Type);
 
         var name = AttributeArgument(ParseExpression($@"Name = ""{field.Name.Value}"""));
         var attribute = isList
@@ -38,11 +37,11 @@ internal class FilterInputBuilderClass(string name, IReadOnlyList<FieldDefinitio
                 IdentifierName(nameof(GraphQLFilterFieldAttribute).AttributeName()),
                 AttributeArgumentList(SingletonSeparatedList(name)));
 
-        return MethodDeclaration(ParseTypeName(ComplexTypeClass.FilterBuilderName(builder)), Identifier(ComplexTypeClass.FieldName(field.Name.Value)))
+        return MethodDeclaration(ParseTypeName(SchemaNames.FilterBuilderName(builder)), Identifier(SchemaNames.FieldName(field.Name.Value)))
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(attribute)))
             .AddParameterListParameters(
-                Parameter(ComplexTypeClass.IdentifierFor(field.Name.Value))
+                Parameter(SchemaNames.IdentifierFor(field.Name.Value))
                     .WithType(ParseTypeName(parameterType)))
             .WithExpressionBody(ArrowExpressionClause(ThisExpression()))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));

@@ -40,23 +40,21 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    private readonly HashSet<string> inputObjectTypes = new(StringComparer.Ordinal);
-
     protected override ISyntaxVisitorAction VisitChildren(DocumentNode node, DocumentWalkerContext context)
     {
         var action = base.VisitChildren(node, context);
 
         // The filter input types may be declared after the fields that use them, so the check runs
         // once the whole document has been walked.
-        this.ReportMissingFilterInputTypes(node, context);
-        ReportConflictingFilterExtensions(node, context);
+        ReportMissingFilterInputTypes(context);
+        ReportConflictingFilterExtensions(context);
 
         return action;
     }
 
     protected override ISyntaxVisitorAction VisitChildren(OperationTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        context.RootOperations.Add(
+        context.Model.AddRootOperation(
             new RootTypeClass(
                 node.Type.Name.Value,
                 node.Operation,
@@ -67,17 +65,14 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(ObjectTypeDefinitionNode node, DocumentWalkerContext context)
     {
+        context.Model.AddDeclaredType(node.Name.Value, DeclaredTypeKind.Object, node.Fields);
         CollectFieldExtensions(node.Fields, context);
 
-        var rootNode = context.RootOperations.FirstOrDefault(x => x.Name == node.Name.Value);
-
-        if (rootNode is not null)
+        // A root operation type is emitted as a RootTypeClass instead, but it declares the same
+        // fields, so the model holds them either way.
+        if (!context.Model.RootOperations.Any(x => x.Name == node.Name.Value))
         {
-            rootNode.WithFields(node.Fields);
-        }
-        else
-        {
-            context.Types.Add(new ComplexTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
+            context.Model.AddType(new ComplexTypeClass(node.Name.Value, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
         }
 
         return base.VisitChildren(node, context);
@@ -85,9 +80,10 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(InterfaceTypeDefinitionNode node, DocumentWalkerContext context)
     {
+        context.Model.AddDeclaredType(node.Name.Value, DeclaredTypeKind.Interface, node.Fields);
         CollectFieldExtensions(node.Fields, context);
 
-        context.Types.Add(new InterfaceTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
+        context.Model.AddType(new InterfaceTypeClass(node.Name.Value, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
 
         return base.VisitChildren(node, context);
     }
@@ -96,29 +92,28 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
     {
         // A union has no fields of its own: its selection is fragments only, so Includes has nothing to
         // add and the marker is left off to reject it at compile time.
-        context.Types.Add(new InterfaceTypeClass(node.Name.Value, [], [], context.TypesAs, canHaveIncludes: false));
+        context.Model.AddType(new InterfaceTypeClass(node.Name.Value, [], context.TypesAs, canHaveIncludes: false));
 
         return base.VisitChildren(node, context);
     }
 
     protected override ISyntaxVisitorAction VisitChildren(EnumTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        context.Types.Add(new EnumTypeClass(node.Name.Value, node.Values));
+        context.Model.AddType(new EnumTypeClass(node.Name.Value, node.Values));
 
         return base.VisitChildren(node, context);
     }
 
     protected override ISyntaxVisitorAction VisitChildren(InputObjectTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        this.inputObjectTypes.Add(node.Name.Value);
+        List<FieldDefinitionNode> fields = [.. node.Fields.Select(x => new FieldDefinitionNode(x.Location, x.Name, x.Description, [], x.Type, x.Directives))];
 
-        var fields = node.Fields.Select(x => new FieldDefinitionNode(x.Location, x.Name, x.Description, [], x.Type, x.Directives));
+        context.Model.AddDeclaredType(node.Name.Value, DeclaredTypeKind.InputObject, fields);
+        context.Model.AddType(new ComplexTypeClass(node.Name.Value, [], context.TypesAs, canHaveIncludes: false));
 
-        context.Types.Add(new ComplexTypeClass(node.Name.Value, fields, [], context.TypesAs, canHaveIncludes: false));
-
-        if (ComplexTypeClass.IsFilterInputType(node.Name.Value))
+        if (SchemaNames.IsFilterInputType(node.Name.Value))
         {
-            context.Types.Add(new FilterInputBuilderClass(node.Name.Value, [.. fields]));
+            context.Model.AddType(new FilterInputBuilderClass(node.Name.Value));
         }
 
         return base.VisitChildren(node, context);
@@ -160,11 +155,11 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
         if (primitiveType is not null)
         {
-            context.Scalars.Add(new Scalar(node.Name.Value, clrType.Value!.Value!.ToString(), primitiveType.Value!.Value!.ToString()));
+            context.Model.AddScalar(new Scalar(node.Name.Value, clrType.Value!.Value!.ToString(), primitiveType.Value!.Value!.ToString()));
         }
         else
         {
-            context.Scalars.Add(new Scalar(node.Name.Value, clrType.Value!.Value!.ToString()));
+            context.Model.AddScalar(new Scalar(node.Name.Value, clrType.Value!.Value!.ToString()));
         }
 
         return base.VisitChildren(node, context);
@@ -180,35 +175,22 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
     /// the same type with a different argument name cannot be expressed by that method, and silently
     /// filtering through the wrong argument would produce a document the server rejects.
     /// </remarks>
-    private static void ReportConflictingFilterExtensions(DocumentNode document, DocumentWalkerContext context)
+    private static void ReportConflictingFilterExtensions(DocumentWalkerContext context)
     {
-        var scalars = context.Scalars.ToDictionary(x => x.Name, StringComparer.InvariantCultureIgnoreCase);
         var chosen = new Dictionary<string, (string Field, string Argument)>(StringComparer.Ordinal);
 
-        foreach (var definition in document.Definitions)
+        foreach (var type in context.Model.DeclaredTypes.Where(x => x.IsSelectable))
         {
-            var fields = definition switch
+            foreach (var field in type.Fields)
             {
-                ObjectTypeDefinitionNode objectType => objectType.Fields,
-                InterfaceTypeDefinitionNode interfaceType => interfaceType.Fields,
-                _ => null,
-            };
-
-            if (fields is null)
-            {
-                continue;
-            }
-
-            foreach (var field in fields)
-            {
-                var filterArgument = field.Arguments.FirstOrDefault(x => ComplexTypeClass.IsFilterInputType(x.Type.NamedType().Name.Value));
+                var filterArgument = field.Arguments.FirstOrDefault(x => SchemaNames.IsFilterInputType(x.Type.NamedType().Name.Value));
 
                 if (filterArgument is null)
                 {
                     continue;
                 }
 
-                var receiver = ComplexTypeClass.TypeName(field.Type, scalars);
+                var receiver = context.Model.TypeName(field.Type);
                 var key = $"{receiver}|{filterArgument.Type.NamedType().Name.Value}";
 
                 if (!chosen.TryGetValue(key, out var first))
@@ -251,38 +233,26 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
     /// </remarks>
     private static void CollectFieldExtensions(IReadOnlyList<FieldDefinitionNode> fields, DocumentWalkerContext context)
     {
-        foreach (var field in fields.Where(x => x.Arguments.Any(a => ComplexTypeClass.IsFilterInputType(a.Type.NamedType().Name.Value))))
+        foreach (var field in fields.Where(x => x.Arguments.Any(a => SchemaNames.IsFilterInputType(a.Type.NamedType().Name.Value))))
         {
             foreach (var argument in field.Arguments)
             {
-                context.FieldExtensions.Add(new FieldExtension(field, argument, ComplexTypeClass.IsFilterInputType(argument.Type.NamedType().Name.Value)));
+                context.Model.AddFieldExtension(new FieldExtension(field, argument, SchemaNames.IsFilterInputType(argument.Type.NamedType().Name.Value)));
             }
         }
     }
 
-    private void ReportMissingFilterInputTypes(DocumentNode document, DocumentWalkerContext context)
+    private static void ReportMissingFilterInputTypes(DocumentWalkerContext context)
     {
-        foreach (var definition in document.Definitions)
+        foreach (var type in context.Model.DeclaredTypes.Where(x => x.IsSelectable))
         {
-            var fields = definition switch
+            foreach (var field in type.Fields)
             {
-                ObjectTypeDefinitionNode objectType => objectType.Fields,
-                InterfaceTypeDefinitionNode interfaceType => interfaceType.Fields,
-                _ => null,
-            };
-
-            if (fields is null)
-            {
-                continue;
-            }
-
-            foreach (var field in fields)
-            {
-                foreach (var argument in field.Arguments.Where(x => ComplexTypeClass.IsFilterInputType(x.Type.NamedType().Name.Value)))
+                foreach (var argument in field.Arguments.Where(x => SchemaNames.IsFilterInputType(x.Type.NamedType().Name.Value)))
                 {
                     var typeName = argument.Type.NamedType().Name.Value;
 
-                    if (this.inputObjectTypes.Contains(typeName))
+                    if (context.Model.HasInputObjectType(typeName))
                     {
                         continue;
                     }

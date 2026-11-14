@@ -26,22 +26,22 @@ internal sealed record FieldExtension(FieldDefinitionNode Field, InputValueDefin
 /// and parameter type. Filter methods are all called <c>Filter</c> — they overload by filter input type —
 /// and the other arguments get a method named after them (<c>In</c>, <c>First</c>, <c>Order</c>).
 /// </remarks>
-internal class FieldExtensionsClass(IEnumerable<FieldExtension> extensions) : IClassFactory
+internal class FieldExtensionsClass : IClassFactory
 {
-    public MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars)
+    public MemberDeclarationSyntax Create(SchemaModel model)
         => ClassDeclaration(Identifier("FieldExtensions"))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-            .AddMembers([.. extensions
-                .Where(x => !knownScalars.ContainsKey(x.Field.Type.NamedType().Name.Value))
+            .AddMembers([.. model.FieldExtensions
+                .Where(x => !model.KnownScalars.ContainsKey(x.Field.Type.NamedType().Name.Value))
                 .SelectMany(x => MethodNames(x).Select(method => new
                 {
                     Extension = x,
-                    Receiver = ComplexTypeClass.TypeName(x.Field.Type, knownScalars),
+                    Receiver = model.TypeName(x.Field.Type),
                     Method = method,
-                    Parameter = ParameterType(x, knownScalars),
+                    Parameter = ParameterType(x, model),
                 }))
                 .GroupBy(x => $"{x.Receiver}|{x.Method}|{x.Parameter}", StringComparer.Ordinal)
-                .Select(g => CreateMember(g.First().Extension, g.First().Method, g.First().Receiver, knownScalars))]);
+                .Select(g => CreateMember(g.First().Extension, g.First().Method, g.First().Receiver, model))]);
 
     /// <summary>
     /// Gets the method names an argument is attached by.
@@ -58,23 +58,23 @@ internal class FieldExtensionsClass(IEnumerable<FieldExtension> extensions) : IC
             return ["Filter"];
         }
 
-        var name = ComplexTypeClass.FieldName(extension.Argument.Name.Value);
+        var name = SchemaNames.FieldName(extension.Argument.Name.Value);
 
         return name == "Order" ? [name, "Sort"] : [name];
     }
 
-    private static string ParameterType(FieldExtension extension, IDictionary<string, Scalar> knownScalars)
+    private static string ParameterType(FieldExtension extension, SchemaModel model)
         => extension.IsFilter
             ? BuilderLambda(extension.Argument.Type.NamedType().Name.Value)
-            : ComplexTypeClass.TypeName(extension.Argument.Type, knownScalars);
+            : model.TypeName(extension.Argument.Type);
 
     private static string BuilderLambda(string filterType)
-        => $"System.Linq.Expressions.Expression<System.Func<{ComplexTypeClass.FilterBuilderName(filterType)}, {ComplexTypeClass.FilterBuilderName(filterType)}>>";
+        => $"System.Linq.Expressions.Expression<System.Func<{SchemaNames.FilterBuilderName(filterType)}, {SchemaNames.FilterBuilderName(filterType)}>>";
 
-    private static MethodDeclarationSyntax CreateMember(FieldExtension extension, string method, string receiver, IDictionary<string, Scalar> knownScalars)
+    private static MethodDeclarationSyntax CreateMember(FieldExtension extension, string method, string receiver, SchemaModel model)
     {
         var argument = extension.Argument;
-        var parameterType = ParameterType(extension, knownScalars);
+        var parameterType = ParameterType(extension, model);
 
         var attribute = extension.IsFilter
             ? Attribute(
@@ -92,7 +92,7 @@ internal class FieldExtensionsClass(IEnumerable<FieldExtension> extensions) : IC
                     AttributeArgument(ParseExpression($@"GQLType = ""{argument.Type}""")),
                 ])));
 
-        var parameter = Parameter(extension.IsFilter ? Identifier("filter") : ComplexTypeClass.IdentifierFor(argument.Name.Value))
+        var parameter = Parameter(extension.IsFilter ? Identifier("filter") : SchemaNames.IdentifierFor(argument.Name.Value))
             .WithType(ParseTypeName(parameterType));
 
         // An optional argument defaults to null, the same way a filter operation that was never set does
