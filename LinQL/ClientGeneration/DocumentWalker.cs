@@ -78,7 +78,6 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         else
         {
             context.Types.Add(new ComplexTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
-            context.SelectionTypes.Add(node.Name.Value);
         }
 
         return base.VisitChildren(node, context);
@@ -89,7 +88,6 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         CollectFieldExtensions(node.Fields, context);
 
         context.Types.Add(new InterfaceTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
-        context.SelectionTypes.Add(node.Name.Value);
 
         return base.VisitChildren(node, context);
     }
@@ -97,7 +95,6 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
     protected override ISyntaxVisitorAction VisitChildren(UnionTypeDefinitionNode node, DocumentWalkerContext context)
     {
         context.Types.Add(new InterfaceTypeClass(node.Name.Value, [], [], context.TypesAs));
-        context.SelectionTypes.Add(node.Name.Value);
 
         return base.VisitChildren(node, context);
     }
@@ -115,7 +112,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
         var fields = node.Fields.Select(x => new FieldDefinitionNode(x.Location, x.Name, x.Description, [], x.Type, x.Directives));
 
-        context.Types.Add(new ComplexTypeClass(node.Name.Value, fields, [], context.TypesAs));
+        context.Types.Add(new ComplexTypeClass(node.Name.Value, fields, [], context.TypesAs, canHaveIncludes: false));
 
         if (ComplexTypeClass.IsFilterInputType(node.Name.Value))
         {

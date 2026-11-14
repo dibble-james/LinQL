@@ -259,7 +259,7 @@ public partial class TranslationProviderTests
         public bool? Any { get; set; }
     }
 
-    internal sealed class FilterProduct
+    internal sealed class FilterProduct : ICanHaveIncludes
     {
         public string Name { get; set; } = string.Empty;
 

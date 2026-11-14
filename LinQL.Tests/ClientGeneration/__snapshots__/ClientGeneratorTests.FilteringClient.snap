@@ -20,7 +20,7 @@ namespace Filtering
     }
 
     [GraphQLType(Name = "Product")]
-    public partial class Product
+    public partial class Product : ICanHaveIncludes
     {
         public string Name { get; set; }
         public float Price { get; set; }
@@ -28,7 +28,7 @@ namespace Filtering
     }
 
     [GraphQLType(Name = "Tag")]
-    public partial class Tag
+    public partial class Tag : ICanHaveIncludes
     {
         public string Label { get; set; }
     }
@@ -142,18 +142,6 @@ namespace Filtering
         public static Product[] Filter(this Product[] source, System.Linq.Expressions.Expression<System.Func<ProductFilterInputBuilder, ProductFilterInputBuilder>> filter) => source;
         [GraphQLArgument(Name = "in", GQLType = "Int")]
         public static Product[] In(this Product[] source, int? @in = null) => source;
-    }
-
-    public static class IncludesExtensions
-    {
-        [GraphQLIncludes]
-        public static Product Includes(this Product source, System.Linq.Expressions.Expression<System.Func<Product, object>> include) => source;
-        [GraphQLIncludes]
-        public static Product[] Includes(this Product[] source, System.Linq.Expressions.Expression<System.Func<Product, object>> include) => source;
-        [GraphQLIncludes]
-        public static Tag Includes(this Tag source, System.Linq.Expressions.Expression<System.Func<Tag, object>> include) => source;
-        [GraphQLIncludes]
-        public static Tag[] Includes(this Tag[] source, System.Linq.Expressions.Expression<System.Func<Tag, object>> include) => source;
     }
 
     public static class JsonSerializerOptionsExtensions

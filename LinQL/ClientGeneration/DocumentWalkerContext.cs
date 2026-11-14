@@ -14,11 +14,6 @@ internal class DocumentWalkerContext(string file, SourceProductionContext contex
 
     public List<FieldExtension> FieldExtensions { get; } = [];
 
-    /// <summary>
-    /// Gets the generated types a selection can be built from, in document order.
-    /// </summary>
-    public List<string> SelectionTypes { get; } = [];
-
     public List<Scalar> Scalars { get; } = [.. Scalar.NativeScalars];
 
     public string File { get; } = file;
@@ -52,13 +47,6 @@ internal class DocumentWalkerContext(string file, SourceProductionContext contex
         if (this.FieldExtensions.Any())
         {
             ns = ns.AddMembers(new FieldExtensionsClass(this.FieldExtensions).Create(scalars));
-        }
-
-        // Includes is emitted for every selectable type rather than only filterable fields: any
-        // selection can grow a field, whether or not the schema gives that field a filter.
-        if (this.SelectionTypes.Any())
-        {
-            ns = ns.AddMembers(new IncludesExtensionsClass(this.SelectionTypes).Create(scalars));
         }
 
         ns = ns.AddMembers(new InterfaceRegistrationExtensionsClass(this.Types.OfType<ComplexTypeClass>()).Create(scalars));

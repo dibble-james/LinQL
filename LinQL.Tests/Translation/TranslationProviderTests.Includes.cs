@@ -60,7 +60,7 @@ internal sealed class IncludesRootType : RootType<IncludesRootType>
     public IncludesOperationType[] Operations { get; set; } = [];
 }
 
-internal sealed class IncludesOperationType
+internal sealed class IncludesOperationType : ICanHaveIncludes
 {
     public int Number { get; set; }
 
@@ -68,23 +68,4 @@ internal sealed class IncludesOperationType
 
     [GraphQLOperation]
     public IncludesOperationType GetNumber([GraphQLArgument(GQLType = "String!")] string value) => new() { Text = value };
-}
-
-/// <summary>
-/// The <c>Includes</c> extensions the generator emits, written by hand here so the translator is
-/// covered without a client.
-/// </summary>
-internal static class IncludesExtensions
-{
-    [GraphQLIncludes]
-    public static IncludesOperationType Includes(this IncludesOperationType source, Expression<Func<IncludesOperationType, object>> include)
-        => source;
-
-    [GraphQLIncludes]
-    public static IncludesOperationType[] Includes(this IncludesOperationType[] source, Expression<Func<IncludesOperationType, object>> include)
-        => source;
-
-    [GraphQLIncludes]
-    public static TranslationProviderTests.FilterProduct[] Includes(this TranslationProviderTests.FilterProduct[] source, Expression<Func<TranslationProviderTests.FilterProduct, object>> include)
-        => source;
 }

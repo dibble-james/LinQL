@@ -75,7 +75,7 @@ namespace Shiftshare.Graph
     }
 
     [GraphQLType(Name = "IEvent")]
-    public partial interface IEvent
+    public partial interface IEvent : ICanHaveIncludes
     {
         public global::System.Guid Calendar { get; set; }
         public global::System.Guid Id { get; set; }
@@ -83,7 +83,7 @@ namespace Shiftshare.Graph
     }
 
     [GraphQLType(Name = "Shift")]
-    public partial class Shift : IEvent
+    public partial class Shift : IEvent, ICanHaveIncludes
     {
         public IEvent Cancel { get; set; }
         public global::System.Guid ShiftType { get; set; }
@@ -100,7 +100,7 @@ namespace Shiftshare.Graph
     }
 
     [GraphQLType(Name = "User")]
-    public partial class User
+    public partial class User : ICanHaveIncludes
     {
         public global::System.Guid Id { get; set; }
         public string Email { get; set; }
@@ -110,7 +110,7 @@ namespace Shiftshare.Graph
     }
 
     [GraphQLType(Name = "Calendar")]
-    public partial class Calendar
+    public partial class Calendar : ICanHaveIncludes
     {
         public global::System.Guid Id { get; set; }
         public string Name { get; set; }
@@ -123,7 +123,7 @@ namespace Shiftshare.Graph
     }
 
     [GraphQLType(Name = "CalendarAccess")]
-    public partial class CalendarAccess
+    public partial class CalendarAccess : ICanHaveIncludes
     {
         public global::System.Guid User { get; set; }
         public PermissionAttributes Permission { get; set; }
@@ -135,7 +135,7 @@ namespace Shiftshare.Graph
     }
 
     [GraphQLType(Name = "ShiftType")]
-    public partial class ShiftType
+    public partial class ShiftType : ICanHaveIncludes
     {
         public global::System.Guid Id { get; set; }
         public string Name { get; set; }
@@ -160,7 +160,7 @@ namespace Shiftshare.Graph
     }
 
     [GraphQLType(Name = "ICalendarEvent")]
-    public partial interface ICalendarEvent
+    public partial interface ICalendarEvent : ICanHaveIncludes
     {
         public global::System.Guid Id { get; set; }
         public global::NodaTime.OffsetDateTime Raised { get; set; }
@@ -169,7 +169,7 @@ namespace Shiftshare.Graph
     }
 
     [GraphQLType(Name = "ShiftScheduled")]
-    public partial class ShiftScheduled : ICalendarEvent
+    public partial class ShiftScheduled : ICalendarEvent, ICanHaveIncludes
     {
         public global::System.Guid ShiftType { get; set; }
         public global::NodaTime.OffsetDate Date { get; set; }
@@ -180,7 +180,7 @@ namespace Shiftshare.Graph
     }
 
     [GraphQLType(Name = "ShiftRescheduled")]
-    public partial class ShiftRescheduled : ICalendarEvent
+    public partial class ShiftRescheduled : ICalendarEvent, ICanHaveIncludes
     {
         public global::NodaTime.OffsetDate Date { get; set; }
         public global::System.Guid Id { get; set; }
@@ -190,7 +190,7 @@ namespace Shiftshare.Graph
     }
 
     [GraphQLType(Name = "EventCancelled")]
-    public partial class EventCancelled : ICalendarEvent
+    public partial class EventCancelled : ICalendarEvent, ICanHaveIncludes
     {
         public global::System.Guid Id { get; set; }
         public global::NodaTime.OffsetDateTime Raised { get; set; }
@@ -252,50 +252,6 @@ namespace Shiftshare.Graph
             options.Scalars.Add(new("OffsetTime", "global::NodaTime.OffsetTime"));
             return options;
         }
-    }
-
-    public static class IncludesExtensions
-    {
-        [GraphQLIncludes]
-        public static IEvent Includes(this IEvent source, System.Linq.Expressions.Expression<System.Func<IEvent, object>> include) => source;
-        [GraphQLIncludes]
-        public static IEvent[] Includes(this IEvent[] source, System.Linq.Expressions.Expression<System.Func<IEvent, object>> include) => source;
-        [GraphQLIncludes]
-        public static Shift Includes(this Shift source, System.Linq.Expressions.Expression<System.Func<Shift, object>> include) => source;
-        [GraphQLIncludes]
-        public static Shift[] Includes(this Shift[] source, System.Linq.Expressions.Expression<System.Func<Shift, object>> include) => source;
-        [GraphQLIncludes]
-        public static User Includes(this User source, System.Linq.Expressions.Expression<System.Func<User, object>> include) => source;
-        [GraphQLIncludes]
-        public static User[] Includes(this User[] source, System.Linq.Expressions.Expression<System.Func<User, object>> include) => source;
-        [GraphQLIncludes]
-        public static Calendar Includes(this Calendar source, System.Linq.Expressions.Expression<System.Func<Calendar, object>> include) => source;
-        [GraphQLIncludes]
-        public static Calendar[] Includes(this Calendar[] source, System.Linq.Expressions.Expression<System.Func<Calendar, object>> include) => source;
-        [GraphQLIncludes]
-        public static CalendarAccess Includes(this CalendarAccess source, System.Linq.Expressions.Expression<System.Func<CalendarAccess, object>> include) => source;
-        [GraphQLIncludes]
-        public static CalendarAccess[] Includes(this CalendarAccess[] source, System.Linq.Expressions.Expression<System.Func<CalendarAccess, object>> include) => source;
-        [GraphQLIncludes]
-        public static ShiftType Includes(this ShiftType source, System.Linq.Expressions.Expression<System.Func<ShiftType, object>> include) => source;
-        [GraphQLIncludes]
-        public static ShiftType[] Includes(this ShiftType[] source, System.Linq.Expressions.Expression<System.Func<ShiftType, object>> include) => source;
-        [GraphQLIncludes]
-        public static ICalendarEvent Includes(this ICalendarEvent source, System.Linq.Expressions.Expression<System.Func<ICalendarEvent, object>> include) => source;
-        [GraphQLIncludes]
-        public static ICalendarEvent[] Includes(this ICalendarEvent[] source, System.Linq.Expressions.Expression<System.Func<ICalendarEvent, object>> include) => source;
-        [GraphQLIncludes]
-        public static ShiftScheduled Includes(this ShiftScheduled source, System.Linq.Expressions.Expression<System.Func<ShiftScheduled, object>> include) => source;
-        [GraphQLIncludes]
-        public static ShiftScheduled[] Includes(this ShiftScheduled[] source, System.Linq.Expressions.Expression<System.Func<ShiftScheduled, object>> include) => source;
-        [GraphQLIncludes]
-        public static ShiftRescheduled Includes(this ShiftRescheduled source, System.Linq.Expressions.Expression<System.Func<ShiftRescheduled, object>> include) => source;
-        [GraphQLIncludes]
-        public static ShiftRescheduled[] Includes(this ShiftRescheduled[] source, System.Linq.Expressions.Expression<System.Func<ShiftRescheduled, object>> include) => source;
-        [GraphQLIncludes]
-        public static EventCancelled Includes(this EventCancelled source, System.Linq.Expressions.Expression<System.Func<EventCancelled, object>> include) => source;
-        [GraphQLIncludes]
-        public static EventCancelled[] Includes(this EventCancelled[] source, System.Linq.Expressions.Expression<System.Func<EventCancelled, object>> include) => source;
     }
 
     public static class JsonSerializerOptionsExtensions

@@ -110,8 +110,8 @@ Another scenario is where you have the results of an operation or a nested type 
 ### Adding extra fields with `Includes`
 
 The document only asks for the fields the projection uses. When something other than the projection
-needs a field — an id for a cache key, a related object you only inspect afterwards — add it with the
-generated `Includes` extension:
+needs a field — an id for a cache key, a related object you only inspect afterwards — add it with
+`Includes`:
 
 ```csharp
 var films = await Query((Root x) => x
@@ -131,6 +131,10 @@ called on, which means it can target a nested selection rather than only the doc
 adds `director` to the `film` selection. On a collection the lambda receives the element type, so
 `x.Films.Includes(f => …)` reads `f` as a film. The order of `Includes`, `Filter`, `First`, `Sort` and
 `Select` does not matter: each call attaches to the field its receiver resolves to.
+
+The generated types implement `ICanHaveIncludes`, and `Includes` is constrained to it, so a scalar or an
+input object is a compile error rather than a rejected query. A hand-written client type implements the
+interface to opt in.
 
 Because the extra field is part of the document, it is part of the operation cache key, so a query with
 and without the include are two cached operations.
