@@ -12,12 +12,8 @@ public partial class TranslationProviderTests
 {
     private void Test<TRoot, TData>(Expression<Func<TRoot, TData>> expression)
         where TRoot : RootType<TRoot>
-        => this.TestInclude(expression, _ => { });
-
-    private void TestInclude<TRoot, TData>(Expression<Func<TRoot, TData>> expression, Action<GraphQLExpression<TRoot, TData>> includes)
-        where TRoot : RootType<TRoot>
     {
-        var request = TranslationProvider.ToRequest(expression, new(), includes);
+        var request = TranslationProvider.ToRequest(expression, new());
 
         Snapshot.Match(request.Query);
     }

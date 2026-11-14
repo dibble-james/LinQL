@@ -38,22 +38,6 @@ public class ExpressionTranslator : ExpressionVisitor
         return root;
     }
 
-    /// <summary>
-    /// Add an extra field to the selection.
-    /// </summary>
-    /// <typeparam name="TRoot">The root operation to start the query from.</typeparam>
-    /// <typeparam name="TData">The result of the query.</typeparam>
-    /// <param name="expression">The original expression.</param>
-    /// <param name="include">The field to include.</param>
-    /// <returns>The translated expression.</returns>
-    public static GraphQLExpression<TRoot, TData> Include<TRoot, TData>(GraphQLExpression<TRoot, TData> expression, Expression<Func<TRoot, object>> include)
-        where TRoot : RootType<TRoot>
-    {
-        var translator = new ExpressionTranslator(expression);
-        translator.Visit(include.Body);
-        return expression;
-    }
-
     /// <inheritdoc/>
     protected override Expression VisitMember(MemberExpression node) => node switch
     {
@@ -76,6 +60,7 @@ public class ExpressionTranslator : ExpressionVisitor
         { Method.Name: nameof(SelectExtentions.SelectAll), Method.DeclaringType.Name: nameof(SelectExtentions) } => this.TraverseSelectAll(node),
         { Method: var method } when method.GetCustomAttribute<GraphQLFilterAttribute>() is not null => this.TraverseFilter(node),
         { Method: var method } when method.GetCustomAttribute<GraphQLArgumentAttribute>() is not null && method.IsDefined(typeof(ExtensionAttribute)) => this.TraverseArgument(node),
+        { Method: var method } when method.GetCustomAttribute<GraphQLIncludesAttribute>() is not null => this.TraverseIncludes(node),
         { Arguments: var args } when args.Any(x => x.UnwrapLambdaFromQuote() is not null) => this.VisitLambdas(node),
         _ => base.VisitMethodCall(node),
     };
@@ -83,6 +68,9 @@ public class ExpressionTranslator : ExpressionVisitor
     /// <inheritdoc/>
     protected override Expression VisitUnary(UnaryExpression node) => node switch
     {
+        // A conversion to object is the lambda's return coercion — an Expression<Func<…, object>> body
+        // always carries one — rather than a cast the query should see, so it is not a spread.
+        { NodeType: ExpressionType.Convert, Type: var type, Operand: var operand } when type == typeof(object) => this.Visit(operand),
         { NodeType: ExpressionType.TypeAs or ExpressionType.Convert } t when !t.Type.Equals(this.expression.Type)
             => this.TraverseMember(node.Operand).WithField(new SpreadExpression(node.Type, this.expression.Root)),
         { NodeType: ExpressionType.Convert, Operand: MethodCallExpression }
@@ -202,6 +190,26 @@ public class ExpressionTranslator : ExpressionVisitor
         }
 
         field.WithArgument(filter.Argument, filter.GQLType, value.ToDictionary());
+
+        return field;
+    }
+
+    /// <summary>
+    /// Adds the fields the include lambda selects to the field the method is called on.
+    /// </summary>
+    /// <remarks>
+    /// The lambda is translated with the receiver's field expression as its root, which is what lets an
+    /// include target a nested selection instead of only the document root.
+    /// </remarks>
+    private Expression TraverseIncludes(MethodCallExpression node)
+    {
+        var field = this.TraverseField(node);
+
+        var include = node.Arguments[1].UnwrapLambdaFromQuote()
+            ?? throw new InvalidOperationException($"'{node.Method.Name}' must be given a lambda.");
+
+        var translator = new ExpressionTranslator(field);
+        translator.Visit(include.Body);
 
         return field;
     }

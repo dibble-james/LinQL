@@ -5,7 +5,7 @@ using LinQL.Description;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-internal class RootTypeClass(string name, OperationType rootOperationType, LinQLTypesAs typesAs) : ComplexTypeClass(name, [], [], typesAs)
+internal class RootTypeClass(string name, OperationType rootOperationType, LinQLTypesAs typesAs) : ComplexTypeClass(name, [], [], typesAs, canHaveIncludes: false)
 {
     public OperationType RootOperation { get; } = rootOperationType;
 

@@ -20,7 +20,7 @@ namespace InterfaceArguments
     }
 
     [GraphQLType(Name = "SearchResult")]
-    public partial interface SearchResult
+    public partial interface SearchResult : ICanHaveIncludes
     {
         public string Id { get; set; }
         public SearchResult[] Related { get; set; }
@@ -30,7 +30,7 @@ namespace InterfaceArguments
     }
 
     [GraphQLType(Name = "Product")]
-    public partial class Product : SearchResult
+    public partial class Product : SearchResult, ICanHaveIncludes
     {
         public string Id { get; set; }
         public string Name { get; set; }

@@ -19,10 +19,19 @@ internal class ComplexTypeClass : IClassFactory
     {
     }
 
-    public ComplexTypeClass(string name, IEnumerable<FieldDefinitionNode> fields, IEnumerable<string> interfaces, LinQLTypesAs typesAs = LinQLTypesAs.Class)
-        => (this.Name, this.fields, this.Interfaces, this.TypesAs) = (name, fields.ToList(), interfaces, typesAs);
+    public ComplexTypeClass(string name, IEnumerable<FieldDefinitionNode> fields, IEnumerable<string> interfaces, LinQLTypesAs typesAs = LinQLTypesAs.Class, bool canHaveIncludes = true)
+        => (this.Name, this.fields, this.Interfaces, this.TypesAs, this.CanHaveIncludes) = (name, fields.ToList(), interfaces, typesAs, canHaveIncludes);
 
     public string Name { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the generated type is one a query can select from.
+    /// </summary>
+    /// <remarks>
+    /// The type implements <see cref="ICanHaveIncludes"/> when this is set, which is what the constraint on
+    /// <c>Includes</c> checks: a root type, an input object or a scalar does not offer the extension.
+    /// </remarks>
+    public bool CanHaveIncludes { get; }
 
     public IEnumerable<string> Interfaces { get; }
 
@@ -85,12 +94,12 @@ internal class ComplexTypeClass : IClassFactory
             .AddMembers([.. this.Properties.Select(this.CreateField(knownScalars))])
             .AddMembers([.. this.Methods.SelectMany(this.CreateOperation(knownScalars))]);
 
-        if (this.Interfaces.Any())
-        {
-            return type.AddBaseListTypes([.. this.Interfaces.Select(x => SimpleBaseType(IdentifierName(x)))]);
-        }
+        var baseTypes = this.Interfaces
+            .Concat(this.CanHaveIncludes ? [nameof(ICanHaveIncludes)] : [])
+            .Select(x => (BaseTypeSyntax)SimpleBaseType(IdentifierName(x)))
+            .ToArray();
 
-        return type;
+        return baseTypes.Length > 0 ? type.AddBaseListTypes(baseTypes) : type;
     }
 
     private IEnumerable<FieldDefinitionNode> Properties

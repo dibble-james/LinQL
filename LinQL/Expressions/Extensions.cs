@@ -74,7 +74,32 @@ internal static class Extensions
             && method.Method.Name == nameof(SelectExtentions.On);
 
     public static IEnumerable<FieldExpression> GetAllScalars(this Type type, IRootExpression root)
-        => type.GetProperties().Where(p => p.PropertyType.IsScalar(root.Scalars)).Select(x => x.ToField(root));
+        => type.GetItemType().GetProperties().Where(p => p.PropertyType.IsScalar(root.Scalars)).Select(x => x.ToField(root));
+
+    /// <summary>
+    /// Gets the element type of a collection, or the type itself when it is not a collection.
+    /// </summary>
+    /// <remarks>
+    /// A childless field expands to the scalars of the type it selects. For a collection that is the
+    /// element type: reflecting over the array itself would select <c>length</c>, <c>rank</c> and the
+    /// other <see cref="Array"/> members instead of the element's fields.
+    /// </remarks>
+    public static Type GetItemType(this Type type)
+    {
+        if (type.IsArray)
+        {
+            return type.GetElementType();
+        }
+
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+        {
+            return type.GetGenericArguments()[0];
+        }
+
+        return type.GetInterfaces()
+            .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            ?.GetGenericArguments()[0] ?? type;
+    }
 
     public static bool IsAssignableFromGenericInterface(this Type type, Type genericInterface)
         => type.GetInterfaces().Any(@interface => @interface.IsAssignableFrom(genericInterface));

@@ -38,7 +38,7 @@ public class GraphQLExpression<TRoot, TData> : TypeFieldExpression, IRootExpress
 {
     private readonly List<Variable> variables = [];
     private readonly LinQLOptions options;
-    private Lazy<string> queryValue;
+    private readonly Lazy<string> queryValue;
 
     /// <summary>
     /// Creates a new GraphQL Expression.
@@ -69,17 +69,6 @@ public class GraphQLExpression<TRoot, TData> : TypeFieldExpression, IRootExpress
 
     /// <inheritdoc />
     public IReadOnlyCollection<Scalar> Scalars => [.. this.options.Scalars];
-
-    /// <summary>
-    /// Add an extra field to the selection.
-    /// </summary>
-    /// <param name="include">The field to include.</param>
-    /// <returns>The translated expression.</returns>
-    public GraphQLExpression<TRoot, TData> Include(Expression<Func<TRoot, object>> include)
-    {
-        this.queryValue = this.ToStringInternal();
-        return ExpressionTranslator.Include(this, include);
-    }
 
     /// <inheritdoc/>
     public Variable WithVariable(string type, object? value)

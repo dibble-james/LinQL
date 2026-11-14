@@ -20,7 +20,7 @@ namespace Filtering
     }
 
     [GraphQLType(Name = "Product")]
-    public partial class Product
+    public partial class Product : ICanHaveIncludes
     {
         public string Name { get; set; }
         public float Price { get; set; }
@@ -28,7 +28,7 @@ namespace Filtering
     }
 
     [GraphQLType(Name = "Tag")]
-    public partial class Tag
+    public partial class Tag : ICanHaveIncludes
     {
         public string Label { get; set; }
     }

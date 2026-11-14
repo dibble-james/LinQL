@@ -112,7 +112,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
         var fields = node.Fields.Select(x => new FieldDefinitionNode(x.Location, x.Name, x.Description, [], x.Type, x.Directives));
 
-        context.Types.Add(new ComplexTypeClass(node.Name.Value, fields, [], context.TypesAs));
+        context.Types.Add(new ComplexTypeClass(node.Name.Value, fields, [], context.TypesAs, canHaveIncludes: false));
 
         if (ComplexTypeClass.IsFilterInputType(node.Name.Value))
         {

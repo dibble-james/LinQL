@@ -21,10 +21,6 @@ public partial class TranslationProviderTests
         => this.Test<NestedClassType, object>(x => new { x.Float, Nested = new { x.Nested!.Number } });
 
     [Fact]
-    public void BasicInclude()
-        => this.TestInclude<NestedOperationType, object>(x => x.Operation, x => x.Include(y => y.Operation.GetNumber("123")));
-
-    [Fact]
     public void ScalarArrayFields()
         => this.Test<ScalarArray, string[]>(x => x.Strings);
 }

@@ -135,6 +135,21 @@ public class GeneratedFilterTests
     public void ScalarListOperationOnQueryArgument()
         => Translate(q => q.ExecuteProducts(null, 1).Select(p => new { p.Name }));
 
+    [Fact]
+    public void IncludesAddsFieldsToTheSelection()
+        => Translate(q => q
+            .Products
+            .Includes(p => p.Tags)
+            .Select(p => new { p.Name }));
+
+    [Fact]
+    public void IncludesComposesWithFilterAndSelect()
+        => Translate(q => q
+            .Products
+            .Filter(f => f.Name(n => n.Eq("widget")))
+            .Includes(p => p.Tags)
+            .Select(p => new { p.Name }));
+
     private static void Translate(Expression<Func<Client.Query, object>> expression)
     {
         var request = TranslationProvider.ToRequest(expression, new LinQLOptions());
