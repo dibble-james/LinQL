@@ -1,10 +1,13 @@
 ﻿query linql {
+  __typename
   simpleType {
     __typename
     ...on someOtherSimpleType {
+      __typename
       number
     }
     ...on simpleScalarType {
+      __typename
       text
     }
   }

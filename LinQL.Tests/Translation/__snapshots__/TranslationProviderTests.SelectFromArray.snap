@@ -1,5 +1,7 @@
 ﻿query linql {
+  __typename
   types {
+    __typename
     text
     number
   }

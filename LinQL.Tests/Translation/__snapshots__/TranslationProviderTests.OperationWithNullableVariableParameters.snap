@@ -1,5 +1,7 @@
 ﻿query linql($var1: SimpleScalarType) {
+  __typename
   getNumber(input: $var1) {
+    __typename
     number
   }
 }
