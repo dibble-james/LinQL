@@ -16,7 +16,7 @@ namespace Filtering
         public Product[] Products { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "products")]
-        public Product[] ExecuteProducts([GraphQLArgument(GQLType = "ProductFilterInput")] ProductFilterInput? where, [GraphQLArgument(GQLType = "Int")] int? @in) => Products;
+        public Product[] ExecuteProducts([GraphQLArgument(Name = "where", GQLType = "ProductFilterInput")] ProductFilterInput? where, [GraphQLArgument(Name = "in", GQLType = "Int")] int? @in) => Products;
     }
 
     [GraphQLType(Name = "Product")]
