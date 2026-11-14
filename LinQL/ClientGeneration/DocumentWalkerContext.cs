@@ -41,10 +41,10 @@ internal class DocumentWalkerContext(string file, SourceProductionContext contex
 
         if (model.FieldExtensions.Any())
         {
-            ns = ns.AddMembers(new FieldExtensionsClass(model.FieldExtensions).Create(model));
+            ns = ns.AddMembers(new FieldExtensionsClass().Create(model));
         }
 
-        ns = ns.AddMembers(new InterfaceRegistrationExtensionsClass(model.Types.OfType<ComplexTypeClass>()).Create(model));
+        ns = ns.AddMembers(new InterfaceRegistrationExtensionsClass().Create(model));
 
         using var clientContent = new StringWriter();
         clientContent.WriteLine("#nullable enable");

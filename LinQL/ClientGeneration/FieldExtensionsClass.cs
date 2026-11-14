@@ -26,12 +26,12 @@ internal sealed record FieldExtension(FieldDefinitionNode Field, InputValueDefin
 /// and parameter type. Filter methods are all called <c>Filter</c> — they overload by filter input type —
 /// and the other arguments get a method named after them (<c>In</c>, <c>First</c>, <c>Order</c>).
 /// </remarks>
-internal class FieldExtensionsClass(IEnumerable<FieldExtension> extensions) : IClassFactory
+internal class FieldExtensionsClass : IClassFactory
 {
     public MemberDeclarationSyntax Create(SchemaModel model)
         => ClassDeclaration(Identifier("FieldExtensions"))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-            .AddMembers([.. extensions
+            .AddMembers([.. model.FieldExtensions
                 .Where(x => !model.KnownScalars.ContainsKey(x.Field.Type.NamedType().Name.Value))
                 .SelectMany(x => MethodNames(x).Select(method => new
                 {

@@ -11,11 +11,6 @@ internal class ComplexTypeClass : IClassFactory
 {
     private readonly List<FieldDefinitionNode> fields;
 
-    public ComplexTypeClass(string name)
-        : this(name, [], [])
-    {
-    }
-
     public ComplexTypeClass(string name, IEnumerable<FieldDefinitionNode> fields, IEnumerable<string> interfaces, LinQLTypesAs typesAs = LinQLTypesAs.Class, bool canHaveIncludes = true)
         => (this.Name, this.fields, this.Interfaces, this.TypesAs, this.CanHaveIncludes) = (name, fields.ToList(), interfaces, typesAs, canHaveIncludes);
 
@@ -118,36 +113,80 @@ internal class ComplexTypeClass : IClassFactory
         => AccessorDeclaration(this.TypesAs == LinQLTypesAs.Record ? SyntaxKind.InitAccessorDeclaration : SyntaxKind.SetAccessorDeclaration)
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
-    protected virtual Func<FieldDefinitionNode, PropertyDeclarationSyntax> CreateField(SchemaModel model)
-        => f => PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaNames.FieldName(f.Name.Value)))
+    protected Func<FieldDefinitionNode, PropertyDeclarationSyntax> CreateField(SchemaModel model)
+        => f => this.CreateProperty(f, model, initialise: false);
+
+    /// <summary>
+    /// Gets a value indicating whether the type implements the field commands or only declares them.
+    /// </summary>
+    /// <remarks>
+    /// A class initialises the property paired with an <c>Execute*</c> method and gives that method an
+    /// expression body; an interface declares the members' shapes, and either of those would not
+    /// compile there.
+    /// </remarks>
+    protected virtual bool ImplementsCommands => true;
+
+    protected Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(SchemaModel model)
+        => f =>
+        [
+            this.CreateCommandProperty(f, model),
+            this.CreateCommandMethod(f, model),
+        ];
+
+    /// <summary>
+    /// Creates the property that holds the value an <c>Execute*</c> method returns.
+    /// </summary>
+    /// <param name="field">The field.</param>
+    /// <param name="model">The schema.</param>
+    /// <returns>The property declaration.</returns>
+    private PropertyDeclarationSyntax CreateCommandProperty(FieldDefinitionNode field, SchemaModel model)
+        => this.CreateProperty(field, model, initialise: this.ImplementsCommands);
+
+    /// <summary>
+    /// Creates the property that holds a field's value.
+    /// </summary>
+    /// <param name="field">The field.</param>
+    /// <param name="model">The schema.</param>
+    /// <param name="initialise">Whether the property starts as <see langword="null"/>.</param>
+    /// <returns>The property declaration.</returns>
+    private PropertyDeclarationSyntax CreateProperty(FieldDefinitionNode field, SchemaModel model, bool initialise)
+    {
+        var property = PropertyDeclaration(ParseTypeName(model.TypeName(field.Type)), Identifier(SchemaNames.FieldName(field.Name.Value)))
             .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
             .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
             .AddAccessorListAccessors(this.MutatorAccessor);
 
-    protected virtual Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(SchemaModel model)
-        => f =>
-        [
-            PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaNames.FieldName(f.Name.Value)))
-                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                    .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
-                    .AddAccessorListAccessors(this.MutatorAccessor)
-                    .WithInitializer(EqualsValueClause(ParseExpression("null!")))
-                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-            MethodDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier("Execute" + SchemaNames.FieldName(f.Name.Value)))
-                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+        return initialise
+            ? property.WithInitializer(EqualsValueClause(ParseExpression("null!"))).WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            : property;
+    }
+
+    /// <summary>
+    /// Creates the <c>Execute*</c> method that calls a field with arguments.
+    /// </summary>
+    /// <param name="field">The field.</param>
+    /// <param name="model">The schema.</param>
+    /// <returns>The method declaration.</returns>
+    private MethodDeclarationSyntax CreateCommandMethod(FieldDefinitionNode field, SchemaModel model)
+    {
+        var method = MethodDeclaration(ParseTypeName(model.TypeName(field.Type)), Identifier("Execute" + SchemaNames.FieldName(field.Name.Value)))
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+            .AddAttributeLists(AttributeList(SeparatedList(
+            [
+                Attribute(IdentifierName(nameof(GraphQLOperationAttribute).AttributeName())),
+                Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{field.Name.Value}""")))))
+            ])))
+            .AddParameterListParameters(
+                [.. field.Arguments.Select(p => Parameter(SchemaNames.IdentifierFor(p.Name.Value))
+                    .WithType(ParseTypeName(model.TypeName(p.Type)))
                     .AddAttributeLists(AttributeList(SeparatedList(
                     [
-                        Attribute(IdentifierName(nameof(GraphQLOperationAttribute).AttributeName())),
-                        Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
-                    ])))
-                    .AddParameterListParameters(
-                        [.. f.Arguments.Select(p => Parameter(SchemaNames.IdentifierFor(p.Name.Value))
-                            .WithType(ParseTypeName(model.TypeName(p.Type)))
-                            .AddAttributeLists(AttributeList(SeparatedList(
-                            [
-                                Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type.ToString()}""")))))
-                            ]))))])
-                    .WithExpressionBody(ArrowExpressionClause(ParseExpression(SchemaNames.FieldName(f.Name.Value))))
-                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-        ];
+                        Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type}""")))))
+                    ]))))]);
+
+        return this.ImplementsCommands
+            ? method.WithExpressionBody(ArrowExpressionClause(ParseExpression(SchemaNames.FieldName(field.Name.Value))))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            : method.WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+    }
 }
