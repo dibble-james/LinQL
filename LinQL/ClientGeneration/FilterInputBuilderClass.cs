@@ -14,20 +14,20 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 /// </summary>
 internal class FilterInputBuilderClass(string name, IReadOnlyList<FieldDefinitionNode> fields) : IClassFactory
 {
-    public MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars)
-        => ClassDeclaration(Identifier(ComplexTypeClass.FilterBuilderName(name)))
+    public MemberDeclarationSyntax Create(SchemaModel model)
+        => ClassDeclaration(Identifier(SchemaModel.FilterBuilderName(name)))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
-            .AddMembers([.. fields.Select(x => CreateField(name, x, knownScalars))]);
+            .AddMembers([.. fields.Select(x => CreateField(name, x, model))]);
 
-    private static MethodDeclarationSyntax CreateField(string builder, FieldDefinitionNode field, IDictionary<string, Scalar> knownScalars)
+    private static MethodDeclarationSyntax CreateField(string builder, FieldDefinitionNode field, SchemaModel model)
     {
         var nestedType = field.Type.NamedType().Name.Value;
-        var isNested = ComplexTypeClass.IsFilterInputType(nestedType);
+        var isNested = SchemaModel.IsFilterInputType(nestedType);
         var isList = isNested && (field.Type.IsListType() || (field.Type.IsNonNullType() && field.Type.InnerType().IsListType()));
 
         var parameterType = isNested
-            ? $"System.Func<{ComplexTypeClass.FilterBuilderName(nestedType)}, {ComplexTypeClass.FilterBuilderName(nestedType)}>"
-            : ComplexTypeClass.TypeName(field.Type, knownScalars);
+            ? $"System.Func<{SchemaModel.FilterBuilderName(nestedType)}, {SchemaModel.FilterBuilderName(nestedType)}>"
+            : model.TypeName(field.Type);
 
         var name = AttributeArgument(ParseExpression($@"Name = ""{field.Name.Value}"""));
         var attribute = isList
@@ -38,11 +38,11 @@ internal class FilterInputBuilderClass(string name, IReadOnlyList<FieldDefinitio
                 IdentifierName(nameof(GraphQLFilterFieldAttribute).AttributeName()),
                 AttributeArgumentList(SingletonSeparatedList(name)));
 
-        return MethodDeclaration(ParseTypeName(ComplexTypeClass.FilterBuilderName(builder)), Identifier(ComplexTypeClass.FieldName(field.Name.Value)))
+        return MethodDeclaration(ParseTypeName(SchemaModel.FilterBuilderName(builder)), Identifier(SchemaModel.FieldName(field.Name.Value)))
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(attribute)))
             .AddParameterListParameters(
-                Parameter(ComplexTypeClass.IdentifierFor(field.Name.Value))
+                Parameter(SchemaModel.IdentifierFor(field.Name.Value))
                     .WithType(ParseTypeName(parameterType)))
             .WithExpressionBody(ArrowExpressionClause(ThisExpression()))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));

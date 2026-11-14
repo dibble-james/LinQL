@@ -1,20 +1,15 @@
 namespace LinQL.ClientGeneration;
 
-using System.Collections.Generic;
-using LinQL.Description;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 internal class DocumentWalkerContext(string file, SourceProductionContext context, string graphNamespace, string[] extraUsings, LinQLTypesAs typesAs)
 {
-    public List<RootTypeClass> RootOperations { get; } = [];
-
-    public List<IClassFactory> Types { get; } = [];
-
-    public List<FieldExtension> FieldExtensions { get; } = [];
-
-    public List<Scalar> Scalars { get; } = [.. Scalar.NativeScalars];
+    /// <summary>
+    /// Gets the schema the walk builds, which the emitter renders.
+    /// </summary>
+    public SchemaModel Model { get; } = new();
 
     public string File { get; } = file;
 
@@ -38,18 +33,18 @@ internal class DocumentWalkerContext(string file, SourceProductionContext contex
             ns = ns.AddUsings([.. extraUsings.Select(x => UsingDirective(IdentifierName(x)))]);
         }
 
-        var scalars = this.Scalars.ToDictionary(x => x.Name, StringComparer.InvariantCultureIgnoreCase);
+        var model = this.Model;
 
-        ns = ns.AddMembers([.. this.RootOperations.Select(x => x.Create(scalars))])
-          .AddMembers([.. this.Types.Select(x => x.Create(scalars))])
-          .AddMembers(new OptionExtensionsClass().Create(scalars));
+        ns = ns.AddMembers([.. model.RootOperations.Select(x => x.Create(model))])
+          .AddMembers([.. model.Types.Select(x => x.Create(model))])
+          .AddMembers(new OptionExtensionsClass().Create(model));
 
-        if (this.FieldExtensions.Any())
+        if (model.FieldExtensions.Any())
         {
-            ns = ns.AddMembers(new FieldExtensionsClass(this.FieldExtensions).Create(scalars));
+            ns = ns.AddMembers(new FieldExtensionsClass(model.FieldExtensions).Create(model));
         }
 
-        ns = ns.AddMembers(new InterfaceRegistrationExtensionsClass(this.Types.OfType<ComplexTypeClass>()).Create(scalars));
+        ns = ns.AddMembers(new InterfaceRegistrationExtensionsClass(model.Types.OfType<ComplexTypeClass>()).Create(model));
 
         using var clientContent = new StringWriter();
         clientContent.WriteLine("#nullable enable");

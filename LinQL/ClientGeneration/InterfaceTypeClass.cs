@@ -15,14 +15,14 @@ internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> 
                 Attribute(IdentifierName(nameof(GraphQLTypeAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{this.Name}""")))))
             ]))]);
 
-    protected override Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(IDictionary<string, Scalar> knownScalars)
+    protected override Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(SchemaModel model)
         => f =>
         [
-            PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
+            PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaModel.FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
                     .AddAccessorListAccessors(this.MutatorAccessor),
-            MethodDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier("Execute" + FieldName(f.Name.Value)))
+            MethodDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier("Execute" + SchemaModel.FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAttributeLists(AttributeList(SeparatedList(
                     [
@@ -30,8 +30,8 @@ internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> 
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
                     ])))
                      .AddParameterListParameters(
-                        [.. f.Arguments.Select(p => Parameter(IdentifierFor(p.Name.Value))
-                            .WithType(ParseTypeName(TypeName(p.Type, knownScalars)))
+                        [.. f.Arguments.Select(p => Parameter(SchemaModel.IdentifierFor(p.Name.Value))
+                            .WithType(ParseTypeName(model.TypeName(p.Type)))
                             .AddAttributeLists(AttributeList(SeparatedList(
                             [
                                 Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type}""")))))

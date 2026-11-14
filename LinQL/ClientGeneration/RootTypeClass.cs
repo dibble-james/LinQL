@@ -9,9 +9,9 @@ internal class RootTypeClass(string name, OperationType rootOperationType, LinQL
 {
     public OperationType RootOperation { get; } = rootOperationType;
 
-    public override MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars)
+    public override MemberDeclarationSyntax Create(SchemaModel model)
     {
-        var rootType = (BaseTypeDeclarationSyntax)base.Create(knownScalars);
+        var rootType = (BaseTypeDeclarationSyntax)base.Create(model);
 
         rootType = rootType
             .AddBaseListTypes(SimpleBaseType(IdentifierName($"RootType<{this.Name}>")))

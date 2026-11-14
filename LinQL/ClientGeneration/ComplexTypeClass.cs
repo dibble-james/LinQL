@@ -2,7 +2,6 @@ namespace LinQL.ClientGeneration;
 
 using HotChocolate.Language;
 using LinQL.Description;
-using LinQL.Expressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -10,8 +9,6 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 internal class ComplexTypeClass : IClassFactory
 {
-    internal const string FilterInputSuffix = "FilterInput";
-
     private readonly List<FieldDefinitionNode> fields;
 
     public ComplexTypeClass(string name)
@@ -87,12 +84,12 @@ internal class ComplexTypeClass : IClassFactory
             closeBraceToken: Token(SyntaxKind.CloseBraceToken),
             semicolonToken: default);
 
-    public virtual MemberDeclarationSyntax Create(IDictionary<string, Scalar> knownScalars)
+    public virtual MemberDeclarationSyntax Create(SchemaModel model)
     {
         var type = this.Type
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
-            .AddMembers([.. this.Properties.Select(this.CreateField(knownScalars))])
-            .AddMembers([.. this.Methods.SelectMany(this.CreateOperation(knownScalars))]);
+            .AddMembers([.. this.Properties.Select(this.CreateField(model))])
+            .AddMembers([.. this.Methods.SelectMany(this.CreateOperation(model))]);
 
         var baseTypes = this.Interfaces
             .Concat(this.CanHaveIncludes ? [nameof(ICanHaveIncludes)] : [])
@@ -108,19 +105,6 @@ internal class ComplexTypeClass : IClassFactory
     private IEnumerable<FieldDefinitionNode> Methods
         => this.fields.Where(x => x.Arguments.Any());
 
-    internal static string TypeName(ITypeNode type, IDictionary<string, Scalar> knownScalars)
-    {
-        var typeName = knownScalars.TryGetValue(type.NamedType().Name.Value, out var mapped)
-            ? mapped.RuntimeType : type.NamedType().Name.Value;
-
-        typeName = type.IsListType() || (type.IsNonNullType() && type.InnerType().IsListType()) ? typeName + "[]" : typeName;
-
-        return type.IsNonNullType() ? typeName : typeName + "?";
-    }
-
-    internal static string FieldName(string field)
-        => char.ToUpperInvariant(field.First()) + field.ToCamelCase().Substring(1);
-
     /// <summary>
     /// Gets the property's mutating accessor: <c>set</c> for a class and <c>init</c> for a record, so a
     /// generated record is only assigned while it is constructed, deserialised or copied with <c>with</c>.
@@ -134,22 +118,22 @@ internal class ComplexTypeClass : IClassFactory
         => AccessorDeclaration(this.TypesAs == LinQLTypesAs.Record ? SyntaxKind.InitAccessorDeclaration : SyntaxKind.SetAccessorDeclaration)
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
-    protected virtual Func<FieldDefinitionNode, PropertyDeclarationSyntax> CreateField(IDictionary<string, Scalar> knownScalars)
-        => f => PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
+    protected virtual Func<FieldDefinitionNode, PropertyDeclarationSyntax> CreateField(SchemaModel model)
+        => f => PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaModel.FieldName(f.Name.Value)))
             .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
             .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
             .AddAccessorListAccessors(this.MutatorAccessor);
 
-    protected virtual Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(IDictionary<string, Scalar> knownScalars)
+    protected virtual Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(SchemaModel model)
         => f =>
         [
-            PropertyDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier(FieldName(f.Name.Value)))
+            PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaModel.FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
                     .AddAccessorListAccessors(this.MutatorAccessor)
                     .WithInitializer(EqualsValueClause(ParseExpression("null!")))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-            MethodDeclaration(ParseTypeName(TypeName(f.Type, knownScalars)), Identifier("Execute" + FieldName(f.Name.Value)))
+            MethodDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier("Execute" + SchemaModel.FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAttributeLists(AttributeList(SeparatedList(
                     [
@@ -157,24 +141,13 @@ internal class ComplexTypeClass : IClassFactory
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
                     ])))
                     .AddParameterListParameters(
-                        [.. f.Arguments.Select(p => Parameter(IdentifierFor(p.Name.Value))
-                            .WithType(ParseTypeName(TypeName(p.Type, knownScalars)))
+                        [.. f.Arguments.Select(p => Parameter(SchemaModel.IdentifierFor(p.Name.Value))
+                            .WithType(ParseTypeName(model.TypeName(p.Type)))
                             .AddAttributeLists(AttributeList(SeparatedList(
                             [
                                 Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type.ToString()}""")))))
                             ]))))])
-                    .WithExpressionBody(ArrowExpressionClause(ParseExpression(FieldName(f.Name.Value))))
+                    .WithExpressionBody(ArrowExpressionClause(ParseExpression(SchemaModel.FieldName(f.Name.Value))))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
         ];
-
-    internal static SyntaxToken IdentifierFor(string name)
-        => Microsoft.CodeAnalysis.CSharp.SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None
-            ? VerbatimIdentifier(SyntaxTriviaList.Empty, name, name, SyntaxTriviaList.Empty)
-            : Identifier(name);
-
-    internal static bool IsFilterInputType(string typeName)
-        => typeName.Length > FilterInputSuffix.Length && typeName.EndsWith(FilterInputSuffix, StringComparison.Ordinal);
-
-    internal static string FilterBuilderName(string filterTypeName)
-        => filterTypeName + "Builder";
 }
