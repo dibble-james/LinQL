@@ -16,7 +16,7 @@ namespace InterfaceArguments
         public SearchResult[] Search { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "search")]
-        public SearchResult[] ExecuteSearch([GraphQLArgument(GQLType = "String!")] string term, [GraphQLArgument(GQLType = "[String!]")] string[]? tags) => Search;
+        public SearchResult[] ExecuteSearch([GraphQLArgument(Name = "term", GQLType = "String!")] string term, [GraphQLArgument(Name = "tags", GQLType = "[String!]")] string[]? tags) => Search;
     }
 
     [GraphQLType(Name = "SearchResult")]
@@ -26,7 +26,7 @@ namespace InterfaceArguments
         public SearchResult[] Related { get; set; }
 
         [GraphQLOperation, GraphQLField(Name = "related")]
-        public SearchResult[] ExecuteRelated([GraphQLArgument(GQLType = "Int!")] int first, [GraphQLArgument(GQLType = "[String!]")] string[]? tags, [GraphQLArgument(GQLType = "[FilterInput!]!")] FilterInput[] filters);
+        public SearchResult[] ExecuteRelated([GraphQLArgument(Name = "first", GQLType = "Int!")] int first, [GraphQLArgument(Name = "tags", GQLType = "[String!]")] string[]? tags, [GraphQLArgument(Name = "filters", GQLType = "[FilterInput!]!")] FilterInput[] filters);
     }
 
     [GraphQLType(Name = "Product")]
@@ -37,7 +37,7 @@ namespace InterfaceArguments
         public SearchResult[] Related { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "related")]
-        public SearchResult[] ExecuteRelated([GraphQLArgument(GQLType = "Int!")] int first, [GraphQLArgument(GQLType = "[String!]")] string[]? tags, [GraphQLArgument(GQLType = "[FilterInput!]!")] FilterInput[] filters) => Related;
+        public SearchResult[] ExecuteRelated([GraphQLArgument(Name = "first", GQLType = "Int!")] int first, [GraphQLArgument(Name = "tags", GQLType = "[String!]")] string[]? tags, [GraphQLArgument(Name = "filters", GQLType = "[FilterInput!]!")] FilterInput[] filters) => Related;
     }
 
     [GraphQLType(Name = "FilterInput")]

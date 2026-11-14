@@ -18,23 +18,23 @@ namespace Shiftshare.Graph
         public IEvent[] Events { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "events")]
-        public IEvent[] ExecuteEvents([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendar, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime from, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime to) => Events;
+        public IEvent[] ExecuteEvents([GraphQLArgument(Name = "calendar", GQLType = "UUID!")] global::System.Guid calendar, [GraphQLArgument(Name = "from", GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime from, [GraphQLArgument(Name = "to", GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime to) => Events;
         public User[] Users { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "users")]
-        public User[] ExecuteUsers([GraphQLArgument(GQLType = "[UUID!]!")] global::System.Guid[] ids) => Users;
+        public User[] ExecuteUsers([GraphQLArgument(Name = "ids", GQLType = "[UUID!]!")] global::System.Guid[] ids) => Users;
         public Calendar[] Calendars { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "calendars")]
-        public Calendar[] ExecuteCalendars([GraphQLArgument(GQLType = "[UUID]")] global::System.Guid[]? ids) => Calendars;
+        public Calendar[] ExecuteCalendars([GraphQLArgument(Name = "ids", GQLType = "[UUID]")] global::System.Guid[]? ids) => Calendars;
         public Shift[] Shifts { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "shifts")]
-        public Shift[] ExecuteShifts([GraphQLArgument(GQLType = "[UUID]!")] global::System.Guid[] ids) => Shifts;
+        public Shift[] ExecuteShifts([GraphQLArgument(Name = "ids", GQLType = "[UUID]!")] global::System.Guid[] ids) => Shifts;
         public ShiftType[] ShiftTypes { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "shiftTypes")]
-        public ShiftType[] ExecuteShiftTypes([GraphQLArgument(GQLType = "[UUID!]")] global::System.Guid[]? ids) => ShiftTypes;
+        public ShiftType[] ExecuteShiftTypes([GraphQLArgument(Name = "ids", GQLType = "[UUID!]")] global::System.Guid[]? ids) => ShiftTypes;
     }
 
     [GraphQLType(Name = "Mutation")]
@@ -45,27 +45,27 @@ namespace Shiftshare.Graph
         public IEvent CancelEvent { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "cancelEvent")]
-        public IEvent ExecuteCancelEvent([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(GQLType = "UUID!")] global::System.Guid id) => CancelEvent;
+        public IEvent ExecuteCancelEvent([GraphQLArgument(Name = "calendarId", GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(Name = "id", GQLType = "UUID!")] global::System.Guid id) => CancelEvent;
         public Calendar CreateCalendar { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "createCalendar")]
-        public Calendar ExecuteCreateCalendar([GraphQLArgument(GQLType = "CreateCalendarInput!")] CreateCalendarInput input) => CreateCalendar;
+        public Calendar ExecuteCreateCalendar([GraphQLArgument(Name = "input", GQLType = "CreateCalendarInput!")] CreateCalendarInput input) => CreateCalendar;
         public IEvent RescheduleShift { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "rescheduleShift")]
-        public IEvent ExecuteRescheduleShift([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(GQLType = "UUID!")] global::System.Guid id, [GraphQLArgument(GQLType = "OffsetDate!")] global::NodaTime.OffsetDate date) => RescheduleShift;
+        public IEvent ExecuteRescheduleShift([GraphQLArgument(Name = "calendarId", GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(Name = "id", GQLType = "UUID!")] global::System.Guid id, [GraphQLArgument(Name = "date", GQLType = "OffsetDate!")] global::NodaTime.OffsetDate date) => RescheduleShift;
         public IEvent ScheduleShift { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "scheduleShift")]
-        public IEvent ExecuteScheduleShift([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(GQLType = "UUID!")] global::System.Guid shiftType, [GraphQLArgument(GQLType = "OffsetDate!")] global::NodaTime.OffsetDate date) => ScheduleShift;
+        public IEvent ExecuteScheduleShift([GraphQLArgument(Name = "calendarId", GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(Name = "shiftType", GQLType = "UUID!")] global::System.Guid shiftType, [GraphQLArgument(Name = "date", GQLType = "OffsetDate!")] global::NodaTime.OffsetDate date) => ScheduleShift;
         public Calendar SetupShiftType { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "setupShiftType")]
-        public Calendar ExecuteSetupShiftType([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(GQLType = "ShiftTypeInput!")] ShiftTypeInput shiftType) => SetupShiftType;
+        public Calendar ExecuteSetupShiftType([GraphQLArgument(Name = "calendarId", GQLType = "UUID!")] global::System.Guid calendarId, [GraphQLArgument(Name = "shiftType", GQLType = "ShiftTypeInput!")] ShiftTypeInput shiftType) => SetupShiftType;
         public ICalendarEvent[] SyncCalendarEvents { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "syncCalendarEvents")]
-        public ICalendarEvent[] ExecuteSyncCalendarEvents([GraphQLArgument(GQLType = "UUID!")] global::System.Guid calendar, [GraphQLArgument(GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime after, [GraphQLArgument(GQLType = "[CalendarEventInput!]!")] CalendarEventInput[] newEvents) => SyncCalendarEvents;
+        public ICalendarEvent[] ExecuteSyncCalendarEvents([GraphQLArgument(Name = "calendar", GQLType = "UUID!")] global::System.Guid calendar, [GraphQLArgument(Name = "after", GQLType = "OffsetDateTime!")] global::NodaTime.OffsetDateTime after, [GraphQLArgument(Name = "newEvents", GQLType = "[CalendarEventInput!]!")] CalendarEventInput[] newEvents) => SyncCalendarEvents;
     }
 
     public enum ApplyPolicy
@@ -96,7 +96,7 @@ namespace Shiftshare.Graph
         public IEvent Reschedule { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "reschedule")]
-        public IEvent ExecuteReschedule([GraphQLArgument(GQLType = "OffsetDate!")] global::NodaTime.OffsetDate to) => Reschedule;
+        public IEvent ExecuteReschedule([GraphQLArgument(Name = "to", GQLType = "OffsetDate!")] global::NodaTime.OffsetDate to) => Reschedule;
     }
 
     [GraphQLType(Name = "User")]
@@ -119,7 +119,7 @@ namespace Shiftshare.Graph
         public Shift ScheduleShift { get; set; } = null !;
 
         [GraphQLOperation, GraphQLField(Name = "scheduleShift")]
-        public Shift ExecuteScheduleShift([GraphQLArgument(GQLType = "UUID!")] global::System.Guid shiftType, [GraphQLArgument(GQLType = "OffsetDate!")] global::NodaTime.OffsetDate date) => ScheduleShift;
+        public Shift ExecuteScheduleShift([GraphQLArgument(Name = "shiftType", GQLType = "UUID!")] global::System.Guid shiftType, [GraphQLArgument(Name = "date", GQLType = "OffsetDate!")] global::NodaTime.OffsetDate date) => ScheduleShift;
     }
 
     [GraphQLType(Name = "CalendarAccess")]

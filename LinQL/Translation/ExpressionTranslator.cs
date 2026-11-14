@@ -266,15 +266,24 @@ public class ExpressionTranslator : ExpressionVisitor
         => this.Visit(extension.Arguments[0]) as TypeFieldExpression
             ?? throw new InvalidOperationException($"'{extension.Method.Name}' must be called on a field.");
 
+    /// <summary>
+    /// Gets the field a call attaches its arguments to.
+    /// </summary>
+    /// <remarks>
+    /// The argument name comes from <see cref="GraphQLArgumentAttribute.Name"/>, which the generator
+    /// writes from the SDL, rather than from the parameter's own name: a hand-written client type, or a
+    /// renamed parameter, would otherwise put a name in the document that the server never declared.
+    /// The parameter name is the fallback for a type that declares a type but no name.
+    /// </remarks>
     private static FieldExpression VisitFieldWithArguments(MethodCallExpression node, IRootExpression root)
     {
         var field = node.Method.ToField(root);
 
         return node.Method.GetParameters()
             .Zip(node.Arguments, (p, i) => (
-                p.Name,
+                Name: p.GetCustomAttribute<GraphQLArgumentAttribute>()?.Name ?? p.Name,
                 Type: p.GetArgumentType(),
                 Value: ArgumentVistor.GetValue(i)))
-            .Aggregate(field, (f, arg) => field.WithArgument(arg.Name, arg.Type, arg.Value));
+            .Aggregate(field, (f, arg) => f.WithArgument(arg.Name, arg.Type, arg.Value));
     }
 }

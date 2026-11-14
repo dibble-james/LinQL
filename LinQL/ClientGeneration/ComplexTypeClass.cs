@@ -172,7 +172,11 @@ internal class ComplexTypeClass : IClassFactory
                     .WithType(ParseTypeName(model.TypeName(p.Type)))
                     .AddAttributeLists(AttributeList(SeparatedList(
                     [
-                        Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type}""")))))
+                        Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SeparatedList(
+                        [
+                            AttributeArgument(ParseExpression(@$"Name = ""{p.Name.Value}""")),
+                            AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type}""")),
+                        ])))
                     ]))))]);
 
         return this.ImplementsCommands
