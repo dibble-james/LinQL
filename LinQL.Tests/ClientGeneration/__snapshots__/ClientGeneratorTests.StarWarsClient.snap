@@ -618,6 +618,218 @@ namespace StarWars
         }
     }
 
+    public static class IncludesExtensions
+    {
+        [GraphQLIncludes]
+        public static Film Includes(this Film source, System.Linq.Expressions.Expression<System.Func<Film, object>> include) => source;
+        [GraphQLIncludes]
+        public static Film[] Includes(this Film[] source, System.Linq.Expressions.Expression<System.Func<Film, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmCharactersConnection Includes(this FilmCharactersConnection source, System.Linq.Expressions.Expression<System.Func<FilmCharactersConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmCharactersConnection[] Includes(this FilmCharactersConnection[] source, System.Linq.Expressions.Expression<System.Func<FilmCharactersConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmCharactersEdge Includes(this FilmCharactersEdge source, System.Linq.Expressions.Expression<System.Func<FilmCharactersEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmCharactersEdge[] Includes(this FilmCharactersEdge[] source, System.Linq.Expressions.Expression<System.Func<FilmCharactersEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmPlanetsConnection Includes(this FilmPlanetsConnection source, System.Linq.Expressions.Expression<System.Func<FilmPlanetsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmPlanetsConnection[] Includes(this FilmPlanetsConnection[] source, System.Linq.Expressions.Expression<System.Func<FilmPlanetsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmPlanetsEdge Includes(this FilmPlanetsEdge source, System.Linq.Expressions.Expression<System.Func<FilmPlanetsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmPlanetsEdge[] Includes(this FilmPlanetsEdge[] source, System.Linq.Expressions.Expression<System.Func<FilmPlanetsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmSpeciesConnection Includes(this FilmSpeciesConnection source, System.Linq.Expressions.Expression<System.Func<FilmSpeciesConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmSpeciesConnection[] Includes(this FilmSpeciesConnection[] source, System.Linq.Expressions.Expression<System.Func<FilmSpeciesConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmSpeciesEdge Includes(this FilmSpeciesEdge source, System.Linq.Expressions.Expression<System.Func<FilmSpeciesEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmSpeciesEdge[] Includes(this FilmSpeciesEdge[] source, System.Linq.Expressions.Expression<System.Func<FilmSpeciesEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmStarshipsConnection Includes(this FilmStarshipsConnection source, System.Linq.Expressions.Expression<System.Func<FilmStarshipsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmStarshipsConnection[] Includes(this FilmStarshipsConnection[] source, System.Linq.Expressions.Expression<System.Func<FilmStarshipsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmStarshipsEdge Includes(this FilmStarshipsEdge source, System.Linq.Expressions.Expression<System.Func<FilmStarshipsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmStarshipsEdge[] Includes(this FilmStarshipsEdge[] source, System.Linq.Expressions.Expression<System.Func<FilmStarshipsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmVehiclesConnection Includes(this FilmVehiclesConnection source, System.Linq.Expressions.Expression<System.Func<FilmVehiclesConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmVehiclesConnection[] Includes(this FilmVehiclesConnection[] source, System.Linq.Expressions.Expression<System.Func<FilmVehiclesConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmVehiclesEdge Includes(this FilmVehiclesEdge source, System.Linq.Expressions.Expression<System.Func<FilmVehiclesEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmVehiclesEdge[] Includes(this FilmVehiclesEdge[] source, System.Linq.Expressions.Expression<System.Func<FilmVehiclesEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmsConnection Includes(this FilmsConnection source, System.Linq.Expressions.Expression<System.Func<FilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmsConnection[] Includes(this FilmsConnection[] source, System.Linq.Expressions.Expression<System.Func<FilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmsEdge Includes(this FilmsEdge source, System.Linq.Expressions.Expression<System.Func<FilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static FilmsEdge[] Includes(this FilmsEdge[] source, System.Linq.Expressions.Expression<System.Func<FilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static Node Includes(this Node source, System.Linq.Expressions.Expression<System.Func<Node, object>> include) => source;
+        [GraphQLIncludes]
+        public static Node[] Includes(this Node[] source, System.Linq.Expressions.Expression<System.Func<Node, object>> include) => source;
+        [GraphQLIncludes]
+        public static PageInfo Includes(this PageInfo source, System.Linq.Expressions.Expression<System.Func<PageInfo, object>> include) => source;
+        [GraphQLIncludes]
+        public static PageInfo[] Includes(this PageInfo[] source, System.Linq.Expressions.Expression<System.Func<PageInfo, object>> include) => source;
+        [GraphQLIncludes]
+        public static PeopleConnection Includes(this PeopleConnection source, System.Linq.Expressions.Expression<System.Func<PeopleConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PeopleConnection[] Includes(this PeopleConnection[] source, System.Linq.Expressions.Expression<System.Func<PeopleConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PeopleEdge Includes(this PeopleEdge source, System.Linq.Expressions.Expression<System.Func<PeopleEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PeopleEdge[] Includes(this PeopleEdge[] source, System.Linq.Expressions.Expression<System.Func<PeopleEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static Person Includes(this Person source, System.Linq.Expressions.Expression<System.Func<Person, object>> include) => source;
+        [GraphQLIncludes]
+        public static Person[] Includes(this Person[] source, System.Linq.Expressions.Expression<System.Func<Person, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonFilmsConnection Includes(this PersonFilmsConnection source, System.Linq.Expressions.Expression<System.Func<PersonFilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonFilmsConnection[] Includes(this PersonFilmsConnection[] source, System.Linq.Expressions.Expression<System.Func<PersonFilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonFilmsEdge Includes(this PersonFilmsEdge source, System.Linq.Expressions.Expression<System.Func<PersonFilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonFilmsEdge[] Includes(this PersonFilmsEdge[] source, System.Linq.Expressions.Expression<System.Func<PersonFilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonStarshipsConnection Includes(this PersonStarshipsConnection source, System.Linq.Expressions.Expression<System.Func<PersonStarshipsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonStarshipsConnection[] Includes(this PersonStarshipsConnection[] source, System.Linq.Expressions.Expression<System.Func<PersonStarshipsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonStarshipsEdge Includes(this PersonStarshipsEdge source, System.Linq.Expressions.Expression<System.Func<PersonStarshipsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonStarshipsEdge[] Includes(this PersonStarshipsEdge[] source, System.Linq.Expressions.Expression<System.Func<PersonStarshipsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonVehiclesConnection Includes(this PersonVehiclesConnection source, System.Linq.Expressions.Expression<System.Func<PersonVehiclesConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonVehiclesConnection[] Includes(this PersonVehiclesConnection[] source, System.Linq.Expressions.Expression<System.Func<PersonVehiclesConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonVehiclesEdge Includes(this PersonVehiclesEdge source, System.Linq.Expressions.Expression<System.Func<PersonVehiclesEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PersonVehiclesEdge[] Includes(this PersonVehiclesEdge[] source, System.Linq.Expressions.Expression<System.Func<PersonVehiclesEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static Planet Includes(this Planet source, System.Linq.Expressions.Expression<System.Func<Planet, object>> include) => source;
+        [GraphQLIncludes]
+        public static Planet[] Includes(this Planet[] source, System.Linq.Expressions.Expression<System.Func<Planet, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetFilmsConnection Includes(this PlanetFilmsConnection source, System.Linq.Expressions.Expression<System.Func<PlanetFilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetFilmsConnection[] Includes(this PlanetFilmsConnection[] source, System.Linq.Expressions.Expression<System.Func<PlanetFilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetFilmsEdge Includes(this PlanetFilmsEdge source, System.Linq.Expressions.Expression<System.Func<PlanetFilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetFilmsEdge[] Includes(this PlanetFilmsEdge[] source, System.Linq.Expressions.Expression<System.Func<PlanetFilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetResidentsConnection Includes(this PlanetResidentsConnection source, System.Linq.Expressions.Expression<System.Func<PlanetResidentsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetResidentsConnection[] Includes(this PlanetResidentsConnection[] source, System.Linq.Expressions.Expression<System.Func<PlanetResidentsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetResidentsEdge Includes(this PlanetResidentsEdge source, System.Linq.Expressions.Expression<System.Func<PlanetResidentsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetResidentsEdge[] Includes(this PlanetResidentsEdge[] source, System.Linq.Expressions.Expression<System.Func<PlanetResidentsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetsConnection Includes(this PlanetsConnection source, System.Linq.Expressions.Expression<System.Func<PlanetsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetsConnection[] Includes(this PlanetsConnection[] source, System.Linq.Expressions.Expression<System.Func<PlanetsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetsEdge Includes(this PlanetsEdge source, System.Linq.Expressions.Expression<System.Func<PlanetsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static PlanetsEdge[] Includes(this PlanetsEdge[] source, System.Linq.Expressions.Expression<System.Func<PlanetsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static Species Includes(this Species source, System.Linq.Expressions.Expression<System.Func<Species, object>> include) => source;
+        [GraphQLIncludes]
+        public static Species[] Includes(this Species[] source, System.Linq.Expressions.Expression<System.Func<Species, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesConnection Includes(this SpeciesConnection source, System.Linq.Expressions.Expression<System.Func<SpeciesConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesConnection[] Includes(this SpeciesConnection[] source, System.Linq.Expressions.Expression<System.Func<SpeciesConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesEdge Includes(this SpeciesEdge source, System.Linq.Expressions.Expression<System.Func<SpeciesEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesEdge[] Includes(this SpeciesEdge[] source, System.Linq.Expressions.Expression<System.Func<SpeciesEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesFilmsConnection Includes(this SpeciesFilmsConnection source, System.Linq.Expressions.Expression<System.Func<SpeciesFilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesFilmsConnection[] Includes(this SpeciesFilmsConnection[] source, System.Linq.Expressions.Expression<System.Func<SpeciesFilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesFilmsEdge Includes(this SpeciesFilmsEdge source, System.Linq.Expressions.Expression<System.Func<SpeciesFilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesFilmsEdge[] Includes(this SpeciesFilmsEdge[] source, System.Linq.Expressions.Expression<System.Func<SpeciesFilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesPeopleConnection Includes(this SpeciesPeopleConnection source, System.Linq.Expressions.Expression<System.Func<SpeciesPeopleConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesPeopleConnection[] Includes(this SpeciesPeopleConnection[] source, System.Linq.Expressions.Expression<System.Func<SpeciesPeopleConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesPeopleEdge Includes(this SpeciesPeopleEdge source, System.Linq.Expressions.Expression<System.Func<SpeciesPeopleEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static SpeciesPeopleEdge[] Includes(this SpeciesPeopleEdge[] source, System.Linq.Expressions.Expression<System.Func<SpeciesPeopleEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static Starship Includes(this Starship source, System.Linq.Expressions.Expression<System.Func<Starship, object>> include) => source;
+        [GraphQLIncludes]
+        public static Starship[] Includes(this Starship[] source, System.Linq.Expressions.Expression<System.Func<Starship, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipFilmsConnection Includes(this StarshipFilmsConnection source, System.Linq.Expressions.Expression<System.Func<StarshipFilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipFilmsConnection[] Includes(this StarshipFilmsConnection[] source, System.Linq.Expressions.Expression<System.Func<StarshipFilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipFilmsEdge Includes(this StarshipFilmsEdge source, System.Linq.Expressions.Expression<System.Func<StarshipFilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipFilmsEdge[] Includes(this StarshipFilmsEdge[] source, System.Linq.Expressions.Expression<System.Func<StarshipFilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipPilotsConnection Includes(this StarshipPilotsConnection source, System.Linq.Expressions.Expression<System.Func<StarshipPilotsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipPilotsConnection[] Includes(this StarshipPilotsConnection[] source, System.Linq.Expressions.Expression<System.Func<StarshipPilotsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipPilotsEdge Includes(this StarshipPilotsEdge source, System.Linq.Expressions.Expression<System.Func<StarshipPilotsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipPilotsEdge[] Includes(this StarshipPilotsEdge[] source, System.Linq.Expressions.Expression<System.Func<StarshipPilotsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipsConnection Includes(this StarshipsConnection source, System.Linq.Expressions.Expression<System.Func<StarshipsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipsConnection[] Includes(this StarshipsConnection[] source, System.Linq.Expressions.Expression<System.Func<StarshipsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipsEdge Includes(this StarshipsEdge source, System.Linq.Expressions.Expression<System.Func<StarshipsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static StarshipsEdge[] Includes(this StarshipsEdge[] source, System.Linq.Expressions.Expression<System.Func<StarshipsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static Vehicle Includes(this Vehicle source, System.Linq.Expressions.Expression<System.Func<Vehicle, object>> include) => source;
+        [GraphQLIncludes]
+        public static Vehicle[] Includes(this Vehicle[] source, System.Linq.Expressions.Expression<System.Func<Vehicle, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehicleFilmsConnection Includes(this VehicleFilmsConnection source, System.Linq.Expressions.Expression<System.Func<VehicleFilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehicleFilmsConnection[] Includes(this VehicleFilmsConnection[] source, System.Linq.Expressions.Expression<System.Func<VehicleFilmsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehicleFilmsEdge Includes(this VehicleFilmsEdge source, System.Linq.Expressions.Expression<System.Func<VehicleFilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehicleFilmsEdge[] Includes(this VehicleFilmsEdge[] source, System.Linq.Expressions.Expression<System.Func<VehicleFilmsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehiclePilotsConnection Includes(this VehiclePilotsConnection source, System.Linq.Expressions.Expression<System.Func<VehiclePilotsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehiclePilotsConnection[] Includes(this VehiclePilotsConnection[] source, System.Linq.Expressions.Expression<System.Func<VehiclePilotsConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehiclePilotsEdge Includes(this VehiclePilotsEdge source, System.Linq.Expressions.Expression<System.Func<VehiclePilotsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehiclePilotsEdge[] Includes(this VehiclePilotsEdge[] source, System.Linq.Expressions.Expression<System.Func<VehiclePilotsEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehiclesConnection Includes(this VehiclesConnection source, System.Linq.Expressions.Expression<System.Func<VehiclesConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehiclesConnection[] Includes(this VehiclesConnection[] source, System.Linq.Expressions.Expression<System.Func<VehiclesConnection, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehiclesEdge Includes(this VehiclesEdge source, System.Linq.Expressions.Expression<System.Func<VehiclesEdge, object>> include) => source;
+        [GraphQLIncludes]
+        public static VehiclesEdge[] Includes(this VehiclesEdge[] source, System.Linq.Expressions.Expression<System.Func<VehiclesEdge, object>> include) => source;
+    }
+
     public static class JsonSerializerOptionsExtensions
     {
         public static JsonSerializerOptions WithKnownInterfaces(this JsonSerializerOptions options)

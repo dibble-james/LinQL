@@ -55,18 +55,16 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
     /// <typeparam name="TRoot">The root operation type.</typeparam>
     /// <typeparam name="TData">The projected result type.</typeparam>
     /// <param name="request">The expression to execute.</param>
-    /// <param name="includes">Any extra fields required.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The projected result.</returns>
     public async Task<LinQLResult<TData>> SendAsync<TRoot, TData>(
         Expression<Func<TRoot, TData>> request,
-        Action<GraphQLExpression<TRoot, TData>>? includes = null,
         CancellationToken cancellationToken = default)
         where TRoot : RootType<TRoot>
     {
         ObjectDisposedException.ThrowIf(this.disposed, this);
 
-        var translated = request.ToRequest(this.options.LinQL, includes);
+        var translated = request.ToRequest(this.options.LinQL);
         var expression = translated.Expression;
 
         if (expression.RootOperation.Type is RootOperationType.Subscription)
@@ -90,18 +88,16 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
     /// <typeparam name="TRoot">The root operation type.</typeparam>
     /// <typeparam name="TData">The projected result type.</typeparam>
     /// <param name="request">The expression to execute.</param>
-    /// <param name="includes">Any extra fields required.</param>
     /// <param name="cancellationToken">A cancellation token that stops the watch.</param>
     /// <returns>The result stream.</returns>
     public IObservable<LinQLResult<TData>> Watch<TRoot, TData>(
         Expression<Func<TRoot, TData>> request,
-        Action<GraphQLExpression<TRoot, TData>>? includes = null,
         CancellationToken cancellationToken = default)
         where TRoot : RootType<TRoot>
     {
         ObjectDisposedException.ThrowIf(this.disposed, this);
 
-        var translated = request.ToRequest(this.options.LinQL, includes);
+        var translated = request.ToRequest(this.options.LinQL);
         var expression = translated.Expression;
         var operation = LinQLOperationRequest.Create(expression.RootOperation.Type, translated.Query, expression.Variables);
         var executor = this.CreateExecutor(expression, translated.Query);

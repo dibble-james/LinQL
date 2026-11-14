@@ -20,19 +20,17 @@ public static class GraphQLClientExtensions
     /// </summary>
     /// <param name="client">The GraphQL Client.</param>
     /// <param name="request">the GraphQL request for this subscription</param>
-    /// <param name="includes">Any other things to execute against the query expression.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The server response.</returns>
     public static async Task<GraphQLExpressionResponse<TRoot, TData>> SendAsync<TRoot, TData>(
         this IGraphQLClient client,
         Expression<Func<TRoot, TData>> request,
-        Action<GraphQLExpression<TRoot, TData>>? includes = null,
         CancellationToken cancellationToken = default)
         where TRoot : RootType<TRoot>
     {
         var linqlClient = client as LinqlGraphQLClient ?? throw new InvalidOperationException($"Client was not a {nameof(LinqlGraphQLClient)}");
 
-        var requestExpression = request.ToRequest(linqlClient.Options, includes).ToGraphQLClientRequest();
+        var requestExpression = request.ToRequest(linqlClient.Options).ToGraphQLClientRequest();
 
         var response = await (requestExpression.Expression.RootOperation switch
         {
@@ -58,17 +56,15 @@ public static class GraphQLClientExtensions
     /// </summary>
     /// <param name="client">The GraphQL Client.</param>
     /// <param name="request">the GraphQL request for this subscription</param>
-    /// <param name="includes">Any other things to execute against the query expression.</param>
     /// <returns>an observable stream for the specified subscription</returns>
     public static IObservable<GraphQLExpressionResponse<TRoot, TData>> CreateSubscriptionStream<TRoot, TData>(
         this IGraphQLClient client,
-        Expression<Func<TRoot, TData>> request,
-        Action<GraphQLExpression<TRoot, TData>>? includes = null)
+        Expression<Func<TRoot, TData>> request)
         where TRoot : RootType<TRoot>
     {
         var linqlClient = client as LinqlGraphQLClient ?? throw new InvalidOperationException($"Client was not a {nameof(LinqlGraphQLClient)}");
 
-        var requestExpression = request.ToRequest(linqlClient.Options, includes).ToGraphQLClientRequest();
+        var requestExpression = request.ToRequest(linqlClient.Options).ToGraphQLClientRequest();
 
         var subscription = requestExpression.Expression.RootOperation switch
         {

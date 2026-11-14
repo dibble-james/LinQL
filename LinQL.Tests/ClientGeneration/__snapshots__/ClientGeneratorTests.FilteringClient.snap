@@ -144,6 +144,18 @@ namespace Filtering
         public static Product[] In(this Product[] source, int? @in = null) => source;
     }
 
+    public static class IncludesExtensions
+    {
+        [GraphQLIncludes]
+        public static Product Includes(this Product source, System.Linq.Expressions.Expression<System.Func<Product, object>> include) => source;
+        [GraphQLIncludes]
+        public static Product[] Includes(this Product[] source, System.Linq.Expressions.Expression<System.Func<Product, object>> include) => source;
+        [GraphQLIncludes]
+        public static Tag Includes(this Tag source, System.Linq.Expressions.Expression<System.Func<Tag, object>> include) => source;
+        [GraphQLIncludes]
+        public static Tag[] Includes(this Tag[] source, System.Linq.Expressions.Expression<System.Func<Tag, object>> include) => source;
+    }
+
     public static class JsonSerializerOptionsExtensions
     {
         public static JsonSerializerOptions WithKnownInterfaces(this JsonSerializerOptions options)

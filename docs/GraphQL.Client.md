@@ -28,7 +28,6 @@ To execute queries and mutations use:
 Task<GraphQLExpressionResponse<TRoot, TData>> SendAsync<TRoot, TData>(
         this IGraphQLClient client,
         Expression<Func<TRoot, TData>> request,
-        Action<GraphQLExpression<TRoot, TData>>? includes = null,
         CancellationToken cancellationToken = default)
         where TRoot : RootType<TRoot>
 ```
@@ -38,8 +37,7 @@ To start a subscription use:
 ````csharp
 IObservable<GraphQLExpressionResponse<TRoot, TData>> CreateSubscriptionStream<TRoot, TData>(
         this IGraphQLClient client,
-        Expression<Func<TRoot, TData>> request,
-        Action<GraphQLExpression<TRoot, TData>>? includes = null)
+        Expression<Func<TRoot, TData>> request)
         where TRoot : RootType<TRoot>
 ```csharp
 

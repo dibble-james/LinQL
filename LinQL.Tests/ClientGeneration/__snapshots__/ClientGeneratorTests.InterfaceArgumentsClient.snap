@@ -60,6 +60,18 @@ namespace InterfaceArguments
         }
     }
 
+    public static class IncludesExtensions
+    {
+        [GraphQLIncludes]
+        public static SearchResult Includes(this SearchResult source, System.Linq.Expressions.Expression<System.Func<SearchResult, object>> include) => source;
+        [GraphQLIncludes]
+        public static SearchResult[] Includes(this SearchResult[] source, System.Linq.Expressions.Expression<System.Func<SearchResult, object>> include) => source;
+        [GraphQLIncludes]
+        public static Product Includes(this Product source, System.Linq.Expressions.Expression<System.Func<Product, object>> include) => source;
+        [GraphQLIncludes]
+        public static Product[] Includes(this Product[] source, System.Linq.Expressions.Expression<System.Func<Product, object>> include) => source;
+    }
+
     public static class JsonSerializerOptionsExtensions
     {
         public static JsonSerializerOptions WithKnownInterfaces(this JsonSerializerOptions options)

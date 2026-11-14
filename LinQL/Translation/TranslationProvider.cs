@@ -2,7 +2,6 @@ namespace LinQL.Translation;
 
 using System;
 using System.Linq.Expressions;
-using LinQL.Expressions;
 
 /// <summary>
 /// Convert an <see cref="Expression"/> to a <see cref="LinqQLRequest{TRoot, TData}"/>.
@@ -16,16 +15,13 @@ public static class TranslationProvider
     /// <typeparam name="TData">The requested data type.</typeparam>
     /// <param name="query">The expression to be sent to the server.</param>
     /// <param name="options">The client configuration.</param>
-    /// <param name="includes">Any extra fields required.</param>
     /// <returns>The request to execute.</returns>
     public static LinqQLRequest<TRoot, TData> ToRequest<TRoot, TData>(
         this Expression<Func<TRoot, TData>> query,
-        LinQLOptions options,
-        Action<GraphQLExpression<TRoot, TData>>? includes = null)
+        LinQLOptions options)
         where TRoot : RootType<TRoot>
     {
         var expression = ExpressionTranslator.Translate(query, options);
-        includes?.Invoke(expression);
 
         var request = GraphQLExpressionTranslator.Translate(expression);
 

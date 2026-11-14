@@ -122,8 +122,8 @@ using var client = connection.WithLinQL(
 ```
 
 Because the key is the translated document plus variables, a request whose
-translation is textually different (for example because the includes differ)
-does not hit the cached entry even when it targets the same fields.
+translation is textually different (for example because it adds a field with
+`Includes`) does not hit the cached entry even when it targets the same fields.
 
 ## Cache boundary
 

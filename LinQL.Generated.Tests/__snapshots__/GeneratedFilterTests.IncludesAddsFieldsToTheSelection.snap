@@ -1,0 +1,11 @@
+﻿query linql {
+  products {
+    tags {
+      label
+    }
+    name
+  }
+}
+
+--- variables ---
+{}

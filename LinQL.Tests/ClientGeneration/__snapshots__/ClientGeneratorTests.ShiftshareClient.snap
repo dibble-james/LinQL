@@ -254,6 +254,50 @@ namespace Shiftshare.Graph
         }
     }
 
+    public static class IncludesExtensions
+    {
+        [GraphQLIncludes]
+        public static IEvent Includes(this IEvent source, System.Linq.Expressions.Expression<System.Func<IEvent, object>> include) => source;
+        [GraphQLIncludes]
+        public static IEvent[] Includes(this IEvent[] source, System.Linq.Expressions.Expression<System.Func<IEvent, object>> include) => source;
+        [GraphQLIncludes]
+        public static Shift Includes(this Shift source, System.Linq.Expressions.Expression<System.Func<Shift, object>> include) => source;
+        [GraphQLIncludes]
+        public static Shift[] Includes(this Shift[] source, System.Linq.Expressions.Expression<System.Func<Shift, object>> include) => source;
+        [GraphQLIncludes]
+        public static User Includes(this User source, System.Linq.Expressions.Expression<System.Func<User, object>> include) => source;
+        [GraphQLIncludes]
+        public static User[] Includes(this User[] source, System.Linq.Expressions.Expression<System.Func<User, object>> include) => source;
+        [GraphQLIncludes]
+        public static Calendar Includes(this Calendar source, System.Linq.Expressions.Expression<System.Func<Calendar, object>> include) => source;
+        [GraphQLIncludes]
+        public static Calendar[] Includes(this Calendar[] source, System.Linq.Expressions.Expression<System.Func<Calendar, object>> include) => source;
+        [GraphQLIncludes]
+        public static CalendarAccess Includes(this CalendarAccess source, System.Linq.Expressions.Expression<System.Func<CalendarAccess, object>> include) => source;
+        [GraphQLIncludes]
+        public static CalendarAccess[] Includes(this CalendarAccess[] source, System.Linq.Expressions.Expression<System.Func<CalendarAccess, object>> include) => source;
+        [GraphQLIncludes]
+        public static ShiftType Includes(this ShiftType source, System.Linq.Expressions.Expression<System.Func<ShiftType, object>> include) => source;
+        [GraphQLIncludes]
+        public static ShiftType[] Includes(this ShiftType[] source, System.Linq.Expressions.Expression<System.Func<ShiftType, object>> include) => source;
+        [GraphQLIncludes]
+        public static ICalendarEvent Includes(this ICalendarEvent source, System.Linq.Expressions.Expression<System.Func<ICalendarEvent, object>> include) => source;
+        [GraphQLIncludes]
+        public static ICalendarEvent[] Includes(this ICalendarEvent[] source, System.Linq.Expressions.Expression<System.Func<ICalendarEvent, object>> include) => source;
+        [GraphQLIncludes]
+        public static ShiftScheduled Includes(this ShiftScheduled source, System.Linq.Expressions.Expression<System.Func<ShiftScheduled, object>> include) => source;
+        [GraphQLIncludes]
+        public static ShiftScheduled[] Includes(this ShiftScheduled[] source, System.Linq.Expressions.Expression<System.Func<ShiftScheduled, object>> include) => source;
+        [GraphQLIncludes]
+        public static ShiftRescheduled Includes(this ShiftRescheduled source, System.Linq.Expressions.Expression<System.Func<ShiftRescheduled, object>> include) => source;
+        [GraphQLIncludes]
+        public static ShiftRescheduled[] Includes(this ShiftRescheduled[] source, System.Linq.Expressions.Expression<System.Func<ShiftRescheduled, object>> include) => source;
+        [GraphQLIncludes]
+        public static EventCancelled Includes(this EventCancelled source, System.Linq.Expressions.Expression<System.Func<EventCancelled, object>> include) => source;
+        [GraphQLIncludes]
+        public static EventCancelled[] Includes(this EventCancelled[] source, System.Linq.Expressions.Expression<System.Func<EventCancelled, object>> include) => source;
+    }
+
     public static class JsonSerializerOptionsExtensions
     {
         public static JsonSerializerOptions WithKnownInterfaces(this JsonSerializerOptions options)
