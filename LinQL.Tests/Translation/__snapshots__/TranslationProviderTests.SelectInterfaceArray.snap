@@ -1,7 +1,9 @@
 ﻿query linql {
+  __typename
   arrayOfInterfaces {
     __typename
     ...on someOtherSimpleType {
+      __typename
       number
       text
       float

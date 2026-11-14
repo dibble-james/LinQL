@@ -1,7 +1,10 @@
 ﻿query linql($var1: String!) {
+  __typename
   number
   operation {
+    __typename
     getNumber(value: $var1) {
+      __typename
       text
     }
   }

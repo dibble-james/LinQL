@@ -1,8 +1,10 @@
 ﻿query linql($var1: ProductFilterInput) {
+  __typename
   results {
     __typename
     id
     related(where: $var1) {
+      __typename
       name
     }
   }

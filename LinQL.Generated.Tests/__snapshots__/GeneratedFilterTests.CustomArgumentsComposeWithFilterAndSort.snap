@@ -4,7 +4,9 @@
   $var3: ProductFilterInput
   $var4: [ProductSortInput!]
 ) {
+  __typename
   search(criteria: $var1, channel: $var2, where: $var3, order: $var4) {
+    __typename
     name
   }
 }

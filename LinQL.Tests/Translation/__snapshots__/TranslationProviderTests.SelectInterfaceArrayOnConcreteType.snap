@@ -1,10 +1,13 @@
 ﻿query linql {
+  __typename
   arrayOfInterfaces {
     __typename
     ...on simpleScalarType {
+      __typename
       text
     }
     ...on someOtherSimpleType {
+      __typename
       float
     }
   }

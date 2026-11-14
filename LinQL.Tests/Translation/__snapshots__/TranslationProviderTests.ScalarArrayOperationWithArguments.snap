@@ -1,3 +1,4 @@
 ﻿query linql($var1: Int!) {
+  __typename
   filteredNumbers(number: $var1)
 }

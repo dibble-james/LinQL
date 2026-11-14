@@ -1,7 +1,9 @@
 ﻿query linql {
+  __typename
   simpleType {
     __typename
     ...on someOtherSimpleType {
+      __typename
       float
     }
   }

@@ -1,5 +1,7 @@
 ﻿query linql($var1: ProductFilterInput) {
+  __typename
   products(where: $var1) {
+    __typename
     name
     price
   }

@@ -112,7 +112,14 @@ var products = await client.SendAsync((Root q) => q
         .Name(n => n.Contains("widget")))
     .Select(p => new { p.Id, p.Name }));
 
-// query linql($var1: ProductFilterInput) { products(where: $var1) { id name } }
+// query linql($var1: ProductFilterInput) {
+//   __typename
+//   products(where: $var1) {
+//     __typename
+//     id
+//     name
+//   }
+// }
 // $var1 = { "price": { "gt": 10 }, "name": { "contains": "widget" } }
 ```
 
