@@ -29,7 +29,9 @@
   <ItemGroup>
     <PackageReference Include="FastExpressionCompiler" />
     <PackageReference Include="HotChocolate.Language" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="HotChocolate.Language.SyntaxTree" PrivateAssets="all" GeneratePathProperty="true" />
+    <!-- The document model is Hot Chocolate's syntax tree, so this one is a real runtime
+         dependency; the other Hot Chocolate packages stay analyzer-only. -->
+    <PackageReference Include="HotChocolate.Language.SyntaxTree" GeneratePathProperty="true" />
     <PackageReference Include="HotChocolate.Language.Visitors" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="HotChocolate.Language.Utf8" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="HotChocolate.Language.Utf8.SyntaxTree" PrivateAssets="all" GeneratePathProperty="true" />
