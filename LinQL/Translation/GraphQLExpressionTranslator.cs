@@ -49,7 +49,7 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
             directives: [],
             selectionSet: this.root!);
 
-        return DocumentRenderer.Render(operation);
+        return new DocumentNode([operation]).ToString();
     }
 
     protected override Expression VisitExtension(Expression node) => node switch

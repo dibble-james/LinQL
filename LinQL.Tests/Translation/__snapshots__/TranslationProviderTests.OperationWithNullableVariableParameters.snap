@@ -1,10 +1,5 @@
-﻿query linql(
-  $var1: SimpleScalarType
-)
- {
-  getNumber(
-    input: $var1
-  ) {
+﻿query linql($var1: SimpleScalarType) {
+  getNumber(input: $var1) {
     number
   }
 }

@@ -1,15 +1,7 @@
-﻿query linql(
-  $var1: ProductFilterInput,
-  $var2: Int
-)
- {
-  products(
-    where: $var1,
-    in: $var2
-  ) {
+﻿query linql($var1: ProductFilterInput, $var2: Int) {
+  products(where: $var1, in: $var2) {
     name
   }
 }
-
 --- variables ---
 {"var1":null,"var2":1}

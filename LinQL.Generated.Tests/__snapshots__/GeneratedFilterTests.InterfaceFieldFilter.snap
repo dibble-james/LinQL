@@ -1,17 +1,11 @@
-﻿query linql(
-  $var1: ProductFilterInput
-)
- {
+﻿query linql($var1: ProductFilterInput) {
   results {
     __typename
     id
-    related(
-      where: $var1
-    ) {
+    related(where: $var1) {
       name
     }
   }
 }
-
 --- variables ---
 {"var1":{"name":{"eq":"widget"}}}

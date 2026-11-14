@@ -1,14 +1,9 @@
-﻿query linql(
-  $var1: String!
-)
- {
+﻿query linql($var1: String!) {
   arrayOfInterfaces {
     __typename
     ...on someOtherSimpleType {
       operation {
-        getNumber(
-          value: $var1
-        ) {
+        getNumber(value: $var1) {
           number
           text
         }
