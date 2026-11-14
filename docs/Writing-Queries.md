@@ -132,9 +132,14 @@ adds `director` to the `film` selection. On a collection the lambda receives the
 `x.Films.Includes(f => …)` reads `f` as a film. The order of `Includes`, `Filter`, `First`, `Sort` and
 `Select` does not matter: each call attaches to the field its receiver resolves to.
 
+`Includes` also works inside a `Select` or an `On` lambda, where it attaches to the selection that lambda
+is scoped to. `x.Films.Select(f => f.Includes(x => x.Director))` produces the same document as
+`x.Films.Includes(f => f.Director)`, and on an interface field it adds the fields the interface itself
+declares — a field of an implementing type is still written with `OfType<T>()` or `On<T>()`.
+
 The generated types implement `ICanHaveIncludes`, and `Includes` is constrained to it, so a scalar or an
 input object is a compile error rather than a rejected query. A hand-written client type implements the
-interface to opt in.
+interface to opt in, and declares collection fields as arrays: the two overloads cover `T` and `T[]`.
 
 Because the extra field is part of the document, it is part of the operation cache key, so a query with
 and without the include are two cached operations.

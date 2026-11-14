@@ -94,7 +94,9 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(UnionTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        context.Types.Add(new InterfaceTypeClass(node.Name.Value, [], [], context.TypesAs));
+        // A union has no fields of its own: its selection is fragments only, so Includes has nothing to
+        // add and the marker is left off to reject it at compile time.
+        context.Types.Add(new InterfaceTypeClass(node.Name.Value, [], [], context.TypesAs, canHaveIncludes: false));
 
         return base.VisitChildren(node, context);
     }
