@@ -161,6 +161,18 @@ public partial class TranslationProviderTests
     public void ArgumentExtensionAddsTheValue()
         => this.TestFilter(x => x.Products.In(3).Select(p => new { p.Name }));
 
+    [Fact]
+    public void AttachingTheSameArgumentTwiceThrows()
+    {
+        Expression<Func<FilterRootType, object>> expression = x => x.Products.In(3).In(4).Select(p => new { p.Name });
+
+        var act = () => TranslationProvider.ToRequest(expression, new LinQLOptions());
+
+        act.Should()
+            .Throw<InvalidOperationException>()
+            .WithMessage("*'products'*'in'*");
+    }
+
     private void TestFilter(Expression<Func<FilterRootType, object>> expression)
     {
         var request = TranslationProvider.ToRequest(expression, new LinQLOptions());
