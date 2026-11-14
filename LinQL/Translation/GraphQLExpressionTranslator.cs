@@ -49,8 +49,6 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
             directives: [],
             selectionSet: this.root!);
 
-        // Hot Chocolate's own writer renders the document; there is no LinQL renderer to keep in
-        // step with the model any more.
         return new DocumentNode([operation]).ToString();
     }
 
