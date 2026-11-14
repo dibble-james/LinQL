@@ -1,3 +1,4 @@
 ﻿query linql {
+  __typename
   number
 }

@@ -1,6 +1,9 @@
 ﻿query linql {
+  __typename
   products {
+    __typename
     tags {
+      __typename
       label
     }
     name

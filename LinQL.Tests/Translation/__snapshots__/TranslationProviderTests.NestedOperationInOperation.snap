@@ -1,7 +1,11 @@
 ﻿query linql($var1: Int!, $var2: String!) {
+  __typename
   operation(number: $var1) {
+    __typename
     operation {
+      __typename
       getNumber(value: $var2) {
+        __typename
         number
       }
     }

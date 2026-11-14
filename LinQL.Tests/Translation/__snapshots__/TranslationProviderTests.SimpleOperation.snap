@@ -1,6 +1,8 @@
 ﻿query linql {
+  __typename
   float
   getNumber {
+    __typename
     number
   }
 }

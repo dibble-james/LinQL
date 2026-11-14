@@ -1,4 +1,5 @@
 ﻿query linql {
+  __typename
   arrayOfInterfaces {
     __typename
     number

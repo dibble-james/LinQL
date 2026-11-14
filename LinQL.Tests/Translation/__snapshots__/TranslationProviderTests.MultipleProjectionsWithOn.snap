@@ -1,14 +1,19 @@
 ﻿query linql {
+  __typename
   iAmObject {
     __typename
     ...on implementaion1 {
+      __typename
       text
     }
     ...on implementaion2 {
+      __typename
       value
     }
     ...on implementaion3 {
+      __typename
       date {
+        __typename
         year
         month
         day
@@ -18,14 +23,18 @@
       }
     }
     ...on implementaion4 {
+      __typename
       amount
     }
     ...on implementaion5 {
+      __typename
       id {
+        __typename
         variant
         version
       }
       collection {
+        __typename
         text
       }
     }

@@ -35,16 +35,23 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 {
     private SelectionSetNode? root;
     private List<ISelectionNode>? selections;
+    private bool emitRootTypeName;
 
     public string Translate(GraphQLExpression<TRoot, TData> query)
     {
+        var operationType = GetOperationType(query.RootOperation.Type);
+
+        // A subscription may not select __typename at its root (GraphQL spec §4.1 and
+        // §5.2.4.1), so this is the one exception the spec forces on the policy.
+        this.emitRootTypeName = operationType != OperationType.Subscription;
+
         this.Visit(query);
 
         var operation = new OperationDefinitionNode(
             location: null,
             name: new NameNode("linql"),
             description: null,
-            operation: GetOperationType(query.RootOperation.Type),
+            operation: operationType,
             variableDefinitions: [.. query.Variables.Select(ToVariableDefinition)],
             directives: [],
             selectionSet: this.root!);
@@ -85,10 +92,16 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
     private Expression VisitField(TypeFieldExpression field)
     {
         var selections = new List<ISelectionNode>();
+        var isRoot = this.selections is null;
 
-        // __typename is part of the document rather than a rendering rule, so the path that builds
-        // the document puts it where the document needs it and the renderer stays type-free.
-        if (field.Type.RequiresTypeName())
+        // Every non-scalar selection carries __typename, the root included. The policy is
+        // unconditional: a cache entry written by a runtime query has to be identifiable by type,
+        // and a configurable document shape would make cache keys depend on client configuration.
+        var typeName = isRoot
+            ? this.emitRootTypeName
+            : !field.Type.GetItemType().IsScalar(field.Root.Scalars);
+
+        if (typeName)
         {
             selections.Add(new FieldNode("__typename"));
         }

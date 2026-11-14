@@ -1,9 +1,13 @@
 ﻿query linql($var1: String!) {
+  __typename
   arrayOfInterfaces {
     __typename
     ...on someOtherSimpleType {
+      __typename
       operation {
+        __typename
         getNumber(value: $var1) {
+          __typename
           number
           text
         }

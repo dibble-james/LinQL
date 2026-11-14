@@ -40,13 +40,21 @@ If you were to query:
 ```
 would produce:
 ```graphql
-query {
-    exampleType {
-        number
-        text
-    }
+query linql {
+  __typename
+  exampleType {
+    __typename
+    number
+    text
+  }
 }
 ```
+Every document carries `__typename` on each selection of an object, interface or union type and on
+the root selection set itself, so a response says which type each entity is without the projection
+having to ask. The rule is unconditional and not configurable: the document is part of the operation
+cache key, so a switch would file the same query under two different keys. A subscription omits it at
+the root, because GraphQL does not allow `__typename` in a subscription's root selection set.
+
 And if you query:
 If you were to query:
 ```csharp
@@ -54,13 +62,16 @@ If you were to query:
 ```
 would produce:
 ```graphql
-query {
-    exampleType {
-        nested {
-            number
-            text
-        }
+query linql {
+  __typename
+  exampleType {
+    __typename
+    nested {
+      __typename
+      number
+      text
     }
+  }
 }
 ```
 The lambda synax we're using here might look a little odd, we're used to having the compiler
@@ -76,15 +87,18 @@ so you could do
 ```
 which would produce:
 ```graphql
-query {
-    exampleType {
-        number
-        text
-        nested {
-            number
-            text
-        }
+query linql {
+  __typename
+  exampleType {
+    __typename
+    number
+    text
+    nested {
+      __typename
+      number
+      text
     }
+  }
 }
 ```
 
@@ -196,7 +210,9 @@ var products = await client.SendAsync((Root q) => q
 
 ```graphql
 query linql($var1: ProductFilterInput) {
+  __typename
   products(where: $var1) {
+    __typename
     id
     name
     price
@@ -268,7 +284,9 @@ client.SendAsync((Root q) => q
 
 ```graphql
 query linql($var1: Int!, $var2: ProductFilterInput, $var3: [ProductSortInput!]) {
+  __typename
   featured(first: $var1, where: $var2, order: $var3) {
+    __typename
     name
   }
 }

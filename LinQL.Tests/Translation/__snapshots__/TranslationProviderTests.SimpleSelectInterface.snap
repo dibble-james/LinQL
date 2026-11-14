@@ -1,4 +1,5 @@
 ﻿query linql {
+  __typename
   simpleType {
     __typename
     number

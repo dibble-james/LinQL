@@ -111,9 +111,20 @@ var products = await client.SendAsync((Root q) => q
         .Name(n => n.Contains("widget")))
     .Select(p => new { p.Id, p.Name }));
 
-// query linql($var1: ProductFilterInput) { products(where: $var1) { id name } }
+// query linql($var1: ProductFilterInput) {
+//   __typename
+//   products(where: $var1) {
+//     __typename
+//     id
+//     name
+//   }
+// }
 // $var1 = { "price": { "gt": 10 }, "name": { "contains": "widget" } }
 ```
+
+Every document carries `__typename` on each non-scalar selection and at the root, unconditionally —
+the document is part of the operation cache key, so the shape is not configurable. See
+[Writing queries](docs/Writing-Queries.md) for the rule, including the subscription root exception.
 
 The operations are the schema's own (`gt`, `contains`, `some`, `all`, `none`, `and`, `or`, …),
 so anything the endpoint advertises works and anything it doesn't is rejected. Only the operations

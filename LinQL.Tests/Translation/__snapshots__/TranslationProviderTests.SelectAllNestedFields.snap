@@ -1,5 +1,7 @@
 ﻿query linql {
+  __typename
   nested {
+    __typename
     number
     text
   }
