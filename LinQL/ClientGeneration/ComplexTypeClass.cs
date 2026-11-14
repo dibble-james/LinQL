@@ -119,7 +119,7 @@ internal class ComplexTypeClass : IClassFactory
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
     protected virtual Func<FieldDefinitionNode, PropertyDeclarationSyntax> CreateField(SchemaModel model)
-        => f => PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaModel.FieldName(f.Name.Value)))
+        => f => PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaNames.FieldName(f.Name.Value)))
             .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
             .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
             .AddAccessorListAccessors(this.MutatorAccessor);
@@ -127,13 +127,13 @@ internal class ComplexTypeClass : IClassFactory
     protected virtual Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(SchemaModel model)
         => f =>
         [
-            PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaModel.FieldName(f.Name.Value)))
+            PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaNames.FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
                     .AddAccessorListAccessors(this.MutatorAccessor)
                     .WithInitializer(EqualsValueClause(ParseExpression("null!")))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-            MethodDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier("Execute" + SchemaModel.FieldName(f.Name.Value)))
+            MethodDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier("Execute" + SchemaNames.FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAttributeLists(AttributeList(SeparatedList(
                     [
@@ -141,13 +141,13 @@ internal class ComplexTypeClass : IClassFactory
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
                     ])))
                     .AddParameterListParameters(
-                        [.. f.Arguments.Select(p => Parameter(SchemaModel.IdentifierFor(p.Name.Value))
+                        [.. f.Arguments.Select(p => Parameter(SchemaNames.IdentifierFor(p.Name.Value))
                             .WithType(ParseTypeName(model.TypeName(p.Type)))
                             .AddAttributeLists(AttributeList(SeparatedList(
                             [
                                 Attribute(IdentifierName(nameof(GraphQLArgumentAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"GQLType = ""{p.Type.ToString()}""")))))
                             ]))))])
-                    .WithExpressionBody(ArrowExpressionClause(ParseExpression(SchemaModel.FieldName(f.Name.Value))))
+                    .WithExpressionBody(ArrowExpressionClause(ParseExpression(SchemaNames.FieldName(f.Name.Value))))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
         ];
 }

@@ -18,11 +18,11 @@ internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> 
     protected override Func<FieldDefinitionNode, IEnumerable<MemberDeclarationSyntax>> CreateOperation(SchemaModel model)
         => f =>
         [
-            PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaModel.FieldName(f.Name.Value)))
+            PropertyDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier(SchemaNames.FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAccessorListAccessors(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
                     .AddAccessorListAccessors(this.MutatorAccessor),
-            MethodDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier("Execute" + SchemaModel.FieldName(f.Name.Value)))
+            MethodDeclaration(ParseTypeName(model.TypeName(f.Type)), Identifier("Execute" + SchemaNames.FieldName(f.Name.Value)))
                     .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                     .AddAttributeLists(AttributeList(SeparatedList(
                     [
@@ -30,7 +30,7 @@ internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> 
                         Attribute(IdentifierName(nameof(GraphQLFieldAttribute).AttributeName()), AttributeArgumentList(SingletonSeparatedList(AttributeArgument(ParseExpression(@$"Name = ""{f.Name.Value}""")))))
                     ])))
                      .AddParameterListParameters(
-                        [.. f.Arguments.Select(p => Parameter(SchemaModel.IdentifierFor(p.Name.Value))
+                        [.. f.Arguments.Select(p => Parameter(SchemaNames.IdentifierFor(p.Name.Value))
                             .WithType(ParseTypeName(model.TypeName(p.Type)))
                             .AddAttributeLists(AttributeList(SeparatedList(
                             [

@@ -15,18 +15,18 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 internal class FilterInputBuilderClass(string name, IReadOnlyList<FieldDefinitionNode> fields) : IClassFactory
 {
     public MemberDeclarationSyntax Create(SchemaModel model)
-        => ClassDeclaration(Identifier(SchemaModel.FilterBuilderName(name)))
+        => ClassDeclaration(Identifier(SchemaNames.FilterBuilderName(name)))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
             .AddMembers([.. fields.Select(x => CreateField(name, x, model))]);
 
     private static MethodDeclarationSyntax CreateField(string builder, FieldDefinitionNode field, SchemaModel model)
     {
         var nestedType = field.Type.NamedType().Name.Value;
-        var isNested = SchemaModel.IsFilterInputType(nestedType);
+        var isNested = SchemaNames.IsFilterInputType(nestedType);
         var isList = isNested && (field.Type.IsListType() || (field.Type.IsNonNullType() && field.Type.InnerType().IsListType()));
 
         var parameterType = isNested
-            ? $"System.Func<{SchemaModel.FilterBuilderName(nestedType)}, {SchemaModel.FilterBuilderName(nestedType)}>"
+            ? $"System.Func<{SchemaNames.FilterBuilderName(nestedType)}, {SchemaNames.FilterBuilderName(nestedType)}>"
             : model.TypeName(field.Type);
 
         var name = AttributeArgument(ParseExpression($@"Name = ""{field.Name.Value}"""));
@@ -38,11 +38,11 @@ internal class FilterInputBuilderClass(string name, IReadOnlyList<FieldDefinitio
                 IdentifierName(nameof(GraphQLFilterFieldAttribute).AttributeName()),
                 AttributeArgumentList(SingletonSeparatedList(name)));
 
-        return MethodDeclaration(ParseTypeName(SchemaModel.FilterBuilderName(builder)), Identifier(SchemaModel.FieldName(field.Name.Value)))
+        return MethodDeclaration(ParseTypeName(SchemaNames.FilterBuilderName(builder)), Identifier(SchemaNames.FieldName(field.Name.Value)))
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .AddAttributeLists(AttributeList(SingletonSeparatedList(attribute)))
             .AddParameterListParameters(
-                Parameter(SchemaModel.IdentifierFor(field.Name.Value))
+                Parameter(SchemaNames.IdentifierFor(field.Name.Value))
                     .WithType(ParseTypeName(parameterType)))
             .WithExpressionBody(ArrowExpressionClause(ThisExpression()))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));

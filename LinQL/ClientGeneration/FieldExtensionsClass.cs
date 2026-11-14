@@ -58,7 +58,7 @@ internal class FieldExtensionsClass(IEnumerable<FieldExtension> extensions) : IC
             return ["Filter"];
         }
 
-        var name = SchemaModel.FieldName(extension.Argument.Name.Value);
+        var name = SchemaNames.FieldName(extension.Argument.Name.Value);
 
         return name == "Order" ? [name, "Sort"] : [name];
     }
@@ -69,7 +69,7 @@ internal class FieldExtensionsClass(IEnumerable<FieldExtension> extensions) : IC
             : model.TypeName(extension.Argument.Type);
 
     private static string BuilderLambda(string filterType)
-        => $"System.Linq.Expressions.Expression<System.Func<{SchemaModel.FilterBuilderName(filterType)}, {SchemaModel.FilterBuilderName(filterType)}>>";
+        => $"System.Linq.Expressions.Expression<System.Func<{SchemaNames.FilterBuilderName(filterType)}, {SchemaNames.FilterBuilderName(filterType)}>>";
 
     private static MethodDeclarationSyntax CreateMember(FieldExtension extension, string method, string receiver, SchemaModel model)
     {
@@ -92,7 +92,7 @@ internal class FieldExtensionsClass(IEnumerable<FieldExtension> extensions) : IC
                     AttributeArgument(ParseExpression($@"GQLType = ""{argument.Type}""")),
                 ])));
 
-        var parameter = Parameter(extension.IsFilter ? Identifier("filter") : SchemaModel.IdentifierFor(argument.Name.Value))
+        var parameter = Parameter(extension.IsFilter ? Identifier("filter") : SchemaNames.IdentifierFor(argument.Name.Value))
             .WithType(ParseTypeName(parameterType));
 
         // An optional argument defaults to null, the same way a filter operation that was never set does
