@@ -9,10 +9,8 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 internal class ComplexTypeClass : IClassFactory
 {
-    private readonly List<FieldDefinitionNode> fields;
-
-    public ComplexTypeClass(string name, IEnumerable<FieldDefinitionNode> fields, IEnumerable<string> interfaces, LinQLTypesAs typesAs = LinQLTypesAs.Class, bool canHaveIncludes = true)
-        => (this.Name, this.fields, this.Interfaces, this.TypesAs, this.CanHaveIncludes) = (name, fields.ToList(), interfaces, typesAs, canHaveIncludes);
+    public ComplexTypeClass(string name, IEnumerable<string> interfaces, LinQLTypesAs typesAs = LinQLTypesAs.Class, bool canHaveIncludes = true)
+        => (this.Name, this.Interfaces, this.TypesAs, this.CanHaveIncludes) = (name, interfaces, typesAs, canHaveIncludes);
 
     public string Name { get; }
 
@@ -31,9 +29,6 @@ internal class ComplexTypeClass : IClassFactory
     /// Gets the kind of declaration this type is emitted as.
     /// </summary>
     public LinQLTypesAs TypesAs { get; }
-
-    public void WithFields(IReadOnlyList<FieldDefinitionNode> fields)
-        => this.fields.AddRange(fields);
 
     protected virtual TypeDeclarationSyntax Type
     {
@@ -81,10 +76,12 @@ internal class ComplexTypeClass : IClassFactory
 
     public virtual MemberDeclarationSyntax Create(SchemaModel model)
     {
+        var fields = model.FieldsOf(this.Name);
+
         var type = this.Type
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
-            .AddMembers([.. this.Properties.Select(this.CreateField(model))])
-            .AddMembers([.. this.Methods.SelectMany(this.CreateOperation(model))]);
+            .AddMembers([.. fields.Where(x => !x.Arguments.Any()).Select(this.CreateField(model))])
+            .AddMembers([.. fields.Where(x => x.Arguments.Any()).SelectMany(this.CreateOperation(model))]);
 
         var baseTypes = this.Interfaces
             .Concat(this.CanHaveIncludes ? [nameof(ICanHaveIncludes)] : [])
@@ -93,12 +90,6 @@ internal class ComplexTypeClass : IClassFactory
 
         return baseTypes.Length > 0 ? type.AddBaseListTypes(baseTypes) : type;
     }
-
-    private IEnumerable<FieldDefinitionNode> Properties
-        => this.fields.Where(x => !x.Arguments.Any());
-
-    private IEnumerable<FieldDefinitionNode> Methods
-        => this.fields.Where(x => x.Arguments.Any());
 
     /// <summary>
     /// Gets the property's mutating accessor: <c>set</c> for a class and <c>init</c> for a record, so a

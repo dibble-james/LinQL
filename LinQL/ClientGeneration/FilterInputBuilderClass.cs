@@ -1,6 +1,5 @@
 namespace LinQL.ClientGeneration;
 
-using System.Collections.Generic;
 using System.Linq;
 using HotChocolate.Language;
 using LinQL.Description;
@@ -12,12 +11,12 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 /// Generates the fluent builder for a filter input type, so filters can be written as
 /// <c>f => f.Price(p => p.Gt(10))</c> instead of object initialisers.
 /// </summary>
-internal class FilterInputBuilderClass(string name, IReadOnlyList<FieldDefinitionNode> fields) : IClassFactory
+internal class FilterInputBuilderClass(string name) : IClassFactory
 {
     public MemberDeclarationSyntax Create(SchemaModel model)
         => ClassDeclaration(Identifier(SchemaNames.FilterBuilderName(name)))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.PartialKeyword))
-            .AddMembers([.. fields.Select(x => CreateField(name, x, model))]);
+            .AddMembers([.. model.FieldsOf(name).Select(x => CreateField(name, x, model))]);
 
     private static MethodDeclarationSyntax CreateField(string builder, FieldDefinitionNode field, SchemaModel model)
     {

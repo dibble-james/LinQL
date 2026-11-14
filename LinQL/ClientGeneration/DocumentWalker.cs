@@ -65,18 +65,14 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(ObjectTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        context.Model.AddDeclaredType(node.Name.Value, node.Fields);
+        context.Model.AddDeclaredType(node.Name.Value, DeclaredTypeKind.Object, node.Fields);
         CollectFieldExtensions(node.Fields, context);
 
-        var rootNode = context.Model.RootOperations.FirstOrDefault(x => x.Name == node.Name.Value);
-
-        if (rootNode is not null)
+        // A root operation type is emitted as a RootTypeClass instead, but it declares the same
+        // fields, so the model holds them either way.
+        if (!context.Model.RootOperations.Any(x => x.Name == node.Name.Value))
         {
-            rootNode.WithFields(node.Fields);
-        }
-        else
-        {
-            context.Model.AddType(new ComplexTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
+            context.Model.AddType(new ComplexTypeClass(node.Name.Value, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
         }
 
         return base.VisitChildren(node, context);
@@ -84,10 +80,10 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(InterfaceTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        context.Model.AddDeclaredType(node.Name.Value, node.Fields);
+        context.Model.AddDeclaredType(node.Name.Value, DeclaredTypeKind.Interface, node.Fields);
         CollectFieldExtensions(node.Fields, context);
 
-        context.Model.AddType(new InterfaceTypeClass(node.Name.Value, node.Fields, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
+        context.Model.AddType(new InterfaceTypeClass(node.Name.Value, node.Interfaces.Select(x => x.Name.Value), context.TypesAs));
 
         return base.VisitChildren(node, context);
     }
@@ -96,7 +92,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
     {
         // A union has no fields of its own: its selection is fragments only, so Includes has nothing to
         // add and the marker is left off to reject it at compile time.
-        context.Model.AddType(new InterfaceTypeClass(node.Name.Value, [], [], context.TypesAs, canHaveIncludes: false));
+        context.Model.AddType(new InterfaceTypeClass(node.Name.Value, [], context.TypesAs, canHaveIncludes: false));
 
         return base.VisitChildren(node, context);
     }
@@ -110,15 +106,14 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     protected override ISyntaxVisitorAction VisitChildren(InputObjectTypeDefinitionNode node, DocumentWalkerContext context)
     {
-        context.Model.AddInputObjectType(node.Name.Value);
+        List<FieldDefinitionNode> fields = [.. node.Fields.Select(x => new FieldDefinitionNode(x.Location, x.Name, x.Description, [], x.Type, x.Directives))];
 
-        var fields = node.Fields.Select(x => new FieldDefinitionNode(x.Location, x.Name, x.Description, [], x.Type, x.Directives));
-
-        context.Model.AddType(new ComplexTypeClass(node.Name.Value, fields, [], context.TypesAs, canHaveIncludes: false));
+        context.Model.AddDeclaredType(node.Name.Value, DeclaredTypeKind.InputObject, fields);
+        context.Model.AddType(new ComplexTypeClass(node.Name.Value, [], context.TypesAs, canHaveIncludes: false));
 
         if (SchemaNames.IsFilterInputType(node.Name.Value))
         {
-            context.Model.AddType(new FilterInputBuilderClass(node.Name.Value, [.. fields]));
+            context.Model.AddType(new FilterInputBuilderClass(node.Name.Value));
         }
 
         return base.VisitChildren(node, context);
@@ -184,7 +179,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
     {
         var chosen = new Dictionary<string, (string Field, string Argument)>(StringComparer.Ordinal);
 
-        foreach (var type in context.Model.DeclaredTypes)
+        foreach (var type in context.Model.DeclaredTypes.Where(x => x.IsSelectable))
         {
             foreach (var field in type.Fields)
             {
@@ -249,7 +244,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
     private static void ReportMissingFilterInputTypes(DocumentWalkerContext context)
     {
-        foreach (var type in context.Model.DeclaredTypes)
+        foreach (var type in context.Model.DeclaredTypes.Where(x => x.IsSelectable))
         {
             foreach (var field in type.Fields)
             {
