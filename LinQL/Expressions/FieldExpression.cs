@@ -57,8 +57,18 @@ public abstract class FieldExpression : Expression
     /// <param name="type">The graphql type.</param>
     /// <param name="value">The name of the variable that will hold the argument value.</param>
     /// <returns>The updated <see cref="FieldExpression"/>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// The field already has an argument with this name. A document cannot pass one argument twice, and
+    /// the mistake is easy to make without repeating a method, because two extension methods can name the
+    /// same argument.
+    /// </exception>
     public FieldExpression WithArgument(string name, string type, object? value)
     {
+        if (this.arguments.ContainsKey(name))
+        {
+            throw new InvalidOperationException($"The field '{this.FieldName}' already has an argument named '{name}', and an argument can be attached to a field only once.");
+        }
+
         var variable = this.Root.WithVariable(type, value);
 
         this.arguments.Add(name, variable.Name);
