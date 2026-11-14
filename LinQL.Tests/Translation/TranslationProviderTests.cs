@@ -120,7 +120,7 @@ public partial class TranslationProviderTests
         public int Number { get; }
     }
 
-    private class SomeOtherSimpleType : ISimpleType
+    private class SomeOtherSimpleType : ISimpleType, ICanHaveIncludes
     {
         public string? Text { get; }
 

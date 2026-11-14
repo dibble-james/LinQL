@@ -25,6 +25,36 @@ public partial class TranslationProviderTests
         => this.Test<IncludesRootType, IncludesOperationType[]>(x => x.Operations.Includes(o => o.GetNumber("123")));
 
     [Fact]
+    public void IncludesInsideSelectMatchesTheChainedForm()
+    {
+        // The include is the Select's selection, so the two spellings must produce the same document.
+        var chained = TranslationProvider.ToRequest(
+            (Expression<Func<FilterRootType, object>>)(x => x.Products.Includes(p => p.Tags.Select(t => t.Label))),
+            new LinQLOptions());
+
+        var insideSelect = TranslationProvider.ToRequest(
+            (Expression<Func<FilterRootType, object>>)(x => x.Products.Select(p => p.Includes(t => t.Tags.Select(tag => tag.Label)))),
+            new LinQLOptions());
+
+        insideSelect.Query.Should().Be(chained.Query);
+    }
+
+    [Fact]
+    public void IncludesInsideOnLambdaMatchesTheSpreadSelection()
+    {
+        // The receiver is the On lambda's parameter, so the include joins the ... on block it is scoped to.
+        var spread = TranslationProvider.ToRequest(
+            (Expression<Func<InterfaceRootType, object>>)(x => x.SimpleType.On((SomeOtherSimpleType y) => y.Float)),
+            new LinQLOptions());
+
+        var withInclude = TranslationProvider.ToRequest(
+            (Expression<Func<InterfaceRootType, object>>)(x => x.SimpleType.On((SomeOtherSimpleType y) => y.Includes(z => z.Float))),
+            new LinQLOptions());
+
+        withInclude.Query.Should().Be(spread.Query);
+    }
+
+    [Fact]
     public void IncludesComposesWithFilterRegardlessOfOrder()
     {
         // Each call attaches to the field its receiver resolves to, so the document does not depend on

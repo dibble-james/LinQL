@@ -68,6 +68,43 @@ public class ClientGeneratorTests
         """;
 
     [Fact]
+    public void UnionTypesDoNotImplementCanHaveIncludes()
+    {
+        // A union has no fields of its own — its selection is fragments only — so Includes has nothing
+        // to add and the marker is left off, which makes it a compile error on a union receiver.
+        var source = ClientGenerator.Generate(
+            new Microsoft.CodeAnalysis.SourceProductionContext(),
+            "path",
+            UnionSdl,
+            "Unions",
+            []);
+
+        Assert.Contains("public partial interface SearchResult", source, System.StringComparison.Ordinal);
+        Assert.DoesNotContain("SearchResult : ICanHaveIncludes", source, System.StringComparison.Ordinal);
+        Assert.Contains("public partial class Product : ICanHaveIncludes", source, System.StringComparison.Ordinal);
+    }
+
+    private const string UnionSdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          search: [SearchResult!]!
+        }
+
+        union SearchResult = Product | Tag
+
+        type Product {
+          name: String!
+        }
+
+        type Tag {
+          label: String!
+        }
+        """;
+
+    [Fact]
     public void FilteringClient()
         => Snapshot.Match(ClientGenerator.Generate(
             new Microsoft.CodeAnalysis.SourceProductionContext(),

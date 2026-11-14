@@ -121,7 +121,12 @@ public class ExpressionTranslator : ExpressionVisitor
     {
         var field = this.TraverseMember(member.Arguments[0]);
         var translator = new ExpressionTranslator(field);
-        translator.Visit(member.Arguments[1]);
+
+        // The body is visited rather than the quoted lambda. A visit returns the field it added, which is
+        // not the lambda's return type, and ExpressionVisitor rebuilds a lambda from its visited body.
+        var selection = member.Arguments[1].UnwrapLambdaFromQuote()
+            ?? throw new InvalidOperationException($"'{member.Method.Name}' must be given a lambda.");
+        translator.Visit(selection.Body);
 
         return field.ReplaceType(member.Method.ReturnType);
     }
@@ -149,7 +154,11 @@ public class ExpressionTranslator : ExpressionVisitor
     {
         var field = new SpreadExpression(member.Method.GetGenericArguments()[1], this.expression.Root);
         var translator = new ExpressionTranslator(field);
-        translator.Visit(member.Arguments[1]);
+
+        // See TraverseSelect: visiting the quoted lambda would rebuild it with a field as its body.
+        var spread = member.Arguments[1].UnwrapLambdaFromQuote()
+            ?? throw new InvalidOperationException($"'{member.Method.Name}' must be given a lambda.");
+        translator.Visit(spread.Body);
 
         var parent = member.Arguments[0] is MethodCallExpression m && m.IsOn()
             ? this.TraverseChainedOn(m)
@@ -157,14 +166,16 @@ public class ExpressionTranslator : ExpressionVisitor
 
         parent.WithField(field);
 
-        return member;
+        // The spread is returned rather than the call, so anything chained after On attaches to the
+        // ... on block. This matches OfType, which already resolves to its spread.
+        return field;
     }
 
     private TypeFieldExpression TraverseChainedOn(MethodCallExpression member)
     {
         var field = new SpreadExpression(member.Method.GetGenericArguments()[1], this.expression.Root);
         var translator = new ExpressionTranslator(field);
-        translator.Visit(member.Arguments[1]);
+        translator.Visit(member.Arguments[1].UnwrapLambdaFromQuote()?.Body ?? member.Arguments[1]);
 
         var parent = member.Arguments[0] is MethodCallExpression m && m.IsOn()
             ? this.TraverseChainedOn(m)
@@ -195,15 +206,17 @@ public class ExpressionTranslator : ExpressionVisitor
     }
 
     /// <summary>
-    /// Adds the fields the include lambda selects to the field the method is called on.
+    /// Adds the fields the include lambda selects to the selection the method is called on.
     /// </summary>
     /// <remarks>
     /// The lambda is translated with the receiver's field expression as its root, which is what lets an
-    /// include target a nested selection instead of only the document root.
+    /// include target a nested selection instead of only the document root. Inside a <c>Select</c> or an
+    /// <c>On</c> lambda the receiver is that lambda's parameter, and the include joins the selection the
+    /// lambda is scoped to.
     /// </remarks>
     private Expression TraverseIncludes(MethodCallExpression node)
     {
-        var field = this.TraverseField(node);
+        var field = this.TraverseIncludeTarget(node);
 
         var include = node.Arguments[1].UnwrapLambdaFromQuote()
             ?? throw new InvalidOperationException($"'{node.Method.Name}' must be given a lambda.");
@@ -212,6 +225,21 @@ public class ExpressionTranslator : ExpressionVisitor
         translator.Visit(include.Body);
 
         return field;
+    }
+
+    /// <summary>
+    /// Gets the selection an include adds to: the field the method is called on, or, when it is called on
+    /// a lambda's parameter, the selection that lambda is scoped to.
+    /// </summary>
+    private TypeFieldExpression TraverseIncludeTarget(MethodCallExpression include)
+    {
+        if (include.Arguments[0] is ParameterExpression)
+        {
+            return this.expression;
+        }
+
+        return this.Visit(include.Arguments[0]) as TypeFieldExpression
+            ?? throw new InvalidOperationException($"'{include.Method.Name}' must be called on a field or on the parameter of the selection it grows.");
     }
 
     private Expression TraverseArgument(MethodCallExpression node)

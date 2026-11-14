@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
-internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> fields, IEnumerable<string> interfaces, LinQLTypesAs typesAs = LinQLTypesAs.Class) : ComplexTypeClass(name, fields, interfaces, typesAs)
+internal class InterfaceTypeClass(string name, IEnumerable<FieldDefinitionNode> fields, IEnumerable<string> interfaces, LinQLTypesAs typesAs = LinQLTypesAs.Class, bool canHaveIncludes = true) : ComplexTypeClass(name, fields, interfaces, typesAs, canHaveIncludes)
 {
     protected override TypeDeclarationSyntax Type => InterfaceDeclaration(Identifier(this.Name))
             .AddAttributeLists([AttributeList(SeparatedList(
