@@ -12,3 +12,6 @@ LINQLGEN04 | LinQLClientGenerator | Error | DocumentWalker
 LINQLGEN05 | LinQLClientGenerator | Error | DocumentWalker
 LINQLGEN06 | LinQLClientGenerator | Warning | DocumentWalker
 LINQLGEN07 | LinQLClientGenerator | Warning | ClientGenerator
+LINQLGEN12 | LinQLClientGenerator | Error | ClientGenerator
+LINQLGEN13 | LinQLClientGenerator | Error | ClientGenerator
+LINQLGEN14 | LinQLClientGenerator | Error | ClientGenerator
