@@ -1,12 +1,19 @@
 namespace LinQL.StrawberryShake.Tests;
 
+using System.Linq.Expressions;
 using System.Text;
 using FluentAssertions;
 using global::StrawberryShake;
+using LinQL.Description;
 using Xunit;
 
 public class QueryTests
 {
+    private static readonly Expression<Func<TestQuery, int>> Number = q => q.Number;
+
+    private static readonly Expression<Func<TestQuery, TestFilm>> Film = q => q.Film;
+
+    private static readonly Expression<Func<TestQuery, string, TestObject>> Echo = (q, toEcho) => q.ExecuteEchoOperation(toEcho);
     [Fact]
     public async Task SendScalarQuery()
     {
@@ -63,6 +70,73 @@ public class QueryTests
         request.Document.Kind.Should().Be(OperationKind.Query);
         Encoding.UTF8.GetString(request.Document.Body).Should().StartWith("query linql(");
         request.Variables["var1"].Should().Be("1");
+    }
+
+    [Fact]
+    public async Task SendDeclaredQuery()
+    {
+        var connection = new StubConnection("{\"data\":{\"number\":12345}}");
+        var client = connection.WithLinQL();
+
+        var query = LinQLQuery<TestQuery, int>.Bind(
+            "query linql { __typename number }",
+            RootOperationType.Query,
+            Number);
+
+        var result = await client.SendAsync(query, TestContext.Current.CancellationToken);
+
+        result.Errors.Should().BeEmpty();
+        result.Data.Should().Be(12345);
+        result.Query.Should().Be("query linql { __typename number }");
+
+        var request = connection.Requests.Should().ContainSingle().Subject;
+
+        request.Name.Should().Be("linql");
+        request.Document.Kind.Should().Be(OperationKind.Query);
+        Encoding.UTF8.GetString(request.Document.Body).Should().Be("query linql { __typename number }");
+    }
+
+    [Fact]
+    public void ProjectionDropsTheDeclarationsParameters()
+    {
+        // A declaration's parameters are document values, so the projection a response is read through takes the
+        // root alone and the argument the body passes through no longer reaches it.
+        var query = LinQLQuery<TestQuery, TestObject>.Bind(
+            "query linql($var1: String!) { __typename echoOperation(toEcho: $var1) { __typename echo } }",
+            RootOperationType.Query,
+            Echo,
+            ("var1", "hello"));
+
+        var projection = query.Projection;
+
+        projection.Parameters.Should().ContainSingle();
+        projection.Compile()(new TestQuery { EchoOperation = new TestObject("hello", 1) })
+            .Should().Be(new TestObject("hello", 1));
+
+        query.Variables["var1"].Should().Be("hello");
+    }
+
+    [Fact]
+    public async Task SendDeclaredQuerySendsBoundVariables()
+    {
+        var connection = new StubConnection("{\"data\":{\"film\":{\"title\":\"A New Hope\",\"episode\":4}}}");
+        var client = connection.WithLinQL();
+
+        var query = LinQLQuery<TestQuery, TestFilm>.Bind(
+            "query linql($var1: ID!) { __typename film(id: $var1) { __typename title episode } }",
+            RootOperationType.Query,
+            Film,
+            ("var1", "1"));
+
+        var result = await client.SendAsync(query, TestContext.Current.CancellationToken);
+
+        result.Errors.Should().BeEmpty();
+        result.Data.Should().Be(new TestFilm("A New Hope", 4));
+
+        var request = connection.Requests.Should().ContainSingle().Subject;
+
+        request.Variables.Should().NotBeNull();
+        request.Variables!["var1"].Should().Be("1");
     }
 
     [Fact]

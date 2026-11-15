@@ -3,6 +3,6 @@
     public static class DeclarationsValue
     {
         public const string Document = "query linql($var1: ID!) {\n  __typename\n  character(id: $var1) {\n    __typename\n    name\n  }\n}";
-        public static global::LinQL.LinQLDeclaredQueryRequest Value(object? id) => global::LinQL.LinQLDeclaredQueryRequest.Bind(Document, ("var1", id));
+        public static global::LinQL.LinQLQuery<global::Filtering.Query, object?> Value(object? id) => global::LinQL.LinQLQuery<global::Filtering.Query, object?>.Bind(Document, global::LinQL.Description.RootOperationType.Query, global::Queries.Declarations.Value, ("var1", (object? )id));
     }
 }

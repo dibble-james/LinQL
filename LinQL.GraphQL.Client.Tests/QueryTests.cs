@@ -1,6 +1,7 @@
 namespace LinQL.GraphQL.Client.Tests;
 
 using System;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using global::GraphQL.Client.Abstractions;
 using global::GraphQL.Client.Http;
@@ -15,6 +16,8 @@ using Xunit;
 
 public class QueryTests : IDisposable
 {
+    private static readonly Expression<Func<TestQuery, int>> Number = q => q.Number;
+
     private readonly WebApplication server;
     private readonly IGraphQLClient client;
 
@@ -54,6 +57,21 @@ public class QueryTests : IDisposable
         result.Errors.Should().BeNull();
         result.Data.Number.Should().Be(42);
         result.Data.Echo.Should().Be("echo");
+    }
+
+    [Fact]
+    public async Task TestSendDeclaredQuery()
+    {
+        var query = LinQLQuery<TestQuery, int>.Bind(
+            "query linql { __typename number }",
+            RootOperationType.Query,
+            Number);
+
+        var result = await this.client.SendAsync(query, TestContext.Current.CancellationToken);
+
+        result.Errors.Should().BeNull();
+        result.Data.Should().Be(12345);
+        result.Document.Should().Be("query linql { __typename number }");
     }
 
     [Fact]

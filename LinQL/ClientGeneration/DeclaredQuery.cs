@@ -13,6 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// <param name="ContainingType">The name of the type declaring the field, which the emitted name is built from.</param>
 /// <param name="Namespace">The namespace the declaring type lives in, or <see langword="null"/> for the global namespace.</param>
 /// <param name="RootType">The root type of the query's expression, or <see langword="null"/> when the field is not one.</param>
+/// <param name="ResultType">The result type of the query's expression, or <see langword="null"/> when the field is not one.</param>
 /// <param name="Parameters">The lambda parameters after the root, which are the values the query sends.</param>
 /// <param name="IsStatic">Whether the field is static, which a declared query has to be.</param>
 /// <param name="Body">The lambda the field holds, which the translator reads.</param>
@@ -24,6 +25,7 @@ internal sealed record DeclaredQuery(
     string ContainingType,
     string? Namespace,
     string? RootType,
+    string? ResultType,
     IReadOnlyList<DeclaredQueryParameter> Parameters,
     bool IsStatic,
     LambdaExpressionSyntax? Body,
@@ -64,6 +66,7 @@ internal sealed record DeclaredQuery(
             field.ContainingType.Name,
             field.ContainingNamespace.IsGlobalNamespace ? null : field.ContainingNamespace.ToDisplayString(),
             signature?.Root,
+            signature?.Result,
             signature?.Parameters ?? [],
             field.IsStatic,
             body,
@@ -103,6 +106,7 @@ internal sealed record DeclaredQuery(
 
         return new Signature(
             delegateType.TypeArguments[0].Name,
+            delegateType.TypeArguments[delegateType.TypeArguments.Length - 1].ToDisplayString(ValueTypeFormat),
             names.Count == values.Count
                 ? [.. values.Select((x, i) => new DeclaredQueryParameter(names[i], x.ToDisplayString(ValueTypeFormat)))]
                 : []);
@@ -112,8 +116,9 @@ internal sealed record DeclaredQuery(
     /// The shape of a declared query's expression.
     /// </summary>
     /// <param name="Root">The root type's name.</param>
+    /// <param name="Result">The result type, fully qualified.</param>
     /// <param name="Parameters">The parameters the binder takes, in declaration order.</param>
-    private sealed record Signature(string Root, IReadOnlyList<DeclaredQueryParameter> Parameters);
+    private sealed record Signature(string Root, string Result, IReadOnlyList<DeclaredQueryParameter> Parameters);
 }
 
 /// <summary>

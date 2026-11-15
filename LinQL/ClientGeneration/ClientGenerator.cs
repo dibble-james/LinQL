@@ -43,8 +43,6 @@ public class ClientGenerator : IIncrementalGenerator
 
     private const string DeclaredQueryAttributeName = "LinQL.Description.LinQLQueryAttribute";
 
-    private const string RequestType = "global::LinQL.LinQLDeclaredQueryRequest";
-
     /// <summary>
     /// Takes a SDL input and generates a set of corresponding types.
     /// </summary>
@@ -274,10 +272,12 @@ public class ClientGenerator : IIncrementalGenerator
                             .WithInitializer(EqualsValueClause(ParseExpression(SymbolDisplay.FormatLiteral(translation.Document!.ToString(), quote: true))))))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.ConstKeyword));
 
-        var binder = MethodDeclaration(ParseTypeName(RequestType), SchemaNames.IdentifierFor(query.FieldName))
+        var queryType = $"global::LinQL.LinQLQuery<global::{query.ClientNamespace}.{query.RootType}, {query.ResultType}>";
+
+        var binder = MethodDeclaration(ParseTypeName(queryType), SchemaNames.IdentifierFor(query.FieldName))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
             .AddParameterListParameters([.. query.Parameters.Select(x => Parameter(SchemaNames.IdentifierFor(x.Name)).WithType(ParseTypeName(x.Type)))])
-            .WithExpressionBody(ArrowExpressionClause(ParseExpression(BinderCall(translation.Bindings))))
+            .WithExpressionBody(ArrowExpressionClause(ParseExpression(BinderCall(query, queryType, translation))))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
         var members = ClassDeclaration(Identifier(name))
@@ -294,23 +294,40 @@ public class ClientGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// Writes the call that binds a declaration's parameters to the variables its document declares.
+    /// Writes the call that joins a document to its operation, its projection and its values.
     /// </summary>
-    /// <param name="bindings">The variables each of the declaration's parameters fills.</param>
+    /// <param name="query">The declaration.</param>
+    /// <param name="queryType">The type the binder returns.</param>
+    /// <param name="translation">Its operation and the variables its parameters fill.</param>
     /// <returns>The call, with one tuple per variable.</returns>
-    private static string BinderCall(IReadOnlyList<DeclaredQueryBinding> bindings)
+    private static string BinderCall(DeclaredQuery query, string queryType, DeclaredQueryTranslation translation)
     {
-        List<string> arguments = ["Document"];
+        List<string> arguments =
+        [
+            "Document",
+            $"global::LinQL.Description.RootOperationType.{translation.Operation}",
+            Projection(query),
+        ];
 
-        foreach (var binding in bindings)
+        foreach (var binding in translation.Bindings)
         {
             var parameter = SchemaNames.IdentifierFor(binding.Parameter).Text;
 
-            arguments.AddRange(binding.Variables.Select(variable => $"({SymbolDisplay.FormatLiteral(variable, quote: true)}, {parameter})"));
+            arguments.AddRange(binding.Variables.Select(variable => $"({SymbolDisplay.FormatLiteral(variable, quote: true)}, (object?){parameter})"));
         }
 
-        return $"{RequestType}.Bind({string.Join(", ", arguments)})";
+        return $"{queryType}.Bind({string.Join(", ", arguments)})";
     }
+
+    /// <summary>
+    /// Names the declared field a call's projection comes from.
+    /// </summary>
+    /// <param name="query">The declaration.</param>
+    /// <returns>The field, fully qualified so the generated file needs no usings.</returns>
+    private static string Projection(DeclaredQuery query)
+        => query.Namespace is null
+            ? $"global::{query.ContainingType}.{query.FieldName}"
+            : $"global::{query.Namespace}.{query.ContainingType}.{query.FieldName}";
 
     /// <summary>
     /// Builds the schema model an SDL describes, without emitting a client from it.

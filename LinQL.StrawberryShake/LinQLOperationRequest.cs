@@ -26,12 +26,26 @@ internal static class LinQLOperationRequest
         string query,
         IReadOnlyCollection<Variable> variables)
     {
+        return Create(
+            operationType,
+            query,
+            variables.ToDictionary(variable => variable.Name, variable => variable.Value));
+    }
+
+    /// <summary>
+    /// Creates an <see cref="OperationRequest"/> for a declared query's document.
+    /// </summary>
+    /// <param name="operationType">The root operation type.</param>
+    /// <param name="query">The document generated at build time.</param>
+    /// <param name="variables">The values the document's variables are bound to.</param>
+    /// <returns>The operation request.</returns>
+    public static OperationRequest Create(
+        RootOperationType operationType,
+        string query,
+        IReadOnlyDictionary<string, object?> variables)
+    {
         var document = new LinQLDocument(operationType, query);
 
-        var values = variables.Count == 0
-            ? null
-            : variables.ToDictionary(variable => variable.Name, variable => variable.Value);
-
-        return new OperationRequest(OperationName, document, values);
+        return new OperationRequest(OperationName, document, variables.Count == 0 ? null : variables);
     }
 }

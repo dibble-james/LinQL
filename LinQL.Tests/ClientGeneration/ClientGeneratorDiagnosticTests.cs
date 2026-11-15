@@ -234,6 +234,22 @@ public class ClientGeneratorDiagnosticTests
             x => x.FilePath.EndsWith("DeclarationsValue.g.cs", StringComparison.Ordinal));
 
     [Fact]
+    public void EmittedBinderCompiles()
+    {
+        // The declaration is compiled against the client the generator emits itself, so this covers what a
+        // snapshot cannot: that the binder's return type, projection reference and bound values type-check.
+        var result = Run(PlainSdl, source: DeclaredQueryWithoutClientTypes);
+
+        var compilation = CSharpCompilation.Create(
+            "Emitted",
+            [CSharpSyntaxTree.ParseText(DeclaredQueryWithoutClientTypes, cancellationToken: TestContext.Current.CancellationToken), .. result.GeneratedTrees],
+            References,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        Assert.Empty(compilation.GetDiagnostics(TestContext.Current.CancellationToken).Where(x => x.Severity == DiagnosticSeverity.Error));
+    }
+
+    [Fact]
     public void DeclarationThatIsNotAParameterisedExpressionIsReported()
     {
         var diagnostic = Assert.Single(Generate(PlainSdl, source: NotAQuerySource), x => x.Id == "LINQLGEN14");
@@ -261,6 +277,26 @@ public class ClientGeneratorDiagnosticTests
                 [LinQLQuery("Filtering")]
                 public static readonly Expression<Func<Filtering.Query, string, int?, object?>> Value =
                     (x, id, count) => x.ExecuteCharacter(id).Select(c => new { c.Name });
+            }
+        }
+        """;
+
+    /// <summary>
+    /// A declaration written against the client types the generator emits, so the emitted binder can be compiled.
+    /// </summary>
+    private const string DeclaredQueryWithoutClientTypes = """
+        using System;
+        using System.Linq.Expressions;
+        using LinQL;
+        using LinQL.Description;
+
+        namespace Queries
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, string, object?>> Value =
+                    (x, id) => x.ExecuteCharacter(id).SelectAll();
             }
         }
         """;

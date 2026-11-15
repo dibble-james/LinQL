@@ -2,16 +2,19 @@ namespace LinQL.ClientGeneration;
 
 using System.Collections.Generic;
 using HotChocolate.Language;
+using LinQL.Description;
 using Microsoft.CodeAnalysis;
 
 /// <summary>
 /// The outcome of translating a declared query's lambda.
 /// </summary>
 /// <param name="Document">The document, or <see langword="null"/> when the declaration had a problem.</param>
+/// <param name="Operation">The operation the document is, which a request carries.</param>
 /// <param name="Bindings">The variables each of the declaration's parameters fills.</param>
 /// <param name="Problems">What stopped the translation, if anything.</param>
 internal sealed record DeclaredQueryTranslation(
     DocumentNode? Document,
+    RootOperationType Operation,
     IReadOnlyList<DeclaredQueryBinding> Bindings,
     IReadOnlyList<Diagnostic> Problems);
 

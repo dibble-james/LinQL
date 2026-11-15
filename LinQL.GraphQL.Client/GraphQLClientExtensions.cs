@@ -50,6 +50,80 @@ public static class GraphQLClientExtensions
     }
 
     /// <summary>
+    /// Execute a declared query and get the server response.
+    /// </summary>
+    /// <typeparam name="TRoot">The root operation type.</typeparam>
+    /// <typeparam name="TData">The projected result type.</typeparam>
+    /// <param name="client">The GraphQL Client.</param>
+    /// <param name="query">The declared query, with its values already bound.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>The server response.</returns>
+    /// <remarks>
+    /// The document was generated at build time, so nothing is translated here: the bound values go straight into
+    /// the request and the response is projected through the declaration's own expression.
+    /// </remarks>
+    public static async Task<LinQLQueryResponse<TData>> SendAsync<TRoot, TData>(
+        this IGraphQLClient client,
+        LinQLQuery<TRoot, TData> query,
+        CancellationToken cancellationToken = default)
+        where TRoot : RootType<TRoot>
+    {
+        var request = new LinQLQueryRequest(query.Document, query.Variables);
+
+        var response = await (query.OperationType switch
+        {
+            RootOperationType.Query => client.SendQueryAsync<TRoot>(request, cancellationToken),
+            RootOperationType.Mutation => client.SendMutationAsync<TRoot>(request, cancellationToken),
+            _ => throw new NotSupportedException($"Can't Send a {query.OperationType}"),
+        }).ConfigureAwait(false);
+
+        if (response.Data is null)
+        {
+            return new LinQLQueryResponse<TData>(query.Document) { Data = default!, Errors = response.Errors, Extensions = response.Extensions };
+        }
+
+        var selector = query.Projection.CompileFast();
+
+        return new LinQLQueryResponse<TData>(query.Document)
+        {
+            Data = selector(response.Data),
+            Errors = response.Errors,
+            Extensions = response.Extensions,
+        };
+    }
+
+    /// <summary>
+    /// Execute a declared subscription and get a stream of server responses.
+    /// </summary>
+    /// <typeparam name="TRoot">The root operation type.</typeparam>
+    /// <typeparam name="TData">The projected result type.</typeparam>
+    /// <param name="client">The GraphQL Client.</param>
+    /// <param name="query">The declared query, with its values already bound.</param>
+    /// <returns>The stream of responses.</returns>
+    public static IObservable<LinQLQueryResponse<TData>> CreateSubscriptionStream<TRoot, TData>(
+        this IGraphQLClient client,
+        LinQLQuery<TRoot, TData> query)
+        where TRoot : RootType<TRoot>
+    {
+        var request = new LinQLQueryRequest(query.Document, query.Variables);
+
+        var subscription = query.OperationType switch
+        {
+            RootOperationType.Subscription => client.CreateSubscriptionStream<TRoot>(request),
+            _ => throw new NotSupportedException($"Can't Subscribe to a {query.OperationType}"),
+        };
+
+        var selector = query.Projection.CompileFast();
+
+        return subscription.Select(response => new LinQLQueryResponse<TData>(query.Document)
+        {
+            Data = selector(response.Data),
+            Errors = response.Errors,
+            Extensions = response.Extensions,
+        });
+    }
+
+    /// <summary>
     /// Creates a subscription to a GraphQL server. The connection is not established until the first actual subscription is made.<br/>
     /// All subscriptions made to this stream share the same hot observable.<br/>
     /// The stream must be recreated completely after an error has occurred within its logic (i.e. a <see cref="WebSocketException"/>)

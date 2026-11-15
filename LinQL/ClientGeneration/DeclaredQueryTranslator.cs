@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HotChocolate.Language;
+using LinQL.Description;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -31,6 +32,7 @@ internal sealed class DeclaredQueryTranslator
     private readonly List<VariableDefinitionNode> variables = [];
     private readonly Dictionary<string, List<string>> bindings = new(StringComparer.Ordinal);
     private IReadOnlyList<string> values = [];
+    private RootOperationType operation = RootOperationType.Query;
 
     private DeclaredQueryTranslator(SchemaModel model, IReadOnlyList<DeclaredValueAt> values)
         => (this.model, this.declaredValues) = (model, values.ToDictionary(x => x.Start, x => x.Value));
@@ -59,6 +61,7 @@ internal sealed class DeclaredQueryTranslator
         // would ship a query that silently differs from what the declaration says.
         return new(
             translator.problems.Count == 0 ? document : null,
+            translator.operation,
             translator.Bindings(),
             translator.problems);
     }
@@ -81,12 +84,13 @@ internal sealed class DeclaredQueryTranslator
 
         this.values = values;
 
-        var operation = this.OperationOf(rootTypeName);
+        this.operation = this.OperationOf(rootTypeName);
+
         var selections = new List<ISelectionNode>();
 
         // __typename is unconditional on a non-scalar selection, the root included; a subscription root is
         // the one exception the spec forces, because GraphQL forbids it there.
-        if (operation != OperationType.Subscription)
+        if (this.operation != RootOperationType.Subscription)
         {
             selections.Add(new FieldNode("__typename"));
         }
@@ -99,21 +103,29 @@ internal sealed class DeclaredQueryTranslator
                 location: null,
                 name: new NameNode("linql"),
                 description: null,
-                operation: operation,
+                operation: DocumentOperation(this.operation),
                 variableDefinitions: this.variables,
                 directives: [],
                 selectionSet: new SelectionSetNode(selections)),
         ]);
     }
 
-    private OperationType OperationOf(string rootTypeName)
+    private RootOperationType OperationOf(string rootTypeName)
         => this.model.RootOperations.FirstOrDefault(x => x.Name == rootTypeName)?.RootOperation switch
         {
-            HotChocolate.Language.OperationType.Query => OperationType.Query,
-            HotChocolate.Language.OperationType.Mutation => OperationType.Mutation,
-            HotChocolate.Language.OperationType.Subscription => OperationType.Subscription,
-            _ => OperationType.Query,
+            HotChocolate.Language.OperationType.Query => RootOperationType.Query,
+            HotChocolate.Language.OperationType.Mutation => RootOperationType.Mutation,
+            HotChocolate.Language.OperationType.Subscription => RootOperationType.Subscription,
+            _ => RootOperationType.Query,
         };
+
+    private static OperationType DocumentOperation(RootOperationType operation) => operation switch
+    {
+        RootOperationType.Query => OperationType.Query,
+        RootOperationType.Mutation => OperationType.Mutation,
+        RootOperationType.Subscription => OperationType.Subscription,
+        _ => OperationType.Query,
+    };
 
     /// <summary>
     /// Reads the lambda's parameters, which are the query's receiver and then its values.

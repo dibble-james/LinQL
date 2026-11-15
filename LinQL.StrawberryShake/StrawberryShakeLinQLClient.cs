@@ -73,13 +73,75 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
         }
 
         var operation = LinQLOperationRequest.Create(expression.RootOperation.Type, translated.Query, expression.Variables);
-        var executor = this.CreateExecutor(expression, translated.Query);
+        var executor = this.CreateExecutor(expression.OriginalQuery, translated.Query);
 
         var result = await executor
             .ExecuteAsync(operation, cancellationToken)
             .ConfigureAwait(false);
 
         return result.Data ?? throw new InvalidOperationException("The LinQL result builder did not produce a result.");
+    }
+
+    /// <summary>
+    /// Executes a declared query and returns the projected result.
+    /// </summary>
+    /// <typeparam name="TRoot">The root operation type.</typeparam>
+    /// <typeparam name="TData">The projected result type.</typeparam>
+    /// <param name="query">The declared query, with its values already bound.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>The projected result.</returns>
+    /// <remarks>
+    /// The document was generated at build time, so nothing is translated here: the values go straight into the
+    /// request and the projection is the declaration's own expression.
+    /// </remarks>
+    public async Task<LinQLResult<TData>> SendAsync<TRoot, TData>(
+        LinQLQuery<TRoot, TData> query,
+        CancellationToken cancellationToken = default)
+        where TRoot : RootType<TRoot>
+    {
+        ObjectDisposedException.ThrowIf(this.disposed, this);
+
+        if (query.OperationType is RootOperationType.Subscription)
+        {
+            throw new NotSupportedException("Subscriptions must be consumed through Watch.");
+        }
+
+        var operation = LinQLOperationRequest.Create(query.OperationType, query.Document, query.Variables);
+        var executor = this.CreateExecutor(query.Projection, query.Document);
+
+        var result = await executor
+            .ExecuteAsync(operation, cancellationToken)
+            .ConfigureAwait(false);
+
+        return result.Data ?? throw new InvalidOperationException("The LinQL result builder did not produce a result.");
+    }
+
+    /// <summary>
+    /// Watches a declared query, emitting a result for every message the server sends.
+    /// </summary>
+    /// <typeparam name="TRoot">The root operation type.</typeparam>
+    /// <typeparam name="TData">The projected result type.</typeparam>
+    /// <param name="query">The declared query, with its values already bound.</param>
+    /// <param name="cancellationToken">A cancellation token that stops the watch.</param>
+    /// <returns>The result stream.</returns>
+    public IObservable<LinQLResult<TData>> Watch<TRoot, TData>(
+        LinQLQuery<TRoot, TData> query,
+        CancellationToken cancellationToken = default)
+        where TRoot : RootType<TRoot>
+    {
+        ObjectDisposedException.ThrowIf(this.disposed, this);
+
+        var operation = LinQLOperationRequest.Create(query.OperationType, query.Document, query.Variables);
+        var executor = this.CreateExecutor(query.Projection, query.Document);
+
+        var results = executor.Watch(operation);
+        var mapped = new MappedObservable<IOperationResult<LinQLResult<TData>>, LinQLResult<TData>>(
+            results,
+            static result => result.Data ?? throw new InvalidOperationException("The LinQL result builder did not produce a result."));
+
+        return new TrackedObservable<LinQLResult<TData>>(
+            mapped,
+            subscription => this.TrackSourceSubscription(subscription, cancellationToken));
     }
 
     /// <summary>
@@ -100,7 +162,7 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
         var translated = request.ToRequest(this.options.LinQL);
         var expression = translated.Expression;
         var operation = LinQLOperationRequest.Create(expression.RootOperation.Type, translated.Query, expression.Variables);
-        var executor = this.CreateExecutor(expression, translated.Query);
+        var executor = this.CreateExecutor(expression.OriginalQuery, translated.Query);
 
         var results = executor.Watch(operation);
         var mapped = new MappedObservable<IOperationResult<LinQLResult<TData>>, LinQLResult<TData>>(
@@ -172,15 +234,15 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
     }
 
     private OperationExecutor<JsonDocument, LinQLResult<TData>> CreateExecutor<TRoot, TData>(
-        GraphQLExpression<TRoot, TData> expression,
+        Expression<Func<TRoot, TData>> projection,
         string query)
         where TRoot : RootType<TRoot>
     {
-        var projection = expression.OriginalQuery.CompileFast();
+        var compiled = projection.CompileFast();
 
         return new(
             this.connection,
-            () => new LinQLResultBuilder<TRoot, TData>(projection, this.options.Serializer, query),
+            () => new LinQLResultBuilder<TRoot, TData>(compiled, this.options.Serializer, query),
             static () => new JsonResultPatcher(),
             this.operationStore,
             this.options.Strategy);
