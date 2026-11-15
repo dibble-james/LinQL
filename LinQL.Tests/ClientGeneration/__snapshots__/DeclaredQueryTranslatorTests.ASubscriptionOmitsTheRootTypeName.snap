@@ -1,0 +1,6 @@
+﻿subscription linql {
+  renamed {
+    __typename
+    name
+  }
+}

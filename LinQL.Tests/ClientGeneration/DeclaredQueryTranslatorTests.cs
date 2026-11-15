@@ -52,6 +52,35 @@ public class DeclaredQueryTranslatorTests
         """;
 
     /// <summary>
+    /// A schema with all three roots, so the operation a declaration writes can be the mutation or the
+    /// subscription one.
+    /// </summary>
+    private const string MultiRootSdl = """
+        schema {
+          query: Query
+          mutation: Mutation
+          subscription: Subscription
+        }
+
+        type Query {
+          hero: Character
+        }
+
+        type Mutation {
+          rename(name: String!): Character
+        }
+
+        type Subscription {
+          renamed: Character
+        }
+
+        type Character {
+          name: String!
+          friend: Character
+        }
+        """;
+
+    /// <summary>
     /// The framework a value has to resolve against for the compiler to see it.
     /// </summary>
     private static readonly MetadataReference[] References =
@@ -88,6 +117,18 @@ public class DeclaredQueryTranslatorTests
     [Fact]
     public void IncludesOnTheLambdasOwnParameterGrowsThatSelection()
         => Snapshot.Match(Translate("q.Hero.Select(h => h.Includes(x => x.Name))").Document);
+
+    [Fact]
+    public void IncludesOnACollectionAddsFieldsToTheElementsSelection()
+        => Snapshot.Match(Translate("q.Heroes.Includes(c => c.Name)").Document);
+
+    [Fact]
+    public void AMutationWritesItsOperationAndKeepsTheRootTypeName()
+        => Snapshot.Match(Translate("q.ExecuteRename(\"a\").Select(c => new { c.Name })", sdl: MultiRootSdl, rootType: "Mutation").Document);
+
+    [Fact]
+    public void ASubscriptionOmitsTheRootTypeName()
+        => Snapshot.Match(Translate("q.Renamed.Select(c => new { c.Name })", sdl: MultiRootSdl, rootType: "Subscription").Document);
 
     [Fact]
     public void WritesAnInlineFragmentForASpread()
@@ -312,7 +353,12 @@ public class DeclaredQueryTranslatorTests
     /// <param name="values">The declaration's lambda parameters after the root.</param>
     /// <param name="declarations">Members the body may refer to.</param>
     /// <returns>What the translation produced.</returns>
-    private static Translation Translate(string body, string[]? values = null, string declarations = "")
+    private static Translation Translate(
+        string body,
+        string[]? values = null,
+        string declarations = "",
+        string sdl = Sdl,
+        string rootType = "Query")
     {
         var parameters = values is null || values.Length == 0 ? "q" : $"(q, {string.Join(", ", values)})";
 
@@ -336,8 +382,8 @@ public class DeclaredQueryTranslatorTests
 
         var translation = DeclaredQueryTranslator.Translate(
             lambda,
-            ClientGenerator.CreateModel(Sdl, "Filtering", LinQLTypesAs.Class),
-            "Query",
+            ClientGenerator.CreateModel(sdl, "Filtering", LinQLTypesAs.Class),
+            rootType,
             DeclaredValues.ReadAll(lambda, semantics));
 
         return new(translation.Document?.ToString(), translation.Problems);

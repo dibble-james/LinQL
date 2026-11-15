@@ -1,0 +1,7 @@
+﻿mutation linql {
+  __typename
+  rename(name: "a") {
+    __typename
+    name
+  }
+}
