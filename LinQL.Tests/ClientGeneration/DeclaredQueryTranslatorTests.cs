@@ -68,6 +68,42 @@ public class DeclaredQueryTranslatorTests
         => Snapshot.Match(Translate("q.Hero.Select(h => h.Friend.Select(f => new { f.Name }))").Document);
 
     [Fact]
+    public void IncludesAddsFieldsToASelection()
+        => Snapshot.Match(Translate("q.Hero.Includes(h => h.Name)").Document);
+
+    [Fact]
+    public void IncludesGrowsTheSelectionASelectAlreadyMade()
+        => Snapshot.Match(Translate("q.Hero.Select(h => new { h.Name }).Includes(h => h.Friend.Select(f => new { f.Name }))").Document);
+
+    [Fact]
+    public void IncludesOnTheLambdasOwnParameterGrowsThatSelection()
+        => Snapshot.Match(Translate("q.Hero.Select(h => h.Includes(x => x.Name))").Document);
+
+    [Fact]
+    public void AValuePassedToIncludesIsReported()
+    {
+        var translation = Translate("q.Hero.Includes(name)", ["name"]);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN10");
+
+        translation.Problems[0].GetMessage().Should().Contain("'name'");
+    }
+
+    [Fact]
+    public void AnIncludeThatIsNotALambdaIsReported()
+    {
+        var translation = Translate("q.Hero.Includes(q)");
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        translation.Problems[0].GetMessage().Should().Contain("an include has to be an expression selecting fields");
+    }
+
+    [Fact]
     public void SelectingATypeFieldWithoutASelectionIsReported()
     {
         var translation = Translate("q.Hero");

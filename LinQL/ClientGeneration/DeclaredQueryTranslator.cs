@@ -25,6 +25,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// input literals allow. An argument is the only place a parameter may stand: a projection that reads one is
 /// reported as <see cref="DeclaredQueryDiagnostics.ProjectionReadsValue"/>, because the document does not depend
 /// on the values and a projection that did would silently read the default substituted for them.
+/// An <c>Includes</c> call grows the selection it is attached to rather than the document root, which is what the
+/// runtime translator does, so <c>q.Hero.Includes(h => h.Name)</c> writes into <c>hero</c>'s selection set.
 /// </remarks>
 internal sealed class DeclaredQueryTranslator
 {
@@ -179,6 +181,11 @@ internal sealed class DeclaredQueryTranslator
                 this.AddSelectedField(access.Expression, typeName, parameter, values, lambda: null, selections);
                 break;
 
+            case InvocationExpressionSyntax invocation when invocation.Expression is MemberAccessExpressionSyntax access
+                && access.Name.Identifier.ValueText == nameof(IncludesExtensions.Includes):
+                this.AddIncludedSelections(invocation, typeName, parameter, values, selections);
+                break;
+
             case IdentifierNameSyntax identifier when values.Contains(identifier.Identifier.ValueText):
                 this.ReportProjection(identifier, identifier.Identifier.ValueText);
                 break;
@@ -241,6 +248,125 @@ internal sealed class DeclaredQueryTranslator
         }
 
         selections.Add(Field(field, new SelectionSetNode(children)));
+    }
+
+    /// <summary>
+    /// Adds the fields an include lambda selects to the selection it is called on.
+    /// </summary>
+    /// <param name="invocation">The <c>Includes</c> call.</param>
+    /// <param name="typeName">The type the enclosing selection is made on.</param>
+    /// <param name="parameter">The lambda parameter that type is bound to.</param>
+    /// <param name="values">The lambda parameters that become variables.</param>
+    /// <param name="selections">The selection set being built.</param>
+    /// <remarks>
+    /// An include attaches to the selection it is called on, as the runtime translator attaches it: on a field it
+    /// grows that field's selection, and on the enclosing lambda's own parameter it grows the selection that
+    /// lambda is already inside. A chain is read from the outside in, so
+    /// <c>q.Hero.Select(h => new { h.Name }).Includes(h => h.Friend.Select(f => new { f.Name }))</c> writes both
+    /// into <c>hero</c>'s selection set. Anything else the call is made on is reported, because an include with
+    /// no selection to grow would silently drop the fields it names.
+    /// </remarks>
+    private void AddIncludedSelections(
+        InvocationExpressionSyntax invocation,
+        string typeName,
+        string parameter,
+        IReadOnlyList<string> values,
+        List<ISelectionNode> selections)
+    {
+        if (invocation.Expression is not MemberAccessExpressionSyntax access)
+        {
+            return;
+        }
+
+        var (target, inner) = SelectionsOf(access.Expression);
+        List<ExpressionSyntax?> chosen = [.. inner, invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression];
+
+        // An include on the lambda's own parameter grows the selection the lambda is already inside.
+        if (IsOnParameter(target, parameter))
+        {
+            foreach (var selection in chosen)
+            {
+                this.AddIncludedSelection(selection, typeName, values, selections);
+            }
+
+            return;
+        }
+
+        if (this.FieldOf(target, typeName, parameter, values) is not { } field)
+        {
+            return;
+        }
+
+        var childType = field.Definition.Type.NamedType().Name.Value;
+        var children = new List<ISelectionNode> { new FieldNode("__typename") };
+
+        foreach (var selection in chosen)
+        {
+            this.AddIncludedSelection(selection, childType, values, children);
+        }
+
+        selections.Add(Field(field, new SelectionSetNode(children)));
+    }
+
+    /// <summary>
+    /// Adds one included selection to a selection set.
+    /// </summary>
+    /// <param name="selection">The include's argument, or <see langword="null"/> for <c>SelectAll</c>.</param>
+    /// <param name="typeName">The type the selection is made on.</param>
+    /// <param name="values">The lambda parameters that become variables.</param>
+    /// <param name="selections">The selection set being built.</param>
+    private void AddIncludedSelection(ExpressionSyntax? selection, string typeName, IReadOnlyList<string> values, List<ISelectionNode> selections)
+    {
+        if (selection is null)
+        {
+            selections.AddRange(this.ScalarFieldsOf(typeName).Select(x => Field(x, selectionSet: null)));
+
+            return;
+        }
+
+        if (selection is LambdaExpressionSyntax lambda && ParameterName(lambda) is { } parameter && lambda.Body is ExpressionSyntax body)
+        {
+            this.AddSelections(body, typeName, parameter, values, selections);
+
+            return;
+        }
+
+        if (RootIdentifier(selection) is { } name && values.Contains(name))
+        {
+            this.ReportProjection(selection, name);
+
+            return;
+        }
+
+        this.Report(selection, "an include has to be an expression selecting fields of the type it is attached to");
+    }
+
+    /// <summary>
+    /// Reads the selections a field expression already carries, so an include can grow them.
+    /// </summary>
+    /// <param name="expression">The expression the include is called on.</param>
+    /// <returns>
+    /// The field expression the selections belong to, and each selection's argument in source order, with
+    /// <see langword="null"/> for <c>SelectAll</c>.
+    /// </returns>
+    private static (ExpressionSyntax Target, IReadOnlyList<ExpressionSyntax?> Selections) SelectionsOf(ExpressionSyntax expression)
+    {
+        List<ExpressionSyntax?> selections = [];
+
+        while (expression is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } invocation
+            && access.Name.Identifier.ValueText is var name
+            && (name == nameof(IncludesExtensions.Includes) || name == nameof(Enumerable.Select) || name == nameof(SelectExtentions.SelectAll)))
+        {
+            selections.Add(name == nameof(SelectExtentions.SelectAll)
+                ? null
+                : invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression);
+
+            expression = access.Expression;
+        }
+
+        selections.Reverse();
+
+        return (expression, selections);
     }
 
     /// <summary>
