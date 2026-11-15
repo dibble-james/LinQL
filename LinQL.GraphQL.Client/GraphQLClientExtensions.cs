@@ -6,7 +6,6 @@ using System.Reactive.Linq;
 using FastExpressionCompiler;
 using LinQL;
 using LinQL.Description;
-using LinQL.Expressions;
 using LinQL.GraphQL.Client;
 using LinQL.Translation;
 
@@ -74,6 +73,7 @@ public static class GraphQLClientExtensions
         {
             RootOperationType.Query => client.SendQueryAsync<TRoot>(request, cancellationToken),
             RootOperationType.Mutation => client.SendMutationAsync<TRoot>(request, cancellationToken),
+            RootOperationType.Subscription => throw new NotSupportedException($"Can't Send a {query.OperationType}"),
             _ => throw new NotSupportedException($"Can't Send a {query.OperationType}"),
         }).ConfigureAwait(false);
 
@@ -110,6 +110,8 @@ public static class GraphQLClientExtensions
         var subscription = query.OperationType switch
         {
             RootOperationType.Subscription => client.CreateSubscriptionStream<TRoot>(request),
+            RootOperationType.Query => throw new NotSupportedException($"Can't Subscribe to a {query.OperationType}"),
+            RootOperationType.Mutation => throw new NotSupportedException($"Can't Subscribe to a {query.OperationType}"),
             _ => throw new NotSupportedException($"Can't Subscribe to a {query.OperationType}"),
         };
 

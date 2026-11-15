@@ -122,9 +122,9 @@ internal sealed class DeclaredQueryTranslator
     private RootOperationType OperationOf(string rootTypeName)
         => this.model.RootOperations.FirstOrDefault(x => x.Name == rootTypeName)?.RootOperation switch
         {
-            HotChocolate.Language.OperationType.Query => RootOperationType.Query,
-            HotChocolate.Language.OperationType.Mutation => RootOperationType.Mutation,
-            HotChocolate.Language.OperationType.Subscription => RootOperationType.Subscription,
+            OperationType.Query => RootOperationType.Query,
+            OperationType.Mutation => RootOperationType.Mutation,
+            OperationType.Subscription => RootOperationType.Subscription,
             _ => RootOperationType.Query,
         };
 
@@ -593,7 +593,6 @@ internal sealed class DeclaredQueryTranslator
             return;
         }
 
-        var childType = field.Definition.Type.NamedType().Name.Value;
         var children = new List<ISelectionNode> { new FieldNode("__typename") };
 
         foreach (var spread in spreads)

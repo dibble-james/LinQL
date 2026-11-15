@@ -113,7 +113,7 @@ public sealed class LinQLResult<TData> : IOperationResult, IEquatable<LinQLResul
             hash.Add(error.Message);
             hash.Add(error.Code);
 
-            foreach (var segment in error.Path ?? Array.Empty<object>())
+            foreach (var segment in error.Path ?? [])
             {
                 hash.Add(segment);
             }
@@ -125,5 +125,5 @@ public sealed class LinQLResult<TData> : IOperationResult, IEquatable<LinQLResul
     private static bool ErrorEquals(IClientError first, IClientError second)
         => string.Equals(first.Message, second.Message, StringComparison.Ordinal)
             && string.Equals(first.Code, second.Code, StringComparison.Ordinal)
-            && (first.Path ?? Array.Empty<object>()).SequenceEqual(second.Path ?? Array.Empty<object>());
+            && (first.Path ?? []).SequenceEqual(second.Path ?? []);
 }

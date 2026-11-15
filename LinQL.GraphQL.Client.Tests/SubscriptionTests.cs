@@ -16,7 +16,7 @@ public class SubscriptionTests : IDisposable
 {
     private const string HostUrl = "http://localhost:5000";
 
-    private static readonly Expression<Func<TestSubscription, TestSubscription.NumberResult>> Numbers = (TestSubscription x) => x.GetNumbers();
+    private static readonly Expression<Func<TestSubscription, TestSubscription.NumberResult>> Numbers = x => x.GetNumbers();
 
     private readonly WebApplication server;
 

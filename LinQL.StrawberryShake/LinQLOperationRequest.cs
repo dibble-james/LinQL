@@ -1,8 +1,8 @@
 namespace LinQL.StrawberryShake;
 
+using global::StrawberryShake;
 using LinQL.Description;
 using LinQL.Expressions;
-using global::StrawberryShake;
 
 /// <summary>
 /// Builds Strawberry Shake <see cref="OperationRequest"/>s from translated LinQL queries.
@@ -24,13 +24,10 @@ internal static class LinQLOperationRequest
     public static OperationRequest Create(
         RootOperationType operationType,
         string query,
-        IReadOnlyCollection<Variable> variables)
-    {
-        return Create(
+        IReadOnlyCollection<Variable> variables) => Create(
             operationType,
             query,
             variables.ToDictionary(variable => variable.Name, variable => variable.Value));
-    }
 
     /// <summary>
     /// Creates an <see cref="OperationRequest"/> for a declared query's document.

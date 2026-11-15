@@ -10,11 +10,11 @@ public class InterfaceJsonDeserializerTests
     {
         this.options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         this.options.Converters.Add(
-            new InterfaceJsonDeserializer<InterfaceType>(new[]
-            {
+            new InterfaceJsonDeserializer<InterfaceType>(
+            [
                 typeof(ConcreteClass1),
                 typeof(ConcreteClass2),
-            }));
+            ]));
     }
 
     [Fact]

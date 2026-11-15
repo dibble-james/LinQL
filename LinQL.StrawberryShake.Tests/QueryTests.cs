@@ -19,7 +19,7 @@ public class QueryTests
     [Fact]
     public async Task SendScalarQuery()
     {
-        var connection = new StubConnection("{\"data\":{\"number\":12345}}");
+        var connection = new StubConnection("""{"data":{"number":12345}}""");
         var client = connection.WithLinQL();
 
         var result = await client.SendAsync((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken);
@@ -37,7 +37,7 @@ public class QueryTests
     [Fact]
     public async Task SendObjectQuery()
     {
-        var connection = new StubConnection("{\"data\":{\"film\":{\"title\":\"A New Hope\",\"episode\":4}}}");
+        var connection = new StubConnection("""{"data":{"film":{"title":"A New Hope","episode":4}}}""");
         var client = connection.WithLinQL();
 
         var result = await client.SendAsync((TestQuery q) => q.GetFilm("1"), cancellationToken: TestContext.Current.CancellationToken);
@@ -49,7 +49,7 @@ public class QueryTests
     [Fact]
     public async Task SendMutation()
     {
-        var connection = new StubConnection("{\"data\":{\"setNumber\":{\"number\":54321}}}");
+        var connection = new StubConnection("""{"data":{"setNumber":{"number":54321}}}""");
         var client = connection.WithLinQL();
 
         var result = await client.SendAsync((TestMutation m) => m.SetNumberOperation(54321), cancellationToken: TestContext.Current.CancellationToken);
@@ -61,7 +61,7 @@ public class QueryTests
     [Fact]
     public async Task SendsVariablesAndNamedOperation()
     {
-        var connection = new StubConnection("{\"data\":{\"film\":{\"title\":\"A New Hope\",\"episode\":4}}}");
+        var connection = new StubConnection("""{"data":{"film":{"title":"A New Hope","episode":4}}}""");
         var client = connection.WithLinQL();
 
         await client.SendAsync((TestQuery q) => q.GetFilm("1"), cancellationToken: TestContext.Current.CancellationToken);
@@ -77,7 +77,7 @@ public class QueryTests
     [Fact]
     public async Task SendDeclaredQuery()
     {
-        var connection = new StubConnection("{\"data\":{\"number\":12345}}");
+        var connection = new StubConnection("""{"data":{"number":12345}}""");
         var client = connection.WithLinQL();
 
         var query = LinQLQuery<TestQuery, int>.Bind(
@@ -121,7 +121,7 @@ public class QueryTests
     [Fact]
     public async Task SendDeclaredQuerySendsBoundVariables()
     {
-        var connection = new StubConnection("{\"data\":{\"film\":{\"title\":\"A New Hope\",\"episode\":4}}}");
+        var connection = new StubConnection("""{"data":{"film":{"title":"A New Hope","episode":4}}}""");
         var client = connection.WithLinQL();
 
         var query = LinQLQuery<TestQuery, TestFilm>.Bind(
@@ -138,14 +138,14 @@ public class QueryTests
         var request = connection.Requests.Should().ContainSingle().Subject;
 
         request.Variables.Should().NotBeNull();
-        request.Variables!["var1"].Should().Be("1");
+        request.Variables["var1"].Should().Be("1");
     }
 
     [Fact]
     public async Task MapsErrors()
     {
         var connection = new StubConnection(
-            "{\"data\":null,\"errors\":[{\"message\":\"boom\",\"code\":\"E1\",\"path\":[\"film\"],\"locations\":[{\"line\":2,\"column\":3}]}]}");
+            """{"data":null,"errors":[{"message":"boom","code":"E1","path":["film"],"locations":[{"line":2,"column":3}]}]}""");
         var client = connection.WithLinQL();
 
         var result = await client.SendAsync((TestQuery q) => q.GetFilm("1"), cancellationToken: TestContext.Current.CancellationToken);
@@ -161,7 +161,7 @@ public class QueryTests
     [Fact]
     public async Task MapsExtensions()
     {
-        var connection = new StubConnection("{\"data\":{\"number\":1},\"extensions\":{\"traceId\":\"abc\"}}");
+        var connection = new StubConnection("""{"data":{"number":1},"extensions":{"traceId":"abc"}}""");
         var client = connection.WithLinQL();
 
         var result = await client.SendAsync((TestQuery q) => q.GetNumber(), cancellationToken: TestContext.Current.CancellationToken);
@@ -185,7 +185,7 @@ public class QueryTests
     [Fact]
     public async Task RejectsSubscriptionsOnSendAsync()
     {
-        var connection = new StubConnection("{\"data\":{\"counter\":1}}");
+        var connection = new StubConnection("""{"data":{"counter":1}}""");
         var client = connection.WithLinQL();
 
         var send = () => client.SendAsync((TestSubscription s) => s.GetCounter());
@@ -197,8 +197,8 @@ public class QueryTests
     public async Task WatchEmitsEveryResponse()
     {
         var connection = new StubConnection(
-            "{\"data\":{\"counter\":1}}",
-            "{\"data\":{\"counter\":2}}");
+            """{"data":{"counter":1}}""",
+            """{"data":{"counter":2}}""");
         var client = connection.WithLinQL();
 
         var values = new List<int>();
@@ -217,8 +217,8 @@ public class QueryTests
     public async Task WatchEmitsEveryResponseForADeclaredQuery()
     {
         var connection = new StubConnection(
-            "{\"data\":{\"counter\":1}}",
-            "{\"data\":{\"counter\":2}}");
+            """{"data":{"counter":1}}""",
+            """{"data":{"counter":2}}""");
         var client = connection.WithLinQL();
 
         var values = new List<int>();
@@ -241,7 +241,7 @@ public class QueryTests
     [Fact]
     public async Task RejectsDeclaredSubscriptionsOnSendAsync()
     {
-        var connection = new StubConnection("{\"data\":{\"counter\":1}}");
+        var connection = new StubConnection("""{"data":{"counter":1}}""");
         var client = connection.WithLinQL();
 
         var send = () => client.SendAsync(DeclaredCounter());

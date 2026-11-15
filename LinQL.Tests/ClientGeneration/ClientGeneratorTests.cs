@@ -79,9 +79,9 @@ public class ClientGeneratorTests
             "Unions",
             []);
 
-        Assert.Contains("public partial interface SearchResult", source, System.StringComparison.Ordinal);
-        Assert.DoesNotContain("SearchResult : ICanHaveIncludes", source, System.StringComparison.Ordinal);
-        Assert.Contains("public partial class Product : ICanHaveIncludes", source, System.StringComparison.Ordinal);
+        Assert.Contains("public partial interface SearchResult", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("SearchResult : ICanHaveIncludes", source, StringComparison.Ordinal);
+        Assert.Contains("public partial class Product : ICanHaveIncludes", source, StringComparison.Ordinal);
     }
 
     private const string UnionSdl = """

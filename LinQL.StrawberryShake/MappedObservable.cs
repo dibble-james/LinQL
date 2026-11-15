@@ -5,21 +5,15 @@ namespace LinQL.StrawberryShake;
 /// </summary>
 /// <typeparam name="TSource">The source value type.</typeparam>
 /// <typeparam name="TResult">The mapped value type.</typeparam>
-internal sealed class MappedObservable<TSource, TResult> : IObservable<TResult>
+/// <remarks>
+/// Initializes a new instance of the <see cref="MappedObservable{TSource, TResult}"/> class.
+/// </remarks>
+/// <param name="source">The sequence to map.</param>
+/// <param name="selector">The mapping.</param>
+internal sealed class MappedObservable<TSource, TResult>(IObservable<TSource> source, Func<TSource, TResult> selector) : IObservable<TResult>
 {
-    private readonly IObservable<TSource> source;
-    private readonly Func<TSource, TResult> selector;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MappedObservable{TSource, TResult}"/> class.
-    /// </summary>
-    /// <param name="source">The sequence to map.</param>
-    /// <param name="selector">The mapping.</param>
-    public MappedObservable(IObservable<TSource> source, Func<TSource, TResult> selector)
-    {
-        this.source = source;
-        this.selector = selector;
-    }
+    private readonly IObservable<TSource> source = source;
+    private readonly Func<TSource, TResult> selector = selector;
 
     /// <inheritdoc />
     public IDisposable Subscribe(IObserver<TResult> observer)

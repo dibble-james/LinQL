@@ -32,7 +32,7 @@ internal class FilterInputBuilderClass(string name) : IClassFactory
         var attribute = isList
             ? Attribute(
                 IdentifierName(nameof(GraphQLFilterFieldAttribute).AttributeName()),
-                AttributeArgumentList(SeparatedList<AttributeArgumentSyntax>([name, AttributeArgument(ParseExpression("IsList = true"))])))
+                AttributeArgumentList(SeparatedList([name, AttributeArgument(ParseExpression("IsList = true"))])))
             : Attribute(
                 IdentifierName(nameof(GraphQLFilterFieldAttribute).AttributeName()),
                 AttributeArgumentList(SingletonSeparatedList(name)));

@@ -7,7 +7,6 @@ using System.Text.Json;
 using LinQL;
 using LinQL.Generated.Tests.Filtering;
 using LinQL.Translation;
-using Client = LinQL.Generated.Tests.Filtering;
 
 /// <summary>
 /// Translates expressions built from the generated client, so the builder methods and field extensions
@@ -17,7 +16,7 @@ public class GeneratedFilterTests
 {
     private static readonly string[] WidgetNames = ["widget", "gadget"];
 
-    private static readonly Client.ProductSortInput[] PriceDescending = [new() { Price = Client.SortEnumType.DESC }];
+    private static readonly ProductSortInput[] PriceDescending = [new() { Price = SortEnumType.DESC }];
 
     [Fact]
     public void ScalarOperation()
@@ -115,8 +114,8 @@ public class GeneratedFilterTests
     public void CustomArgumentsComposeWithFilterAndSort()
         => Translate(q => q
             .Search
-            .Criteria(new Client.SearchCriteriaInput { Term = "widget" })
-            .Channel(Client.Channel.WEB)
+            .Criteria(new SearchCriteriaInput { Term = "widget" })
+            .Channel(Channel.WEB)
             .Filter(f => f.Price(p => p.Gt(10)))
             .Order(PriceDescending)
             .Select(p => new { p.Name }));
@@ -150,7 +149,7 @@ public class GeneratedFilterTests
             .Includes(p => p.Tags)
             .Select(p => new { p.Name }));
 
-    private static void Translate(Expression<Func<Client.Query, object>> expression)
+    private static void Translate(Expression<Func<Query, object>> expression)
     {
         var request = TranslationProvider.ToRequest(expression, new LinQLOptions());
 
