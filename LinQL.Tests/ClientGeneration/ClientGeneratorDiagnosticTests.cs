@@ -218,6 +218,10 @@ public class ClientGeneratorDiagnosticTests
         => Snapshot.Match(DeclaredQueryTree("x.ExecuteCharacter(id).Select(c => new { c.Name })", "id"));
 
     [Fact]
+    public void DeclaredQueryLiteralBecomesAValue()
+        => Snapshot.Match(DeclaredQueryTree("""x.ExecuteCharacter("1").SelectAll()"""));
+
+    [Fact]
     public void DeclaredQueryBinderTakesTheDeclarationsParameters()
         => Snapshot.Match(Assert.Single(
             Run(PlainSdl, source: TypedParameterSource).GeneratedTrees,

@@ -35,12 +35,12 @@ internal static class DeclaredQueryDiagnostics
         isEnabledByDefault: true);
 
     /// <summary>
-    /// An argument's value is not one of the declaration's parameters, so it cannot become a variable.
+    /// An argument's value is one the declaration cannot write into its document.
     /// </summary>
     public static readonly DiagnosticDescriptor UnsupportedValue = new(
         id: "LINQLGEN11",
-        title: "Declared query uses a value that cannot become a variable",
-        messageFormat: "'{0}' cannot become a variable. A declared query's argument values have to be its lambda parameters after the root, one for each value the query sends.",
+        title: "Declared query uses a value that cannot be written into its document",
+        messageFormat: "'{0}' cannot become a value: {1}",
         category: "LinQLClientGenerator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);

@@ -16,6 +16,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// <param name="Parameters">The lambda parameters after the root, which are the values the query sends.</param>
 /// <param name="IsStatic">Whether the field is static, which a declared query has to be.</param>
 /// <param name="Body">The lambda the field holds, which the translator reads.</param>
+/// <param name="Values">The values its arguments write, read while the semantic model is available.</param>
 /// <param name="Location">The declaration.</param>
 internal sealed record DeclaredQuery(
     string ClientNamespace,
@@ -26,6 +27,7 @@ internal sealed record DeclaredQuery(
     IReadOnlyList<DeclaredQueryParameter> Parameters,
     bool IsStatic,
     LambdaExpressionSyntax? Body,
+    IReadOnlyList<DeclaredValueAt> Values,
     Location Location)
 {
     /// <summary>
@@ -65,6 +67,7 @@ internal sealed record DeclaredQuery(
             signature?.Parameters ?? [],
             field.IsStatic,
             body,
+            body is null ? [] : DeclaredValues.ReadAll(body, attribute.SemanticModel),
             field.Locations.FirstOrDefault() ?? Location.None);
     }
 

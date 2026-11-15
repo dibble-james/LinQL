@@ -20,13 +20,36 @@ public class DeclaredQueryTranslatorTests
           heroes: [Character!]!
           character(id: ID!): Character
           characters(ids: [ID!]!): [Character!]!
+          search(where: SearchInput): [Character!]!
+          episodes(only: Episode): [Character!]!
         }
 
         type Character {
           name: String!
           friend: Character
         }
+
+        input SearchInput {
+          name: String
+          minAge: Int
+          friends: [SearchInput!]
+        }
+
+        enum Episode {
+          NEW_HOPE
+          EMPIRE
+        }
         """;
+
+    /// <summary>
+    /// The framework a value has to resolve against for the compiler to see it.
+    /// </summary>
+    private static readonly MetadataReference[] References =
+    [
+        .. (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? string.Empty)
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => MetadataReference.CreateFromFile(x)),
+    ];
 
     [Fact]
     public void SelectsTheScalarFieldsOfAField()
@@ -47,65 +70,109 @@ public class DeclaredQueryTranslatorTests
     [Fact]
     public void SelectingATypeFieldWithoutASelectionIsReported()
     {
-        var (document, problems) = Translate("q.Hero");
+        var translation = Translate("q.Hero");
 
-        document.Should().BeNull();
-        problems.Should().ContainSingle()
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN08");
 
-        problems[0].GetMessage().Should().Contain("'hero'").And.Contain("'Character'");
+        translation.Problems[0].GetMessage().Should().Contain("'hero'").And.Contain("'Character'");
     }
 
     [Fact]
     public void PassesAnArgumentAsAVariableTypedByTheSchema()
-        => Snapshot.Match(Translate("q.ExecuteCharacter(id: id).Select(c => new { c.Name })", "id").Document);
+        => Snapshot.Match(Translate("q.ExecuteCharacter(id: id).Select(c => new { c.Name })", ["id"]).Document);
 
     [Fact]
     public void PassesAListArgumentAsAVariableOfTheDeclaredType()
-        => Snapshot.Match(Translate("q.ExecuteCharacters(ids).SelectAll()", "ids").Document);
+        => Snapshot.Match(Translate("q.ExecuteCharacters(ids).SelectAll()", ["ids"]).Document);
 
     [Fact]
     public void AParameterUsedTwiceBecomesOneVariablePerArgument()
-        => Snapshot.Match(Translate("new { q.ExecuteCharacter(id).Select(c => new { c.Name }), q.ExecuteCharacter(id).SelectAll() }", "id").Document);
+        => Snapshot.Match(Translate("new { q.ExecuteCharacter(id).Select(c => new { c.Name }), q.ExecuteCharacter(id).SelectAll() }", ["id"]).Document);
 
     [Fact]
-    public void AnArgumentValueThatIsNotAParameterIsReported()
-    {
-        var (document, problems) = Translate("""q.ExecuteCharacter("1").Select(c => new { c.Name })""");
+    public void WritesALiteralValue()
+        => Snapshot.Match(Translate("""q.ExecuteCharacter("1").SelectAll()""").Document);
 
-        document.Should().BeNull();
-        problems.Should().ContainSingle()
+    [Fact]
+    public void WritesAConstantValue()
+        => Snapshot.Match(Translate("q.ExecuteCharacter(Id).SelectAll()", declarations: """public const string Id = "1";""").Document);
+
+    [Fact]
+    public void WritesAnEnumMemberValue()
+        => Snapshot.Match(Translate("q.ExecuteEpisodes(Episode.EMPIRE).SelectAll()", declarations: "public enum Episode { NEW_HOPE, EMPIRE }").Document);
+
+    [Fact]
+    public void WritesAListInitialiser()
+        => Snapshot.Match(Translate("""q.ExecuteCharacters(new[] { "1", "2" }).SelectAll()""").Document);
+
+    [Fact]
+    public void WritesAnObjectInitialiser()
+        => Snapshot.Match(Translate("""q.ExecuteSearch(new SearchInput { Name = "hero", Friends = new[] { new SearchInput { Name = "other" } } }).SelectAll()""").Document);
+
+    [Fact]
+    public void WritesAParameterInsideAnInitialiserAsAVariable()
+        => Snapshot.Match(Translate("q.ExecuteSearch(new SearchInput { Name = name }).SelectAll()", ["name"]).Document);
+
+    [Fact]
+    public void AValueTheCompilerCannotSeeIsReported()
+    {
+        var translation = Translate("q.ExecuteCharacter(id.ToUpper()).SelectAll()", ["id"]);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN11");
 
-        problems[0].GetMessage().Should().Contain("cannot become a variable");
+        translation.Problems[0].GetMessage().Should().Contain("cannot become a value");
     }
 
     [Fact]
     public void AnArgumentTheSchemaDoesNotDeclareIsReported()
     {
-        var (document, problems) = Translate("q.ExecuteCharacter(missing: id).SelectAll()", "id");
+        var translation = Translate("q.ExecuteCharacter(missing: id).SelectAll()", ["id"]);
 
-        document.Should().BeNull();
-        problems.Should().ContainSingle()
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        problems[0].GetMessage().Should().Contain("'missing'");
+        translation.Problems[0].GetMessage().Should().Contain("'missing'");
     }
 
-    private static Translation Translate(string body, params string[] values)
+    /// <summary>
+    /// Translates a body written in a class, so a const or an enum can be declared beside it.
+    /// </summary>
+    /// <param name="body">The lambda's body.</param>
+    /// <param name="values">The declaration's lambda parameters after the root.</param>
+    /// <param name="declarations">Members the body may refer to.</param>
+    /// <returns>What the translation produced.</returns>
+    private static Translation Translate(string body, string[]? values = null, string declarations = "")
     {
-        var parameters = values.Length == 0 ? "q" : $"(q, {string.Join(", ", values)})";
+        var parameters = values is null || values.Length == 0 ? "q" : $"(q, {string.Join(", ", values)})";
 
-        var lambda = CSharpSyntaxTree.ParseText($"System.Func<object, object> query = {parameters} => {body};")
-            .GetRoot()
-            .DescendantNodes()
-            .OfType<LambdaExpressionSyntax>()
-            .First();
+        var source = $$"""
+            namespace Values
+            {
+                public static class Holder
+                {
+                    {{declarations}}
+
+                    public static readonly System.Func<object, object> Query = {{parameters}} => {{body}};
+                }
+            }
+            """;
+
+        var tree = CSharpSyntaxTree.ParseText(source);
+
+        var lambda = tree.GetRoot().DescendantNodes().OfType<LambdaExpressionSyntax>().First();
+
+        var semantics = CSharpCompilation.Create("values", [tree], References).GetSemanticModel(tree);
 
         var translation = DeclaredQueryTranslator.Translate(
             lambda,
             ClientGenerator.CreateModel(Sdl, "Filtering", LinQLTypesAs.Class),
-            "Query");
+            "Query",
+            DeclaredValues.ReadAll(lambda, semantics));
 
         return new(translation.Document?.ToString(), translation.Problems);
     }

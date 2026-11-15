@@ -237,7 +237,7 @@ public class ClientGenerator : IIncrementalGenerator
                 models[query.ClientNamespace] = model;
             }
 
-            var translation = DeclaredQueryTranslator.Translate(query.Body, model, rootType);
+            var translation = DeclaredQueryTranslator.Translate(query.Body, model, rootType, query.Values);
 
             foreach (var problem in translation.Problems)
             {

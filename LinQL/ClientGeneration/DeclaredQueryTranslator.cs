@@ -17,20 +17,23 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// a construct the translator does not handle is reported as <see cref="DeclaredQueryDiagnostics.UnsupportedConstruct"/>
 /// rather than dropped from the document, because a document that looks precomputed and is not is the one
 /// outcome the compile-time path cannot ship.
-/// A field's arguments become variables: each value is one of the declaration's lambda parameters after the
-/// root, so it has nowhere to live in the document but a variable, and the variable's type is read from the
-/// SDL argument rather than from the parameter. Names stay <c>var1…varN</c> in traversal order, which is the
-/// same numbering the runtime translator gives them.
+/// A field's argument is either one of the declaration's parameters, which becomes a variable named
+/// <c>var1…varN</c> in traversal order and typed from the SDL argument, or a value the compiler saw —
+/// a constant, an enum member, an object or collection initialiser — which is written into the document. A
+/// parameter standing inside such a value is still a variable, so values and variables mix the way GraphQL
+/// input literals allow.
 /// </remarks>
 internal sealed class DeclaredQueryTranslator
 {
     private readonly SchemaModel model;
+    private readonly IReadOnlyDictionary<int, DeclaredValue> declaredValues;
     private readonly List<Diagnostic> problems = [];
     private readonly List<VariableDefinitionNode> variables = [];
     private readonly Dictionary<string, List<string>> bindings = new(StringComparer.Ordinal);
     private IReadOnlyList<string> values = [];
 
-    private DeclaredQueryTranslator(SchemaModel model) => this.model = model;
+    private DeclaredQueryTranslator(SchemaModel model, IReadOnlyList<DeclaredValueAt> values)
+        => (this.model, this.declaredValues) = (model, values.ToDictionary(x => x.Start, x => x.Value));
 
     /// <summary>
     /// Translates the body of a declared query.
@@ -38,13 +41,18 @@ internal sealed class DeclaredQueryTranslator
     /// <param name="lambda">The declaration's lambda.</param>
     /// <param name="model">The schema the declaration is bound to.</param>
     /// <param name="rootTypeName">The name of the schema's root type.</param>
+    /// <param name="values">The values the declaration writes, as the compiler saw them.</param>
     /// <returns>
     /// The document and the variables each parameter fills, or a null document when the lambda could not be
     /// translated at all.
     /// </returns>
-    public static DeclaredQueryTranslation Translate(LambdaExpressionSyntax? lambda, SchemaModel model, string rootTypeName)
+    public static DeclaredQueryTranslation Translate(
+        LambdaExpressionSyntax? lambda,
+        SchemaModel model,
+        string rootTypeName,
+        IReadOnlyList<DeclaredValueAt> values)
     {
-        var translator = new DeclaredQueryTranslator(model);
+        var translator = new DeclaredQueryTranslator(model, values);
         var document = translator.TranslateQuery(lambda, rootTypeName);
 
         // A declaration with a reported problem has no document: emitting the part that could be translated
@@ -299,12 +307,12 @@ internal sealed class DeclaredQueryTranslator
     }
 
     /// <summary>
-    /// Attaches a field's arguments as variables, typed from the SDL.
+    /// Attaches a field's arguments, each one a variable or a value the compiler saw.
     /// </summary>
     /// <param name="field">The field being called.</param>
     /// <param name="arguments">The arguments the call passes.</param>
     /// <param name="values">The lambda parameters that become variables.</param>
-    /// <returns>The field with its variables, or <see langword="null"/> when an argument cannot be one.</returns>
+    /// <returns>The field with its arguments, or <see langword="null"/> when one cannot be written.</returns>
     private ResolvedField? FieldWithArguments(FieldDefinitionNode field, ArgumentListSyntax arguments, IReadOnlyList<string> values)
     {
         var attached = new List<ArgumentNode>();
@@ -324,36 +332,171 @@ internal sealed class DeclaredQueryTranslator
                 return null;
             }
 
-            // Every value becomes a variable, so a value the document cannot name a variable for is
-            // reported rather than written into the document as if it had been precomputed.
-            if (argument.Expression is not IdentifierNameSyntax identifier || !values.Contains(identifier.Identifier.ValueText))
+            if (this.ValueOf(argument.Expression, declared.Type, values) is not { } value)
             {
-                this.problems.Add(Diagnostic.Create(
-                    DeclaredQueryDiagnostics.UnsupportedValue,
-                    argument.Expression.GetLocation(),
-                    argument.Expression.ToString()));
-
                 return null;
             }
 
-            var name = "var" + (this.variables.Count + 1);
-
-            this.variables.Add(
-                new VariableDefinitionNode(
-                    location: null,
-                    variable: new VariableNode(name),
-                    description: null,
-                    type: declared.Type,
-                    defaultValue: null,
-                    directives: []));
-
-            this.Bind(identifier.Identifier.ValueText, name);
-
-            attached.Add(new ArgumentNode(declared.Name.Value, new VariableNode(name)));
+            attached.Add(new ArgumentNode(declared.Name.Value, value));
         }
 
         return new ResolvedField(field, attached);
     }
+
+    /// <summary>
+    /// Reads an argument's value.
+    /// </summary>
+    /// <param name="expression">The expression the call passes.</param>
+    /// <param name="expected">The type the schema declares the argument as.</param>
+    /// <param name="values">The lambda parameters that become variables.</param>
+    /// <returns>The value, or <see langword="null"/> when it cannot be written.</returns>
+    private IValueNode? ValueOf(ExpressionSyntax expression, ITypeNode expected, IReadOnlyList<string> values)
+    {
+        if (expression is IdentifierNameSyntax identifier && values.Contains(identifier.Identifier.ValueText))
+        {
+            return this.Variable(identifier.Identifier.ValueText, expected);
+        }
+
+        if (!this.declaredValues.TryGetValue(expression.SpanStart, out var value))
+        {
+            this.ReportValue(
+                expression,
+                "only a parameter, a constant the compiler can see, or an object or collection initialiser of those can be written into a document");
+
+            return null;
+        }
+
+        return this.Structure(value, expected, expression);
+    }
+
+    /// <summary>
+    /// Writes a value the compiler saw into the document.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="expected">The type the schema declares the position as.</param>
+    /// <param name="location">Where the value was written, for a diagnostic.</param>
+    /// <returns>The document node, or <see langword="null"/> when the value cannot be written.</returns>
+    private IValueNode? Structure(DeclaredValue value, ITypeNode expected, SyntaxNode location) => value switch
+    {
+        DeclaredConstant constant => ConstantNode(constant.Constant)
+            ?? this.Unsupported(location, $"'{constant.Constant}' has no form in a document"),
+        DeclaredEnumMember member => new EnumValueNode(member.Member),
+        DeclaredParameter parameter when this.values.Contains(parameter.Name) => this.Variable(parameter.Name, expected),
+        DeclaredParameter parameter => this.Unsupported(location, $"'{parameter.Name}' is not one of the declaration's values"),
+        DeclaredObject declared => this.InputObject(declared, expected, location),
+        DeclaredList declared => this.ListValue(declared, expected, location),
+        _ => this.Unsupported(location, "the value cannot be written into a document"),
+    };
+
+    /// <summary>
+    /// Writes an object initialiser as an input object, naming each field the way the schema does.
+    /// </summary>
+    private IValueNode? InputObject(DeclaredObject value, ITypeNode expected, SyntaxNode location)
+    {
+        var typeName = expected.NamedType().Name.Value;
+
+        if (!this.model.DeclaredTypesByName.TryGetValue(typeName, out var input) || input.Kind != DeclaredTypeKind.InputObject)
+        {
+            return this.Unsupported(location, $"'{typeName}' is not an input object the schema declares");
+        }
+
+        var fields = new List<ObjectFieldNode>();
+
+        foreach (var field in value.Fields)
+        {
+            var declared = input.Fields.FirstOrDefault(x => SchemaNames.FieldName(x.Name.Value) == field.Name);
+
+            if (declared is null)
+            {
+                return this.Unsupported(location, $"'{typeName}' declares no field named '{field.Name}'");
+            }
+
+            if (this.Structure(field.Value, declared.Type, location) is not { } node)
+            {
+                return null;
+            }
+
+            fields.Add(new ObjectFieldNode(declared.Name.Value, node));
+        }
+
+        return new ObjectValueNode(fields);
+    }
+
+    /// <summary>
+    /// Writes a collection initialiser as a list, typing each item as the list's element.
+    /// </summary>
+    private IValueNode? ListValue(DeclaredList value, ITypeNode expected, SyntaxNode location)
+    {
+        if (!expected.IsListType() && !(expected.IsNonNullType() && expected.InnerType().IsListType()))
+        {
+            return this.Unsupported(location, $"'{expected}' is not a list");
+        }
+
+        var element = expected is ListTypeNode list ? list.Type : expected.InnerType() is ListTypeNode inner ? inner.Type : expected;
+
+        var items = new List<IValueNode>();
+
+        foreach (var item in value.Items)
+        {
+            if (this.Structure(item, element, location) is not { } node)
+            {
+                return null;
+            }
+
+            items.Add(node);
+        }
+
+        return new ListValueNode(items);
+    }
+
+    /// <summary>
+    /// Declares a variable for a parameter at the position it stands in, typed from that position.
+    /// </summary>
+    /// <param name="parameter">The parameter's name.</param>
+    /// <param name="type">The type the schema declares the position as.</param>
+    /// <returns>The reference to the variable.</returns>
+    private VariableNode Variable(string parameter, ITypeNode type)
+    {
+        var name = "var" + (this.variables.Count + 1);
+
+        this.variables.Add(
+            new VariableDefinitionNode(
+                location: null,
+                variable: new VariableNode(name),
+                description: null,
+                type: type,
+                defaultValue: null,
+                directives: []));
+
+        this.Bind(parameter, name);
+
+        return new VariableNode(name);
+    }
+
+    /// <summary>
+    /// Writes a constant as the document value of its shape.
+    /// </summary>
+    /// <param name="constant">The constant.</param>
+    /// <returns>The node, or <see langword="null"/> when the constant has no document form.</returns>
+    private static IValueNode? ConstantNode(object? constant) => constant switch
+    {
+        null => new NullValueNode(location: null),
+        string text => new StringValueNode(text),
+        bool flag => new BooleanValueNode(flag),
+        char character => new StringValueNode(character.ToString()),
+        byte number => new IntValueNode(number),
+        sbyte number => new IntValueNode(number),
+        short number => new IntValueNode(number),
+        ushort number => new IntValueNode(number),
+        int number => new IntValueNode(number),
+        uint number => new IntValueNode(number),
+        long number => new IntValueNode(number),
+        ulong number => new IntValueNode(number),
+        float number => new FloatValueNode(number),
+        double number => new FloatValueNode(number),
+        decimal number => new FloatValueNode(number),
+        _ => null,
+    };
 
     /// <summary>
     /// Resolves the SDL argument a call's argument fills.
@@ -410,10 +553,24 @@ internal sealed class DeclaredQueryTranslator
             node.ToString(),
             reason));
 
+    private void ReportValue(SyntaxNode node, string reason)
+        => this.problems.Add(Diagnostic.Create(
+            DeclaredQueryDiagnostics.UnsupportedValue,
+            node.GetLocation(),
+            node.ToString(),
+            reason));
+
+    private IValueNode? Unsupported(SyntaxNode node, string reason)
+    {
+        this.ReportValue(node, reason);
+
+        return null;
+    }
+
     /// <summary>
-    /// A field the declaration selects, with the arguments it attaches as variables.
+    /// A field the declaration selects, with the arguments it attaches.
     /// </summary>
     /// <param name="Definition">The field the schema declares.</param>
-    /// <param name="Arguments">The arguments the field is selected with, each one a variable.</param>
+    /// <param name="Arguments">The arguments the field is selected with, each a variable or a written value.</param>
     private sealed record ResolvedField(FieldDefinitionNode Definition, IReadOnlyList<ArgumentNode> Arguments);
 }

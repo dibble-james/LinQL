@@ -1,0 +1,8 @@
+﻿namespace Queries
+{
+    public static class DeclarationsValue
+    {
+        public const string Document = "query linql {\n  __typename\n  character(id: \"1\") {\n    __typename\n    name\n  }\n}";
+        public static global::LinQL.LinQLDeclaredQueryRequest Value() => global::LinQL.LinQLDeclaredQueryRequest.Bind(Document);
+    }
+}
