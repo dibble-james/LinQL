@@ -1,6 +1,7 @@
 namespace LinQL.GraphQL.Client.Tests;
 
 using System;
+using System.Linq.Expressions;
 using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -14,6 +15,9 @@ using Microsoft.Extensions.DependencyInjection;
 public class SubscriptionTests : IDisposable
 {
     private const string HostUrl = "http://localhost:5000";
+
+    private static readonly Expression<Func<TestSubscription, TestSubscription.NumberResult>> Numbers = (TestSubscription x) => x.GetNumbers();
+
     private readonly WebApplication server;
 
     public SubscriptionTests()
@@ -50,6 +54,46 @@ public class SubscriptionTests : IDisposable
 
         await foreach (var number in numbers.TakeUntil(Observable.Timer(TimeSpan.FromSeconds(5))).ToAsyncEnumerable())
         {
+            number.Data.Number.Should().Be(lastNumber + 1, "Numbers should arrive in sync");
+            lastNumber = number.Data.Number;
+
+            if (number.Data.Number > 5)
+            {
+                ranToCompletion = true;
+                break;
+            }
+        }
+
+        ranToCompletion.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task TestDeclaredSubscriptions()
+    {
+        var client =
+            new GraphQLHttpClient(
+                opt =>
+                {
+                    opt.EndPoint = new UriBuilder(HostUrl) { Path = "graphql" }.Uri;
+                    opt.WebSocketEndPoint = new UriBuilder(HostUrl) { Scheme = "ws", Path = "graphql" }.Uri;
+                },
+                new SystemTextJsonSerializer())
+            .WithLinQL(new LinQLOptions());
+
+        var query = LinQLQuery<TestSubscription, TestSubscription.NumberResult>.Bind(
+            "subscription linql { numbers { __typename number } }",
+            RootOperationType.Subscription,
+            Numbers);
+
+        var ranToCompletion = false;
+
+        var numbers = client.CreateSubscriptionStream(query);
+
+        var lastNumber = -1;
+
+        await foreach (var number in numbers.TakeUntil(Observable.Timer(TimeSpan.FromSeconds(5))).ToAsyncEnumerable())
+        {
+            number.Document.Should().Be("subscription linql { numbers { __typename number } }");
             number.Data.Number.Should().Be(lastNumber + 1, "Numbers should arrive in sync");
             lastNumber = number.Data.Number;
 

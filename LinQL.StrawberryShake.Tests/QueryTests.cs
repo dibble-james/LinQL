@@ -14,6 +14,8 @@ public class QueryTests
     private static readonly Expression<Func<TestQuery, TestFilm>> Film = q => q.Film;
 
     private static readonly Expression<Func<TestQuery, string, TestObject>> Echo = (q, toEcho) => q.ExecuteEchoOperation(toEcho);
+
+    private static readonly Expression<Func<TestSubscription, int>> Counter = s => s.GetCounter();
     [Fact]
     public async Task SendScalarQuery()
     {
@@ -210,6 +212,47 @@ public class QueryTests
         values.Should().Equal(1, 2);
         connection.Requests.Should().ContainSingle().Which.Document.Kind.Should().Be(OperationKind.Subscription);
     }
+
+    [Fact]
+    public async Task WatchEmitsEveryResponseForADeclaredQuery()
+    {
+        var connection = new StubConnection(
+            "{\"data\":{\"counter\":1}}",
+            "{\"data\":{\"counter\":2}}");
+        var client = connection.WithLinQL();
+
+        var values = new List<int>();
+        var completed = new TaskCompletionSource();
+        using var subscription = client
+            .Watch(DeclaredCounter(), TestContext.Current.CancellationToken)
+            .Subscribe(new CollectingObserver(values, completed));
+
+        await completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        values.Should().Equal(1, 2);
+
+        var request = connection.Requests.Should().ContainSingle().Subject;
+
+        request.Name.Should().Be("linql");
+        request.Document.Kind.Should().Be(OperationKind.Subscription);
+        Encoding.UTF8.GetString(request.Document.Body).Should().Be("subscription linql { counter }");
+    }
+
+    [Fact]
+    public async Task RejectsDeclaredSubscriptionsOnSendAsync()
+    {
+        var connection = new StubConnection("{\"data\":{\"counter\":1}}");
+        var client = connection.WithLinQL();
+
+        var send = () => client.SendAsync(DeclaredCounter());
+
+        await send.Should().ThrowAsync<NotSupportedException>();
+    }
+
+    private static LinQLQuery<TestSubscription, int> DeclaredCounter() => LinQLQuery<TestSubscription, int>.Bind(
+        "subscription linql { counter }",
+        RootOperationType.Subscription,
+        Counter);
 
     private sealed class CollectingObserver(ICollection<int> values, TaskCompletionSource completed) : IObserver<LinQLResult<int>>
     {
