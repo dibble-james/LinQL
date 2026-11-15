@@ -152,6 +152,18 @@ public class DeclaredQueryTranslatorTests
     }
 
     [Fact]
+    public void AValuePassedAsTheProjectionIsReported()
+    {
+        var translation = Translate("q.Hero.Select(name)", ["name"]);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN10");
+
+        translation.Problems[0].GetMessage().Should().Contain("'name'");
+    }
+
+    [Fact]
     public void AnArgumentTheSchemaDoesNotDeclareIsReported()
     {
         var translation = Translate("q.ExecuteCharacter(missing: id).SelectAll()", ["id"]);

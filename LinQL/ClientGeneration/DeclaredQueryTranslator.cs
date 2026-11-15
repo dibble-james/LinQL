@@ -197,6 +197,11 @@ internal sealed class DeclaredQueryTranslator
     /// <param name="parameter">The lambda parameter that type is bound to.</param>
     /// <param name="values">The lambda parameters that become variables.</param>
     /// <param name="lambda">The projection, or <see langword="null"/> for <c>SelectAll</c>.</param>
+    /// <remarks>
+    /// A projection that is one of the declaration's values is reported as
+    /// <see cref="DeclaredQueryDiagnostics.ProjectionReadsValue"/> rather than as a malformed projection, because
+    /// the value is what is wrong with it: the document does not depend on the values, so the projection cannot.
+    /// </remarks>
     /// <param name="selections">The selection set being built.</param>
     private void AddSelectedField(
         ExpressionSyntax receiver,
@@ -221,6 +226,12 @@ internal sealed class DeclaredQueryTranslator
         else if (lambda is LambdaExpressionSyntax projection && ParameterName(projection) is { } childParameter && projection.Body is ExpressionSyntax body)
         {
             this.AddSelections(body, childType, childParameter, values, children);
+        }
+        else if (RootIdentifier(lambda) is { } value && values.Contains(value))
+        {
+            this.ReportProjection(lambda, value);
+
+            return;
         }
         else
         {
