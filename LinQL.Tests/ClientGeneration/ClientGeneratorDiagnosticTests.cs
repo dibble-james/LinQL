@@ -217,6 +217,13 @@ public class ClientGeneratorDiagnosticTests
             x => x.FilePath.Contains("DeclarationsValue.Document", StringComparison.Ordinal)).ToString());
 
     [Fact]
+    public void DeclaredQueryArgumentsBecomeVariables()
+        => Snapshot.Match(Assert.Single(
+            Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.ExecuteCharacter(id).Select(c => new { c.Name })", values: "id"))
+                .GeneratedTrees,
+            x => x.FilePath.Contains("DeclarationsValue.Document", StringComparison.Ordinal)).ToString());
+
+    [Fact]
     public void DeclarationWithAProblemEmitsNoDocument()
         => Assert.DoesNotContain(
             Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero")).GeneratedTrees,
@@ -250,6 +257,7 @@ public class ClientGeneratorDiagnosticTests
 
         type Query {
           hero: Character
+          character(id: ID!): Character
         }
 
         type Character {
@@ -293,9 +301,15 @@ public class ClientGeneratorDiagnosticTests
     /// </summary>
     /// <param name="clientNamespace">The schema the query names.</param>
     /// <param name="rootType">The root type its expression uses.</param>
+    /// <param name="body">The lambda's body.</param>
+    /// <param name="values">The declaration's lambda parameters after the root, comma separated, or <see langword="null"/> for none.</param>
     /// <returns>The source, whose declared field is on line 22.</returns>
-    private static string DeclaredQuerySource(string clientNamespace, string rootType = "Query", string body = "null")
-        => $$"""
+    private static string DeclaredQuerySource(string clientNamespace, string rootType = "Query", string body = "null", string? values = null)
+    {
+        var parameters = values is null ? "x" : $"(x, {values})";
+        var valueTypes = values is null ? string.Empty : string.Concat(Enumerable.Repeat(", object?", values.Split(',').Length));
+
+        return $$"""
             using System.Linq.Expressions;
             using LinQL.Description;
 
@@ -317,10 +331,11 @@ public class ClientGeneratorDiagnosticTests
                 public static class Declarations
                 {
                     [LinQLQuery("{{clientNamespace}}")]
-                    public static readonly Expression<System.Func<Filtering.{{rootType}}, object?>> Value = x => {{body}};
+                    public static readonly Expression<System.Func<Filtering.{{rootType}}{{valueTypes}}, object?>> Value = {{parameters}} => {{body}};
                 }
             }
             """;
+    }
 
     private sealed class SdlFile(string path, string content) : AdditionalText
     {

@@ -19,6 +19,7 @@ public class DeclaredQueryTranslatorTests
           hero: Character
           heroes: [Character!]!
           character(id: ID!): Character
+          characters(ids: [ID!]!): [Character!]!
         }
 
         type Character {
@@ -56,23 +57,49 @@ public class DeclaredQueryTranslatorTests
     }
 
     [Fact]
-    public void FieldArgumentsAreReportedAsUnsupported()
+    public void PassesAnArgumentAsAVariableTypedByTheSchema()
+        => Snapshot.Match(Translate("q.ExecuteCharacter(id: id).Select(c => new { c.Name })", "id").Document);
+
+    [Fact]
+    public void PassesAListArgumentAsAVariableOfTheDeclaredType()
+        => Snapshot.Match(Translate("q.ExecuteCharacters(ids).SelectAll()", "ids").Document);
+
+    [Fact]
+    public void AParameterUsedTwiceBecomesOneVariablePerArgument()
+        => Snapshot.Match(Translate("new { q.ExecuteCharacter(id).Select(c => new { c.Name }), q.ExecuteCharacter(id).SelectAll() }", "id").Document);
+
+    [Fact]
+    public void AnArgumentValueThatIsNotAParameterIsReported()
     {
         var (document, problems) = Translate("""q.ExecuteCharacter("1").Select(c => new { c.Name })""");
 
         document.Should().BeNull();
-        problems.Should().ContainSingle();
+        problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN11");
 
-        problems[0].Id.Should().Be("LINQLGEN09");
-        problems[0].GetMessage().Should().Contain("arguments are not translated yet");
+        problems[0].GetMessage().Should().Contain("cannot become a variable");
     }
 
-    private static (string? Document, IReadOnlyList<Diagnostic> Problems) Translate(string body)
+    [Fact]
+    public void AnArgumentTheSchemaDoesNotDeclareIsReported()
     {
-        var lambda = CSharpSyntaxTree.ParseText($"System.Func<object, object> query = q => {body};")
+        var (document, problems) = Translate("q.ExecuteCharacter(missing: id).SelectAll()", "id");
+
+        document.Should().BeNull();
+        problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        problems[0].GetMessage().Should().Contain("'missing'");
+    }
+
+    private static (string? Document, IReadOnlyList<Diagnostic> Problems) Translate(string body, params string[] values)
+    {
+        var parameters = values.Length == 0 ? "q" : $"(q, {string.Join(", ", values)})";
+
+        var lambda = CSharpSyntaxTree.ParseText($"System.Func<object, object> query = {parameters} => {body};")
             .GetRoot()
             .DescendantNodes()
-            .OfType<SimpleLambdaExpressionSyntax>()
+            .OfType<LambdaExpressionSyntax>()
             .First();
 
         var (document, problems) = DeclaredQueryTranslator.Translate(

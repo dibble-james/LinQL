@@ -1,0 +1,7 @@
+﻿query linql($var1: [ID!]!) {
+  __typename
+  characters(ids: $var1) {
+    __typename
+    name
+  }
+}

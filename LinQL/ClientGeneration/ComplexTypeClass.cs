@@ -160,7 +160,7 @@ internal class ComplexTypeClass : IClassFactory
     /// <returns>The method declaration.</returns>
     private MethodDeclarationSyntax CreateCommandMethod(FieldDefinitionNode field, SchemaModel model)
     {
-        var method = MethodDeclaration(ParseTypeName(model.TypeName(field.Type)), Identifier("Execute" + SchemaNames.FieldName(field.Name.Value)))
+        var method = MethodDeclaration(ParseTypeName(model.TypeName(field.Type)), Identifier(SchemaNames.ExecuteName(field.Name.Value)))
             .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
             .AddAttributeLists(AttributeList(SeparatedList(
             [

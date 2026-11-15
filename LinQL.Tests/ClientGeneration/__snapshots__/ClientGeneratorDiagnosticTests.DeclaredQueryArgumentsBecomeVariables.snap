@@ -1,0 +1,7 @@
+﻿namespace Queries
+{
+    public static class DeclarationsValue
+    {
+        public const string Document = "query linql($var1: ID!) {\n  __typename\n  character(id: $var1) {\n    __typename\n    name\n  }\n}";
+    }
+}

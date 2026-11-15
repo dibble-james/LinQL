@@ -7,8 +7,8 @@ using Microsoft.CodeAnalysis;
 /// </summary>
 /// <remarks>
 /// Every one of them is reported on the declaration, so a query that the generator cannot compile is not
-/// silently left out of the result. The translator's own rules take LINQLGEN08 and 09; binding a
-/// declaration to a schema takes 12 to 14, which keeps 10 and 11 for the value and projection rules.
+/// silently left out of the result. The translator's own rules take LINQLGEN08, 09 and 11; binding a
+/// declaration to a schema takes 12 to 14, which keeps 10 for the projection rule.
 /// </remarks>
 internal static class DeclaredQueryDiagnostics
 {
@@ -30,6 +30,17 @@ internal static class DeclaredQueryDiagnostics
         id: "LINQLGEN09",
         title: "Declared query uses a construct the translator does not support",
         messageFormat: "'{0}' cannot be translated: {1}",
+        category: "LinQLClientGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    /// <summary>
+    /// An argument's value is not one of the declaration's parameters, so it cannot become a variable.
+    /// </summary>
+    public static readonly DiagnosticDescriptor UnsupportedValue = new(
+        id: "LINQLGEN11",
+        title: "Declared query uses a value that cannot become a variable",
+        messageFormat: "'{0}' cannot become a variable. A declared query's argument values have to be its lambda parameters after the root, one for each value the query sends.",
         category: "LinQLClientGenerator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);

@@ -1,0 +1,11 @@
+﻿query linql($var1: ID!, $var2: ID!) {
+  __typename
+  character(id: $var1) {
+    __typename
+    name
+  }
+  character(id: $var2) {
+    __typename
+    name
+  }
+}
