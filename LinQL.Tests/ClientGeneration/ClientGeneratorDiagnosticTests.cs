@@ -210,6 +210,19 @@ public class ClientGeneratorDiagnosticTests
     }
 
     [Fact]
+    public void DeclaredQueryDocumentIsEmitted()
+        => Snapshot.Match(Assert.Single(
+            Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero.Select(h => new { h.Name })"))
+                .GeneratedTrees,
+            x => x.FilePath.Contains("DeclarationsValue.Document", StringComparison.Ordinal)).ToString());
+
+    [Fact]
+    public void DeclarationWithAProblemEmitsNoDocument()
+        => Assert.DoesNotContain(
+            Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero")).GeneratedTrees,
+            x => x.FilePath.Contains("Document", StringComparison.Ordinal));
+
+    [Fact]
     public void DeclarationThatIsNotAParameterisedExpressionIsReported()
     {
         var diagnostic = Assert.Single(Generate(PlainSdl, source: NotAQuerySource), x => x.Id == "LINQLGEN14");

@@ -1,0 +1,7 @@
+﻿namespace Queries
+{
+    public static class DeclarationsValue
+    {
+        public const string Document = "query linql {\n  __typename\n  hero {\n    __typename\n    name\n  }\n}";
+    }
+}

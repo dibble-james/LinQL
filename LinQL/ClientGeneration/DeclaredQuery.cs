@@ -9,11 +9,21 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// </summary>
 /// <param name="ClientNamespace">The client namespace the declaration names.</param>
 /// <param name="FieldName">The declared field's name.</param>
+/// <param name="ContainingType">The name of the type declaring the field, which the emitted name is built from.</param>
+/// <param name="Namespace">The namespace the declaring type lives in, or <see langword="null"/> for the global namespace.</param>
 /// <param name="RootType">The root type of the query's expression, or <see langword="null"/> when the field is not one.</param>
 /// <param name="IsStatic">Whether the field is static, which a declared query has to be.</param>
 /// <param name="Body">The lambda the field holds, which the translator reads.</param>
 /// <param name="Location">The declaration.</param>
-internal sealed record DeclaredQuery(string ClientNamespace, string FieldName, string? RootType, bool IsStatic, LambdaExpressionSyntax? Body, Location Location)
+internal sealed record DeclaredQuery(
+    string ClientNamespace,
+    string FieldName,
+    string ContainingType,
+    string? Namespace,
+    string? RootType,
+    bool IsStatic,
+    LambdaExpressionSyntax? Body,
+    Location Location)
 {
     /// <summary>
     /// Reads a declaration from the attribute application marking its field.
@@ -32,6 +42,8 @@ internal sealed record DeclaredQuery(string ClientNamespace, string FieldName, s
         return new DeclaredQuery(
             clientNamespace,
             field.Name,
+            field.ContainingType.Name,
+            field.ContainingNamespace.IsGlobalNamespace ? null : field.ContainingNamespace.ToDisplayString(),
             RootTypeOf(field.Type),
             field.IsStatic,
             (attribute.TargetNode as VariableDeclaratorSyntax)?.Initializer?.Value as LambdaExpressionSyntax,

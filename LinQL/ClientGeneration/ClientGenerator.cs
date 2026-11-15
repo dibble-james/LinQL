@@ -4,8 +4,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 /// <summary>
 /// Converts SDL into a set of types.
@@ -233,13 +235,51 @@ public class ClientGenerator : IIncrementalGenerator
                 models[query.ClientNamespace] = model;
             }
 
-            var (_, problems) = DeclaredQueryTranslator.Translate(query.Body, model, rootType);
+            var (document, problems) = DeclaredQueryTranslator.Translate(query.Body, model, rootType);
 
             foreach (var problem in problems)
             {
                 output.ReportDiagnostic(problem);
             }
+
+            if (document is not null)
+            {
+                EmitDocument(output, query, document);
+            }
         }
+    }
+
+    /// <summary>
+    /// Emits the document a declared query compiles to, so a caller can read it.
+    /// </summary>
+    /// <param name="output">The source output.</param>
+    /// <param name="query">The declaration.</param>
+    /// <param name="document">Its document.</param>
+    /// <remarks>
+    /// The document is a constant for now. Once the binder lands it is joined by the variable mapping and the
+    /// projection, which is why it is emitted beside the declaration rather than as a request object here.
+    /// </remarks>
+    private static void EmitDocument(SourceProductionContext output, DeclaredQuery query, HotChocolate.Language.DocumentNode document)
+    {
+        var name = query.ContainingType + query.FieldName;
+
+        var members = ClassDeclaration(Identifier(name))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+            .AddMembers(
+                FieldDeclaration(
+                    VariableDeclaration(PredefinedType(Token(SyntaxKind.StringKeyword)))
+                        .AddVariables(
+                            VariableDeclarator(Identifier("Document"))
+                                .WithInitializer(EqualsValueClause(ParseExpression(SymbolDisplay.FormatLiteral(document.ToString(), quote: true))))))
+                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.ConstKeyword)));
+
+        MemberDeclarationSyntax emitted = query.Namespace is null
+            ? members
+            : NamespaceDeclaration(ParseName(query.Namespace)).AddMembers(members);
+
+        output.AddSource(
+            $"{name}.Document.g.cs",
+            SourceText.From(emitted.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
     }
 
     /// <summary>
