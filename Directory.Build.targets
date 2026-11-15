@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- IDE0005 only runs in the build when GenerateDocumentationFile is set; the projects without one
+       report this advisory instead, and the format gate covers IDE0005 for them. The condition has to
+       live here rather than in Directory.Build.props, which is imported before the project sets
+       GenerateDocumentationFile, so the test would always see it unset. -->
+  <PropertyGroup>
+    <NoWarn Condition="'$(GenerateDocumentationFile)' != 'true'">$(NoWarn);EnableGenerateDocumentationFile</NoWarn>
+  </PropertyGroup>
+
+</Project>

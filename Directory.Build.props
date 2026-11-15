@@ -7,9 +7,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <!-- IDE0005 only runs in the build when GenerateDocumentationFile is set; the projects without
-         one report this advisory instead, and the format gate covers IDE0005 for them. -->
-    <NoWarn>$(NoWarn);EnableGenerateDocumentationFile</NoWarn>
   </PropertyGroup>
 
 </Project>
