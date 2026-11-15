@@ -7,8 +7,8 @@ using Microsoft.CodeAnalysis;
 /// </summary>
 /// <remarks>
 /// Every one of them is reported on the declaration, so a query that the generator cannot compile is not
-/// silently left out of the result. The translator's own rules take LINQLGEN08, 09 and 11; binding a
-/// declaration to a schema takes 12 to 14, which keeps 10 for the projection rule.
+/// silently left out of the result. The translator's own rules take LINQLGEN08 to 11; binding a declaration to
+/// a schema takes 12 to 14.
 /// </remarks>
 internal static class DeclaredQueryDiagnostics
 {
@@ -30,6 +30,17 @@ internal static class DeclaredQueryDiagnostics
         id: "LINQLGEN09",
         title: "Declared query uses a construct the translator does not support",
         messageFormat: "'{0}' cannot be translated: {1}",
+        category: "LinQLClientGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    /// <summary>
+    /// The projection reads one of the declaration's values.
+    /// </summary>
+    public static readonly DiagnosticDescriptor ProjectionReadsValue = new(
+        id: "LINQLGEN10",
+        title: "Declared query's projection reads one of its values",
+        messageFormat: "'{0}' is one of the declaration's values, so it can only be written into the document as an argument. A projection has to be a function of the response alone, because the document does not depend on the values.",
         category: "LinQLClientGenerator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);

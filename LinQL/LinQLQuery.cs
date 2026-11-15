@@ -98,8 +98,8 @@ public sealed class LinQLQuery<TRoot, TData>(
     /// <returns>The projection, which takes only the root.</returns>
     /// <remarks>
     /// A declaration's parameters are document values, not projection inputs, so replacing them with their defaults
-    /// leaves the body that depends on the response alone. A projection that reads one is reserved for
-    /// <c>LINQLGEN10</c>, which is not reported yet, so such a body would project <c>default</c> silently.
+    /// leaves the body that depends on the response alone. The generator reports a projection that reads one as
+    /// <c>LINQLGEN10</c>, so a body reaching this method does not depend on a value.
     /// </remarks>
     private static Expression<Func<TRoot, TData>> Project(LambdaExpression declaration)
     {

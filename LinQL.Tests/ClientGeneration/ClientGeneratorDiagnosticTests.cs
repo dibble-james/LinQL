@@ -210,6 +210,16 @@ public class ClientGeneratorDiagnosticTests
     }
 
     [Fact]
+    public void DeclaredQueryReadingAValueInItsProjectionIsReported()
+    {
+        var diagnostic = Assert.Single(
+            Generate(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero.Select(h => new { h.Name, Prefix = name })", values: "name")),
+            x => x.Id == "LINQLGEN10");
+
+        Assert.Contains("'name'", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void DeclaredQueryDocumentIsEmitted()
         => Snapshot.Match(DeclaredQueryTree("x.Hero.Select(h => new { h.Name })"));
 

@@ -22,7 +22,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// <c>var1…varN</c> in traversal order and typed from the SDL argument, or a value the compiler saw —
 /// a constant, an enum member, an object or collection initialiser — which is written into the document. A
 /// parameter standing inside such a value is still a variable, so values and variables mix the way GraphQL
-/// input literals allow.
+/// input literals allow. An argument is the only place a parameter may stand: a projection that reads one is
+/// reported as <see cref="DeclaredQueryDiagnostics.ProjectionReadsValue"/>, because the document does not depend
+/// on the values and a projection that did would silently read the default substituted for them.
 /// </remarks>
 internal sealed class DeclaredQueryTranslator
 {
@@ -177,6 +179,10 @@ internal sealed class DeclaredQueryTranslator
                 this.AddSelectedField(access.Expression, typeName, parameter, values, lambda: null, selections);
                 break;
 
+            case IdentifierNameSyntax identifier when values.Contains(identifier.Identifier.ValueText):
+                this.ReportProjection(identifier, identifier.Identifier.ValueText);
+                break;
+
             default:
                 this.AddLeafOrImplicitField(expression, typeName, parameter, values, selections);
                 break;
@@ -290,7 +296,14 @@ internal sealed class DeclaredQueryTranslator
             }
 
             default:
-                this.Report(expression, "the expression is not a field of the type being selected");
+                if (RootIdentifier(expression) is { } name && values.Contains(name))
+                {
+                    this.ReportProjection(expression, name);
+                }
+                else
+                {
+                    this.Report(expression, "the expression is not a field of the type being selected");
+                }
 
                 return null;
         }
@@ -547,6 +560,21 @@ internal sealed class DeclaredQueryTranslator
     private static bool IsOnParameter(ExpressionSyntax expression, string parameter)
         => expression is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == parameter;
 
+    /// <summary>
+    /// Finds the identifier an expression is built on, so a value used through a member or a call is still
+    /// recognisable as that value.
+    /// </summary>
+    /// <param name="expression">The expression.</param>
+    /// <returns>The identifier's name, or <see langword="null"/> when the expression is not built on one.</returns>
+    private static string? RootIdentifier(ExpressionSyntax expression) => expression switch
+    {
+        IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+        MemberAccessExpressionSyntax access => RootIdentifier(access.Expression),
+        InvocationExpressionSyntax invocation => RootIdentifier(invocation.Expression),
+        ParenthesizedExpressionSyntax parenthesized => RootIdentifier(parenthesized.Expression),
+        _ => null,
+    };
+
     private static ExpressionSyntax? Projection(InvocationExpressionSyntax invocation)
         => invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
 
@@ -571,6 +599,12 @@ internal sealed class DeclaredQueryTranslator
             node.GetLocation(),
             node.ToString(),
             reason));
+
+    private void ReportProjection(SyntaxNode node, string parameter)
+        => this.problems.Add(Diagnostic.Create(
+            DeclaredQueryDiagnostics.ProjectionReadsValue,
+            node.GetLocation(),
+            parameter));
 
     private IValueNode? Unsupported(SyntaxNode node, string reason)
     {

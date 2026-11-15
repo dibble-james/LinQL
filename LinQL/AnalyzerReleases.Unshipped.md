@@ -14,6 +14,7 @@ LINQLGEN06 | LinQLClientGenerator | Warning | DocumentWalker
 LINQLGEN07 | LinQLClientGenerator | Warning | ClientGenerator
 LINQLGEN08 | LinQLClientGenerator | Error | DeclaredQueryTranslator
 LINQLGEN09 | LinQLClientGenerator | Error | DeclaredQueryTranslator
+LINQLGEN10 | LinQLClientGenerator | Error | DeclaredQueryTranslator
 LINQLGEN11 | LinQLClientGenerator | Error | DeclaredQueryTranslator
 LINQLGEN12 | LinQLClientGenerator | Error | ClientGenerator
 LINQLGEN13 | LinQLClientGenerator | Error | ClientGenerator

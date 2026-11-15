@@ -128,6 +128,30 @@ public class DeclaredQueryTranslatorTests
     }
 
     [Fact]
+    public void AProjectionThatReadsAValueIsReported()
+    {
+        var translation = Translate("q.Hero.Select(h => new { h.Name, Prefix = name })", ["name"]);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN10");
+
+        translation.Problems[0].GetMessage().Should().Contain("'name'");
+    }
+
+    [Fact]
+    public void AProjectionThatReadsAPartOfAValueIsReported()
+    {
+        var translation = Translate("q.Hero.Select(h => name.ToUpper())", ["name"]);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN10");
+
+        translation.Problems[0].GetMessage().Should().Contain("'name'");
+    }
+
+    [Fact]
     public void AnArgumentTheSchemaDoesNotDeclareIsReported()
     {
         var translation = Translate("q.ExecuteCharacter(missing: id).SelectAll()", ["id"]);
