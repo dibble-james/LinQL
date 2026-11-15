@@ -1,5 +1,6 @@
 namespace LinQL.ClientGeneration;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using HotChocolate.Language;
@@ -26,6 +27,8 @@ internal sealed class DeclaredQueryTranslator
     private readonly SchemaModel model;
     private readonly List<Diagnostic> problems = [];
     private readonly List<VariableDefinitionNode> variables = [];
+    private readonly Dictionary<string, List<string>> bindings = new(StringComparer.Ordinal);
+    private IReadOnlyList<string> values = [];
 
     private DeclaredQueryTranslator(SchemaModel model) => this.model = model;
 
@@ -35,15 +38,21 @@ internal sealed class DeclaredQueryTranslator
     /// <param name="lambda">The declaration's lambda.</param>
     /// <param name="model">The schema the declaration is bound to.</param>
     /// <param name="rootTypeName">The name of the schema's root type.</param>
-    /// <returns>The document, or <see langword="null"/> when the lambda could not be translated at all.</returns>
-    public static (DocumentNode? Document, IReadOnlyList<Diagnostic> Problems) Translate(LambdaExpressionSyntax? lambda, SchemaModel model, string rootTypeName)
+    /// <returns>
+    /// The document and the variables each parameter fills, or a null document when the lambda could not be
+    /// translated at all.
+    /// </returns>
+    public static DeclaredQueryTranslation Translate(LambdaExpressionSyntax? lambda, SchemaModel model, string rootTypeName)
     {
         var translator = new DeclaredQueryTranslator(model);
         var document = translator.TranslateQuery(lambda, rootTypeName);
 
         // A declaration with a reported problem has no document: emitting the part that could be translated
         // would ship a query that silently differs from what the declaration says.
-        return (translator.problems.Count == 0 ? document : null, translator.problems);
+        return new(
+            translator.problems.Count == 0 ? document : null,
+            translator.Bindings(),
+            translator.problems);
     }
 
     private DocumentNode? TranslateQuery(LambdaExpressionSyntax? lambda, string rootTypeName)
@@ -61,6 +70,8 @@ internal sealed class DeclaredQueryTranslator
         }
 
         var (parameter, values) = declared;
+
+        this.values = values;
 
         var operation = this.OperationOf(rootTypeName);
         var selections = new List<ISelectionNode>();
@@ -336,6 +347,8 @@ internal sealed class DeclaredQueryTranslator
                     defaultValue: null,
                     directives: []));
 
+            this.Bind(identifier.Identifier.ValueText, name);
+
             attached.Add(new ArgumentNode(declared.Name.Value, new VariableNode(name)));
         }
 
@@ -357,6 +370,24 @@ internal sealed class DeclaredQueryTranslator
         => argument.NameColon is { } named
             ? field.Arguments.FirstOrDefault(x => x.Name.Value == named.Name.Identifier.ValueText)
             : position < field.Arguments.Count ? field.Arguments[position] : null;
+
+    private void Bind(string parameter, string variable)
+    {
+        if (!this.bindings.TryGetValue(parameter, out var variables))
+        {
+            variables = [];
+            this.bindings[parameter] = variables;
+        }
+
+        variables.Add(variable);
+    }
+
+    /// <summary>
+    /// Gets the variables each of the declaration's parameters fills.
+    /// </summary>
+    /// <returns>The bindings in declaration order, so the binder's parameters read as the lambda wrote them.</returns>
+    private IReadOnlyList<DeclaredQueryBinding> Bindings()
+        => [.. this.values.Where(this.bindings.ContainsKey).Select(x => new DeclaredQueryBinding(x, this.bindings[x]))];
 
     private static bool IsOnParameter(ExpressionSyntax expression, string parameter)
         => expression is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == parameter;

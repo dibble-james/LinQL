@@ -211,23 +211,23 @@ public class ClientGeneratorDiagnosticTests
 
     [Fact]
     public void DeclaredQueryDocumentIsEmitted()
-        => Snapshot.Match(Assert.Single(
-            Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero.Select(h => new { h.Name })"))
-                .GeneratedTrees,
-            x => x.FilePath.Contains("DeclarationsValue.Document", StringComparison.Ordinal)).ToString());
+        => Snapshot.Match(DeclaredQueryTree("x.Hero.Select(h => new { h.Name })"));
 
     [Fact]
     public void DeclaredQueryArgumentsBecomeVariables()
-        => Snapshot.Match(Assert.Single(
-            Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.ExecuteCharacter(id).Select(c => new { c.Name })", values: "id"))
-                .GeneratedTrees,
-            x => x.FilePath.Contains("DeclarationsValue.Document", StringComparison.Ordinal)).ToString());
+        => Snapshot.Match(DeclaredQueryTree("x.ExecuteCharacter(id).Select(c => new { c.Name })", "id"));
 
     [Fact]
-    public void DeclarationWithAProblemEmitsNoDocument()
+    public void DeclaredQueryBinderTakesTheDeclarationsParameters()
+        => Snapshot.Match(Assert.Single(
+            Run(PlainSdl, source: TypedParameterSource).GeneratedTrees,
+            x => x.FilePath.EndsWith("DeclarationsValue.g.cs", StringComparison.Ordinal)).ToString());
+
+    [Fact]
+    public void DeclarationWithAProblemEmitsNoDeclaredQuery()
         => Assert.DoesNotContain(
             Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero")).GeneratedTrees,
-            x => x.FilePath.Contains("Document", StringComparison.Ordinal));
+            x => x.FilePath.EndsWith("DeclarationsValue.g.cs", StringComparison.Ordinal));
 
     [Fact]
     public void DeclarationThatIsNotAParameterisedExpressionIsReported()
@@ -236,6 +236,30 @@ public class ClientGeneratorDiagnosticTests
 
         Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
     }
+
+    private const string TypedParameterSource = """
+        using System;
+        using System.Linq.Expressions;
+        using LinQL.Description;
+
+        namespace Filtering
+        {
+            public class Query
+            {
+                public string? Hero { get; set; }
+            }
+        }
+
+        namespace Queries
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, string, int?, object?>> Value =
+                    (x, id, count) => x.ExecuteCharacter(id).Select(c => new { c.Name });
+            }
+        }
+        """;
 
     private const string NotAQuerySource = """
         using LinQL.Description;
@@ -264,6 +288,17 @@ public class ClientGeneratorDiagnosticTests
           name: String!
         }
         """;
+
+    /// <summary>
+    /// Gets the generated declared-query file a source produces.
+    /// </summary>
+    /// <param name="body">The lambda's body.</param>
+    /// <param name="values">The declaration's lambda parameters after the root, comma separated.</param>
+    /// <returns>The generated source.</returns>
+    private static string DeclaredQueryTree(string body, string? values = null)
+        => Assert.Single(
+            Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: body, values: values)).GeneratedTrees,
+            x => x.FilePath.EndsWith("DeclarationsValue.g.cs", StringComparison.Ordinal)).ToString();
 
     private static ImmutableArray<Diagnostic> Generate(string sdl, string? typesAs = null, string? source = null)
         => [.. Run(sdl, typesAs, source).Diagnostics];

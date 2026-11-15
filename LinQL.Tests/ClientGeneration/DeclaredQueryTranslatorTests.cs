@@ -92,7 +92,7 @@ public class DeclaredQueryTranslatorTests
         problems[0].GetMessage().Should().Contain("'missing'");
     }
 
-    private static (string? Document, IReadOnlyList<Diagnostic> Problems) Translate(string body, params string[] values)
+    private static Translation Translate(string body, params string[] values)
     {
         var parameters = values.Length == 0 ? "q" : $"(q, {string.Join(", ", values)})";
 
@@ -102,11 +102,18 @@ public class DeclaredQueryTranslatorTests
             .OfType<LambdaExpressionSyntax>()
             .First();
 
-        var (document, problems) = DeclaredQueryTranslator.Translate(
+        var translation = DeclaredQueryTranslator.Translate(
             lambda,
             ClientGenerator.CreateModel(Sdl, "Filtering", LinQLTypesAs.Class),
             "Query");
 
-        return (document?.ToString(), problems);
+        return new(translation.Document?.ToString(), translation.Problems);
     }
+
+    /// <summary>
+    /// What a translation produced, reduced to what these tests compare.
+    /// </summary>
+    /// <param name="Document">The document's text, or <see langword="null"/> when there is none.</param>
+    /// <param name="Problems">What stopped the translation.</param>
+    private sealed record Translation(string? Document, IReadOnlyList<Diagnostic> Problems);
 }

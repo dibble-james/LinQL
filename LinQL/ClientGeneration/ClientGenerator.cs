@@ -43,6 +43,8 @@ public class ClientGenerator : IIncrementalGenerator
 
     private const string DeclaredQueryAttributeName = "LinQL.Description.LinQLQueryAttribute";
 
+    private const string RequestType = "global::LinQL.LinQLDeclaredQueryRequest";
+
     /// <summary>
     /// Takes a SDL input and generates a set of corresponding types.
     /// </summary>
@@ -235,51 +237,79 @@ public class ClientGenerator : IIncrementalGenerator
                 models[query.ClientNamespace] = model;
             }
 
-            var (document, problems) = DeclaredQueryTranslator.Translate(query.Body, model, rootType);
+            var translation = DeclaredQueryTranslator.Translate(query.Body, model, rootType);
 
-            foreach (var problem in problems)
+            foreach (var problem in translation.Problems)
             {
                 output.ReportDiagnostic(problem);
             }
 
-            if (document is not null)
+            if (translation.Document is not null)
             {
-                EmitDocument(output, query, document);
+                EmitDeclaredQuery(output, query, translation);
             }
         }
     }
 
     /// <summary>
-    /// Emits the document a declared query compiles to, so a caller can read it.
+    /// Emits the document a declared query compiles to and the binder a call site uses to send it.
     /// </summary>
     /// <param name="output">The source output.</param>
     /// <param name="query">The declaration.</param>
-    /// <param name="document">Its document.</param>
+    /// <param name="translation">Its document and the variables its parameters fill.</param>
     /// <remarks>
-    /// The document is a constant for now. Once the binder lands it is joined by the variable mapping and the
-    /// projection, which is why it is emitted beside the declaration rather than as a request object here.
+    /// The document does not depend on a call, so it is a constant; the binder takes the lambda's own parameters
+    /// and binds them to the names the document gave the variables. The projection and the request type that
+    /// carries it to an adapter are the next step, which is why the binder returns
+    /// <c>LinQLDeclaredQueryRequest</c> rather than an operation.
     /// </remarks>
-    private static void EmitDocument(SourceProductionContext output, DeclaredQuery query, HotChocolate.Language.DocumentNode document)
+    private static void EmitDeclaredQuery(SourceProductionContext output, DeclaredQuery query, DeclaredQueryTranslation translation)
     {
         var name = query.ContainingType + query.FieldName;
 
+        var document = FieldDeclaration(
+                VariableDeclaration(PredefinedType(Token(SyntaxKind.StringKeyword)))
+                    .AddVariables(
+                        VariableDeclarator(Identifier("Document"))
+                            .WithInitializer(EqualsValueClause(ParseExpression(SymbolDisplay.FormatLiteral(translation.Document!.ToString(), quote: true))))))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.ConstKeyword));
+
+        var binder = MethodDeclaration(ParseTypeName(RequestType), SchemaNames.IdentifierFor(query.FieldName))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+            .AddParameterListParameters([.. query.Parameters.Select(x => Parameter(SchemaNames.IdentifierFor(x.Name)).WithType(ParseTypeName(x.Type)))])
+            .WithExpressionBody(ArrowExpressionClause(ParseExpression(BinderCall(translation.Bindings))))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+
         var members = ClassDeclaration(Identifier(name))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-            .AddMembers(
-                FieldDeclaration(
-                    VariableDeclaration(PredefinedType(Token(SyntaxKind.StringKeyword)))
-                        .AddVariables(
-                            VariableDeclarator(Identifier("Document"))
-                                .WithInitializer(EqualsValueClause(ParseExpression(SymbolDisplay.FormatLiteral(document.ToString(), quote: true))))))
-                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.ConstKeyword)));
+            .AddMembers(document, binder);
 
         MemberDeclarationSyntax emitted = query.Namespace is null
             ? members
             : NamespaceDeclaration(ParseName(query.Namespace)).AddMembers(members);
 
         output.AddSource(
-            $"{name}.Document.g.cs",
+            $"{name}.g.cs",
             SourceText.From(emitted.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
+    }
+
+    /// <summary>
+    /// Writes the call that binds a declaration's parameters to the variables its document declares.
+    /// </summary>
+    /// <param name="bindings">The variables each of the declaration's parameters fills.</param>
+    /// <returns>The call, with one tuple per variable.</returns>
+    private static string BinderCall(IReadOnlyList<DeclaredQueryBinding> bindings)
+    {
+        List<string> arguments = ["Document"];
+
+        foreach (var binding in bindings)
+        {
+            var parameter = SchemaNames.IdentifierFor(binding.Parameter).Text;
+
+            arguments.AddRange(binding.Variables.Select(variable => $"({SymbolDisplay.FormatLiteral(variable, quote: true)}, {parameter})"));
+        }
+
+        return $"{RequestType}.Bind({string.Join(", ", arguments)})";
     }
 
     /// <summary>
