@@ -2,15 +2,15 @@
   __typename
   iAmObject {
     __typename
-    ...on implementaion1 {
+    ... on implementaion1 {
       __typename
       text
     }
-    ...on implementaion2 {
+    ... on implementaion2 {
       __typename
       value
     }
-    ...on implementaion3 {
+    ... on implementaion3 {
       __typename
       date {
         __typename
@@ -22,11 +22,11 @@
         dayNumber
       }
     }
-    ...on implementaion4 {
+    ... on implementaion4 {
       __typename
       amount
     }
-    ...on implementaion5 {
+    ... on implementaion5 {
       __typename
       id {
         __typename

@@ -238,6 +238,42 @@ public class ClientGeneratorDiagnosticTests
             x => x.FilePath.EndsWith("DeclarationsValue.g.cs", StringComparison.Ordinal)).ToString());
 
     [Fact]
+    public void DeclaredQueryFilterIsRebuiltThroughFilterValue()
+        => Snapshot.Match(DeclaredQueryTree(
+            "x.Products.Filter(p => p.Name(n => n.Contains(term))).SelectAll()",
+            "term",
+            FilteredQuerySdl));
+
+    [Fact]
+    public void DeclaredQueryFilterCombinatorUsesCombine()
+        => Snapshot.Match(DeclaredQueryTree(
+            "x.Products.Filter(p => p.Name(n => n.Contains(\"widget\")).And(a => a.Name(n => n.Contains(term)))).SelectAll()",
+            "term",
+            FilteredQuerySdl));
+
+    [Fact]
+    public void DeclaredQuerySortArgumentBecomesAVariable()
+        => Snapshot.Match(DeclaredQueryTree("x.Products.Sort(order).SelectAll()", "order", FilteredQuerySdl));
+
+    [Fact]
+    public void EmittedFilterBinderCompiles()
+    {
+        // The declaration is compiled against the client and filter builders the generator emits, so this
+        // covers what a snapshot cannot: that a rebuilt filter is the shape FilterValue takes.
+        var result = Run(FilteredQuerySdl, source: DeclaredFilterWithoutClientTypes);
+
+        var compilation = CSharpCompilation.Create(
+            "Filtered",
+            [CSharpSyntaxTree.ParseText(DeclaredFilterWithoutClientTypes, cancellationToken: TestContext.Current.CancellationToken), .. result.GeneratedTrees],
+            References,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var errors = compilation.GetDiagnostics(TestContext.Current.CancellationToken).Where(x => x.Severity == DiagnosticSeverity.Error).ToList();
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
     public void DeclarationWithAProblemEmitsNoDeclaredQuery()
         => Assert.DoesNotContain(
             Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero")).GeneratedTrees,
@@ -383,6 +419,27 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
+    /// <summary>
+    /// A declaration filtered through the client types the generator emits, so the emitted binder can be compiled.
+    /// </summary>
+    private const string DeclaredFilterWithoutClientTypes = """
+        using System;
+        using System.Linq.Expressions;
+        using Filtering;
+        using LinQL;
+        using LinQL.Description;
+
+        namespace Queries
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, string, object?>> Value =
+                    (x, term) => x.Products.Filter(p => p.Name(n => n.Contains(term))).SelectAll();
+            }
+        }
+        """;
+
     private const string NotAQuerySource = """
         using LinQL.Description;
 
@@ -412,14 +469,45 @@ public class ClientGeneratorDiagnosticTests
         """;
 
     /// <summary>
+    /// A schema whose query takes a filter and an order, so the binder a filter emits can be compared.
+    /// </summary>
+    private const string FilteredQuerySdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          products(where: ProductFilterInput, order: [ProductSortInput!]): [Product!]!
+        }
+
+        type Product {
+          name: String!
+        }
+
+        input ProductFilterInput {
+          name: StringOperationFilterInput
+          and: [ProductFilterInput!]
+        }
+
+        input StringOperationFilterInput {
+          contains: String
+        }
+
+        input ProductSortInput {
+          name: String
+        }
+        """;
+
+    /// <summary>
     /// Gets the generated declared-query file a source produces.
     /// </summary>
     /// <param name="body">The lambda's body.</param>
     /// <param name="values">The declaration's lambda parameters after the root, comma separated.</param>
+    /// <param name="sdl">The schema the declaration is written against.</param>
     /// <returns>The generated source.</returns>
-    private static string DeclaredQueryTree(string body, string? values = null)
+    private static string DeclaredQueryTree(string body, string? values = null, string sdl = PlainSdl)
         => Assert.Single(
-            Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: body, values: values)).GeneratedTrees,
+            Run(sdl, source: DeclaredQuerySource("Filtering", body: body, values: values)).GeneratedTrees,
             x => x.FilePath.EndsWith("DeclarationsValue.g.cs", StringComparison.Ordinal)).ToString();
 
     private static ImmutableArray<Diagnostic> Generate(string sdl, string? typesAs = null, string? source = null)
