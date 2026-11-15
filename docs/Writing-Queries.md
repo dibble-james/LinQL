@@ -529,9 +529,14 @@ reporting that a projection has to be an expression taking the field's type.
 | `LINQLGEN12` | the named client namespace is not declared by any SDL in the project |
 | `LINQLGEN13` | the schema exists but does not generate the root type the expression uses |
 | `LINQLGEN14` | the member is not a static `Expression<Func<TRoot, TData>>` field |
+| `LINQLGEN15` | the field is not initialised with a lambda, so there is no expression source to read |
 
 All are errors on the declaration. 08–11 are the translator's rules and match the runtime path's behaviour;
-12–14 happen before translation, when the declaration is matched to a schema.
+12–15 happen before translation, when the declaration is matched to a schema and its source is read.
+
+The document is generated from the lambda's *source*, which is why `15` exists: a field built by a method —
+`= Build()` — cannot be translated, and reporting that is better than emitting nothing and leaving the call
+site to fail on a missing binder.
 
 #### Sending one
 

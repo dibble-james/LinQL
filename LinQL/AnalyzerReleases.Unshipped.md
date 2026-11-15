@@ -19,3 +19,4 @@ LINQLGEN11 | LinQLClientGenerator | Error | DeclaredQueryTranslator
 LINQLGEN12 | LinQLClientGenerator | Error | ClientGenerator
 LINQLGEN13 | LinQLClientGenerator | Error | ClientGenerator
 LINQLGEN14 | LinQLClientGenerator | Error | ClientGenerator
+LINQLGEN15 | LinQLClientGenerator | Error | ClientGenerator

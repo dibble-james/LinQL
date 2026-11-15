@@ -267,6 +267,28 @@ public class ClientGeneratorDiagnosticTests
         Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void DeclarationInitialisedByAFactoryIsReported()
+    {
+        var result = Run(PlainSdl, source: FactorySource);
+
+        var diagnostic = Assert.Single(result.Diagnostics, x => x.Id == "LINQLGEN15");
+
+        Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.DoesNotContain(result.GeneratedTrees, x => x.FilePath.Contains("DeclarationsValue.g.cs", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void DeclarationsNamedAlikeInTwoNamespacesAreBothEmitted()
+    {
+        var result = Run(PlainSdl, source: TwoNamespacesSource);
+
+        Assert.DoesNotContain(result.Diagnostics, x => x.Severity == DiagnosticSeverity.Error);
+        Assert.Equal(
+            2,
+            result.GeneratedTrees.Count(x => x.FilePath.Contains("DeclarationsValue.g.cs", StringComparison.Ordinal)));
+    }
+
     private const string TypedParameterSource = """
         using System;
         using System.Linq.Expressions;
@@ -307,6 +329,56 @@ public class ClientGeneratorDiagnosticTests
                 [LinQLQuery("Filtering")]
                 public static readonly Expression<Func<Filtering.Query, string, object?>> Value =
                     (x, id) => x.ExecuteCharacter(id).SelectAll();
+            }
+        }
+        """;
+
+    /// <summary>
+    /// A declaration whose expression is produced by a method, so there is no source to read.
+    /// </summary>
+    private const string FactorySource = """
+        using System;
+        using System.Linq.Expressions;
+        using LinQL.Description;
+
+        namespace Queries
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, object?>> Value = Build();
+
+                private static Expression<Func<Filtering.Query, object?>> Build()
+                    => x => x.Hero.Select(h => new { h.Name });
+            }
+        }
+        """;
+
+    /// <summary>
+    /// Two declarations that agree on their containing type and field name, which is legal across namespaces.
+    /// </summary>
+    private const string TwoNamespacesSource = """
+        using System;
+        using System.Linq.Expressions;
+        using LinQL.Description;
+
+        namespace First
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, object?>> Value
+                    = x => x.Hero.Select(h => new { h.Name });
+            }
+        }
+
+        namespace Second
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, object?>> Value
+                    = x => x.Hero.Select(h => new { h.Name });
             }
         }
         """;

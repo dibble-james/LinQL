@@ -209,6 +209,7 @@ written is worse than one that does not compile.
 | `LINQLGEN12` | the named client namespace is not declared by any SDL in the project |
 | `LINQLGEN13` | the schema exists but does not generate the root type the expression uses |
 | `LINQLGEN14` | the member is not a static `Expression<Func<TRoot, TData>>` field |
+| `LINQLGEN15` | the field is not initialised with a lambda, so there is no expression source to read |
 
 A union or interface field needs a selection, as it does at runtime: `On((Film f) => …)`, a cast
 `((Film)q.Result).Title`, or `q.Results.OfType<Film>()` each write the same `... on Film` fragment.

@@ -223,6 +223,15 @@ public class ClientGenerator : IIncrementalGenerator
                 continue;
             }
 
+            // A declaration whose expression comes from a method has no source to read, so there is nothing to
+            // translate. Reporting it is the only honest outcome: skipping it would leave the call site with no
+            // binder and no reason why.
+            if (query.Body is null)
+            {
+                output.ReportDiagnostic(Diagnostic.Create(DeclaredQueryDiagnostics.NotALambda, query.Location, query.FieldName));
+                continue;
+            }
+
             // Only a declaration bound to a schema has a document to translate, and the schema is built once
             // per namespace however many declarations name it.
             if (!models.TryGetValue(query.ClientNamespace, out var model))
@@ -287,8 +296,11 @@ public class ClientGenerator : IIncrementalGenerator
             ? members
             : NamespaceDeclaration(ParseName(query.Namespace)).AddMembers(members);
 
+        // A hint name is unique across the whole compilation, so it carries the namespace: the same containing
+        // type and field name in two namespaces is a legal pair of declarations, and naming the file after the
+        // type alone would fail the run instead of emitting both.
         output.AddSource(
-            $"{name}.g.cs",
+            query.Namespace is null ? $"{name}.g.cs" : $"{query.Namespace}.{name}.g.cs",
             SourceText.From(emitted.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
     }
 

@@ -79,6 +79,17 @@ internal static class DeclaredQueryDiagnostics
         isEnabledByDefault: true);
 
     /// <summary>
+    /// The declaration is a static expression field, but is not initialised with a lambda.
+    /// </summary>
+    public static readonly DiagnosticDescriptor NotALambda = new(
+        id: "LINQLGEN15",
+        title: "Declared query is not initialised with a lambda",
+        messageFormat: "'{0}' is marked with LinQLQuery but is not initialised with a lambda. The document is read from the expression's source, so the field has to be written as `(q, …) => …` rather than produced by a method or another expression.",
+        category: "LinQLClientGenerator",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    /// <summary>
     /// The declaration is not a static expression field.
     /// </summary>
     public static readonly DiagnosticDescriptor NotAnExpression = new(
