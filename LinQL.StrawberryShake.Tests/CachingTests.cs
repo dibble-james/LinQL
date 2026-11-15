@@ -274,13 +274,9 @@ public class CachingTests
         await send.Should().ThrowAsync<ObjectDisposedException>();
     }
 
-    private sealed class SequentialConnection : IConnection<JsonDocument>
+    private sealed class SequentialConnection(params string[] json) : IConnection<JsonDocument>
     {
-        private readonly Queue<string> responses;
-
-        public SequentialConnection(params string[] json)
-            => this.responses = new Queue<string>(json);
-
+        private readonly Queue<string> responses = new(json);
         private int completedRequests;
 
         public List<OperationRequest> Requests { get; } = [];
@@ -368,7 +364,7 @@ public class CachingTests
 
     private sealed class CollectingObserver<T> : IObserver<LinQLResult<T>>
     {
-        private readonly object sync = new();
+        private readonly Lock sync = new();
         private readonly List<T> values = [];
         private readonly TaskCompletionSource completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -378,7 +374,7 @@ public class CachingTests
             {
                 lock (this.sync)
                 {
-                    return this.values.ToArray();
+                    return [.. this.values];
                 }
             }
         }

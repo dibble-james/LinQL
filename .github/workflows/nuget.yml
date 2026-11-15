@@ -37,6 +37,11 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
+      # Whitespace, code style and analyzers. C# sources are LF on every platform
+      # (.editorconfig and .gitattributes agree), so this passes on the Linux runner too.
+      - name: Verify formatting
+        run: dotnet format LinQL.slnx --no-restore --verify-no-changes
+
       - name: Run Tests
         run: dotnet test --no-restore
 

@@ -1,5 +1,4 @@
 #pragma warning disable CA1852 // Seal internal types
-#nullable enable
 namespace LinQL.Tests.Translation;
 
 public partial class TranslationProviderTests
@@ -11,10 +10,10 @@ public partial class TranslationProviderTests
     public void SelectAllWithHelperNestedFields() => this.Test<NestedClassType, object>(x => x.Nested!.SelectAll());
 
     [Fact]
-    public void SelectAllNestedFieldsFromOperation() => this.Test<NestedOperationType, object>(x => x.Operation.GetNumber("123")!);
+    public void SelectAllNestedFieldsFromOperation() => this.Test<NestedOperationType, object>(x => x.Operation.GetNumber("123"));
 
     [Fact]
-    public void SelectAllNestedFieldsWithHelperFromOperation() => this.Test<NestedOperationType, object>(x => x.Operation.GetNumber("123")!.SelectAll());
+    public void SelectAllNestedFieldsWithHelperFromOperation() => this.Test<NestedOperationType, object>(x => x.Operation.GetNumber("123").SelectAll());
 
     [Fact]
     public void SelectFromArray() => this.Test<NestedArrayType, object>(x => x.Types.Select(x => new

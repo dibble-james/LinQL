@@ -5,18 +5,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using LinQL;
 using global::GraphQL.Client.Abstractions;
 using global::GraphQL.Client.Http;
 using global::GraphQL.Client.Serializer.SystemTextJson;
 using HotChocolate.Data;
+using LinQL;
 using LinQL.GraphQL.Client.Tests.Filtering;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
-using Client = LinQL.GraphQL.Client.Tests.Filtering;
+using Client = Filtering;
 
 /// <summary>
 /// Sends filters built from the generated client to a real Hot Chocolate server with
@@ -33,7 +32,7 @@ public class FilterTests : IDisposable
     private static readonly string[] TaggedNew = ["apple", "banana"];
 
     // Expression trees cannot contain collection expressions, so the sort input is a static field.
-    private static readonly Client.ProductSortInput[] PriceDescending = [new() { Price = Client.SortEnumType.DESC }];
+    private static readonly ProductSortInput[] PriceDescending = [new() { Price = SortEnumType.DESC }];
 
     private readonly WebApplication server;
     private readonly IGraphQLClient client;
@@ -61,7 +60,7 @@ public class FilterTests : IDisposable
     public async Task ScalarOperationFiltersRows()
     {
         var result = await this.client.SendAsync(
-            (Client.Query q) => q.Products.Filter(f => f.Name(n => n.Contains("an"))).Select(p => new { p.Name }),
+            (Query q) => q.Products.Filter(f => f.Name(n => n.Contains("an"))).Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
@@ -72,7 +71,7 @@ public class FilterTests : IDisposable
     public async Task OrKeepsOrSemantics()
     {
         var result = await this.client.SendAsync(
-            (Client.Query q) => q.Products.Filter(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("banana")))).Select(p => new { p.Name }),
+            (Query q) => q.Products.Filter(f => f.Price(p => p.Gt(10)).Or(o => o.Name(n => n.Eq("banana")))).Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
@@ -83,7 +82,7 @@ public class FilterTests : IDisposable
     public async Task SomeOnCollectionFiltersRows()
     {
         var result = await this.client.SendAsync(
-            (Client.Query q) => q.Products.Filter(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new"))))).Select(p => new { p.Name }),
+            (Query q) => q.Products.Filter(f => f.Tags(t => t.Some(s => s.Label(l => l.Eq("new"))))).Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
@@ -97,11 +96,11 @@ public class FilterTests : IDisposable
         // of rows that survive shows the value reached the server: two candidates leave banana, three
         // also leave cherry. A dropped argument would return all three either way.
         var two = await this.client.SendAsync(
-            (Client.Query q) => q.Featured.First(2).Filter(f => f.Price(p => p.Gt(10))).Select(p => new { p.Name }),
+            (Query q) => q.Featured.First(2).Filter(f => f.Price(p => p.Gt(10))).Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         var three = await this.client.SendAsync(
-            (Client.Query q) => q.Featured.First(3).Filter(f => f.Price(p => p.Gt(10))).Select(p => new { p.Name }),
+            (Query q) => q.Featured.First(3).Filter(f => f.Price(p => p.Gt(10))).Select(p => new { p.Name }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         two.Errors.Should().BeNull();
@@ -114,7 +113,7 @@ public class FilterTests : IDisposable
     public async Task SortingArgumentIsForwarded()
     {
         var result = await this.client.SendAsync(
-            (Client.Query q) => q
+            (Query q) => q
                 .Featured
                 .First(3)
                 .Filter(f => f.Price(p => p.Gt(10)))
@@ -131,7 +130,7 @@ public class FilterTests : IDisposable
     {
         // The filter is a field argument, so whether the resolver returns an interface should not matter.
         var result = await this.client.SendAsync(
-            (Client.Query q) => q.Results.Filter(f => f.Name(n => n.Contains("an"))).Select(r => new { r.Id }),
+            (Query q) => q.Results.Filter(f => f.Name(n => n.Contains("an"))).Select(r => new { r.Id }),
             cancellationToken: TestContext.Current.CancellationToken);
 
         result.Errors.Should().BeNull();
@@ -160,9 +159,9 @@ public class FilterTests : IDisposable
 
     public interface SearchResult
     {
-        string Id { get; }
+        public string Id { get; }
 
-        string Name { get; }
+        public string Name { get; }
     }
 
     public class Product : SearchResult

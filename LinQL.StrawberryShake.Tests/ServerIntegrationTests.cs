@@ -7,7 +7,6 @@ using FluentAssertions;
 using global::StrawberryShake.Transport.Http;
 using HotChocolate;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

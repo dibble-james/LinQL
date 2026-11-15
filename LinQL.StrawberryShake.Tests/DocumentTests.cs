@@ -2,8 +2,8 @@ namespace LinQL.StrawberryShake.Tests;
 
 using System.Text;
 using FluentAssertions;
-using LinQL.Description;
 using global::StrawberryShake;
+using LinQL.Description;
 using Xunit;
 
 public class DocumentTests

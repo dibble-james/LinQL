@@ -455,10 +455,30 @@ dotnet_naming_rule.parameters_rule.symbols              = parameters_group
 dotnet_naming_rule.parameters_rule.style = camel_case_style
 dotnet_naming_rule.parameters_rule.severity = error
 tab_width = 4
-end_of_line = crlf
+# The repository stores LF (`* text=auto`), CI checks out on Linux, and .gitattributes pins
+# *.cs to LF, so a CRLF requirement here would only make the whitespace formatter disagree
+# with the checkout it is run against.
+end_of_line = lf
 dotnet_style_allow_statement_immediately_after_block_experimental = true:silent
 dotnet_style_allow_multiple_blank_lines_experimental = true:silent
 dotnet_diagnostic.CA1715.severity = suggestion
+
+##########################################
+# Deliberate exceptions
+##########################################
+
+# The extension methods live in GraphQL.Client.Abstractions on purpose: that is the namespace a
+# GraphQL.Client caller already has in scope, so `client.SendAsync(...)` resolves without another using.
+[LinQL.GraphQL.Client/GraphQLClientExtensions.cs]
+dotnet_diagnostic.IDE0130.severity = none
+
+# A test builds expressions rather than consuming their results, so a fluent call whose value is
+# discarded is the point of the line. A lambda parameter the tree never reads still has to stay, or
+# the delegate's shape changes, and a JSON payload stub is JSON by design.
+[{LinQL.Tests,LinQL.Generated.Tests,LinQL.GraphQL.Client.Tests,LinQL.StrawberryShake.Tests}/**.cs]
+dotnet_diagnostic.IDE0058.severity = none
+dotnet_diagnostic.IDE0060.severity = none
+dotnet_diagnostic.JSON002.severity = none
 
 ##########################################
 # License
@@ -468,6 +488,7 @@ dotnet_diagnostic.CA1715.severity = suggestion
 # corresponding to this .editorconfig file.
 # See: https://github.com/RehanSaeed/EditorConfig
 #
+
 # MIT License
 #
 # Copyright (c) 2017-2019 Muhammad Rehan Saeed

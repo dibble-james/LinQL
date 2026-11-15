@@ -2,8 +2,8 @@ namespace LinQL.StrawberryShake;
 
 using System.Security.Cryptography;
 using System.Text;
-using LinQL.Description;
 using global::StrawberryShake;
+using LinQL.Description;
 
 /// <summary>
 /// A Strawberry Shake document built from a translated LinQL query.

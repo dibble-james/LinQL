@@ -3,11 +3,10 @@ namespace LinQL.StrawberryShake;
 using System.Linq.Expressions;
 using System.Text.Json;
 using FastExpressionCompiler;
-using LinQL.Description;
-using LinQL.Expressions;
-using LinQL.Translation;
 using global::StrawberryShake;
 using global::StrawberryShake.Json;
+using LinQL.Description;
+using LinQL.Translation;
 
 /// <summary>
 /// Executes LinQL expressions over a Strawberry Shake <see cref="IConnection{TResponseBody}"/>.
@@ -18,7 +17,7 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
     private readonly LinQLStrawberryShakeOptions options;
     private readonly EntityStore entityStore;
     private readonly OperationStore operationStore;
-    private readonly object subscriptionsSync = new();
+    private readonly Lock subscriptionsSync = new();
     private readonly HashSet<TrackedSubscription> subscriptions = [];
     private bool disposed;
 
@@ -187,7 +186,7 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
             }
 
             this.disposed = true;
-            active = this.subscriptions.ToArray();
+            active = [.. this.subscriptions];
             this.subscriptions.Clear();
         }
 
@@ -248,16 +247,10 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
             this.options.Strategy);
     }
 
-    private sealed class TrackedObservable<T> : IObservable<T>
+    private sealed class TrackedObservable<T>(IObservable<T> source, Func<IDisposable, IDisposable> track) : IObservable<T>
     {
-        private readonly IObservable<T> source;
-        private readonly Func<IDisposable, IDisposable> track;
-
-        public TrackedObservable(IObservable<T> source, Func<IDisposable, IDisposable> track)
-        {
-            this.source = source;
-            this.track = track;
-        }
+        private readonly IObservable<T> source = source;
+        private readonly Func<IDisposable, IDisposable> track = track;
 
         public IDisposable Subscribe(IObserver<T> observer) => this.track(this.source.Subscribe(observer));
     }

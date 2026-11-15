@@ -1,5 +1,4 @@
 #pragma warning disable CA1852 // Seal internal types
-#nullable enable
 namespace LinQL.Tests.Translation;
 
 using LinQL.Description;
@@ -7,15 +6,15 @@ using LinQL.Description;
 public partial class TranslationProviderTests
 {
     [Fact]
-    public void SimpleSelectInterface() => this.Test<InterfaceRootType, object>(x => x.SimpleType!.Number);
+    public void SimpleSelectInterface() => this.Test<InterfaceRootType, object>(x => x.SimpleType.Number);
 
     [Fact]
     public void SelectInterfaceCastConcreteType()
-        => this.Test<InterfaceRootType, object>(x => ((SomeOtherSimpleType)x.SimpleType!)!.Float);
+        => this.Test<InterfaceRootType, object>(x => ((SomeOtherSimpleType)x.SimpleType).Float);
 
     [Fact]
     public void SelectAllFieldsInterfaceCastConcreteType()
-        => this.Test<InterfaceRootType, object>(x => (SomeOtherSimpleType)x.SimpleType!);
+        => this.Test<InterfaceRootType, object>(x => (SomeOtherSimpleType)x.SimpleType);
 
     [Fact]
     public void SelectInterfaceAsConcreteType()
@@ -29,7 +28,7 @@ public partial class TranslationProviderTests
     public void SelectAllFieldsInterfaceOnConcreteType()
         => this.Test<InterfaceRootType, object?>(x =>
             x.SimpleType.On((SomeOtherSimpleType y) => y.Number.ToString())
-                        .On((SimpleScalarType y) => y.Text!));
+                        .On((SimpleScalarType y) => y.Text));
 
     [Fact]
     public void SelectInterfaceArray()
@@ -55,7 +54,7 @@ public partial class TranslationProviderTests
     public void SelectInterfaceArrayOnConcreteType()
         => this.Test<InterfaceRootType, object>(x => x.ArrayOfInterfaces
             .Select(y => y.On((SimpleScalarType z) => z.Text)
-                          .On((SomeOtherSimpleType z) => z.Float.ToString()!)));
+                          .On((SomeOtherSimpleType z) => z.Float.ToString())));
 
     [Fact]
     public void SelectInterfaceArrayMultipleTypes()

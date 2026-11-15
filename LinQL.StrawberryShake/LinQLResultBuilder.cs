@@ -9,33 +9,26 @@ using global::StrawberryShake.Json;
 /// </summary>
 /// <typeparam name="TRoot">The root operation type.</typeparam>
 /// <typeparam name="TData">The projected result type.</typeparam>
-internal sealed class LinQLResultBuilder<TRoot, TData> : IOperationResultBuilder<JsonDocument, LinQLResult<TData>>
+/// <remarks>
+/// Initializes a new instance of the <see cref="LinQLResultBuilder{TRoot, TData}"/> class.
+/// </remarks>
+/// <param name="projection">The compiled projection applied to the deserialised root data.</param>
+/// <param name="serializer">The serializer options used to read the response.</param>
+/// <param name="query">The document that was sent.</param>
+internal sealed class LinQLResultBuilder<TRoot, TData>(Func<TRoot, TData> projection, JsonSerializerOptions serializer, string query) : IOperationResultBuilder<JsonDocument, LinQLResult<TData>>
     where TRoot : RootType<TRoot>
 {
     private static readonly IReadOnlyDictionary<string, object?> Empty = new Dictionary<string, object?>();
 
-    private readonly Func<TRoot, TData> projection;
-    private readonly JsonSerializerOptions serializer;
-    private readonly string query;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LinQLResultBuilder{TRoot, TData}"/> class.
-    /// </summary>
-    /// <param name="projection">The compiled projection applied to the deserialised root data.</param>
-    /// <param name="serializer">The serializer options used to read the response.</param>
-    /// <param name="query">The document that was sent.</param>
-    public LinQLResultBuilder(Func<TRoot, TData> projection, JsonSerializerOptions serializer, string query)
-    {
-        this.projection = projection;
-        this.serializer = serializer;
-        this.query = query;
-    }
+    private readonly Func<TRoot, TData> projection = projection;
+    private readonly JsonSerializerOptions serializer = serializer;
+    private readonly string query = query;
 
     /// <inheritdoc />
     public IOperationResult<LinQLResult<TData>> Build(Response<JsonDocument> response)
     {
         var errors = new List<IClientError>();
-        IReadOnlyDictionary<string, object?> extensions = response.Extensions ?? Empty;
+        var extensions = response.Extensions ?? Empty;
         var contextData = response.ContextData ?? Empty;
         var data = default(TData)!;
 
@@ -45,7 +38,7 @@ internal sealed class LinQLResultBuilder<TRoot, TData> : IOperationResultBuilder
 
             if (root.TryGetProperty("errors", out var errorsElement) && errorsElement.ValueKind is JsonValueKind.Array)
             {
-                errors.AddRange(JsonErrorParser.ParseErrors(errorsElement) ?? Array.Empty<IClientError>());
+                errors.AddRange(JsonErrorParser.ParseErrors(errorsElement) ?? []);
             }
 
             if (root.TryGetProperty("extensions", out var extensionsElement) && extensionsElement.ValueKind is JsonValueKind.Object)
