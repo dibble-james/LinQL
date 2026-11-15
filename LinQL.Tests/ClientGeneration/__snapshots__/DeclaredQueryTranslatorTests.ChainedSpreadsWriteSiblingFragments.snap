@@ -1,0 +1,14 @@
+﻿query linql {
+  __typename
+  result {
+    __typename
+    ... on Character {
+      __typename
+      name
+    }
+    ... on Film {
+      __typename
+      title
+    }
+  }
+}

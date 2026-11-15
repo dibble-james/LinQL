@@ -1,0 +1,7 @@
+﻿query linql {
+  __typename
+  character(id: "1") {
+    __typename
+    name
+  }
+}

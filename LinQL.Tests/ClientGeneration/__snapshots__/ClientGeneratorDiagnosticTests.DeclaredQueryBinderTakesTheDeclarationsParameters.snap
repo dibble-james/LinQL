@@ -1,0 +1,8 @@
+﻿namespace Queries
+{
+    public static class DeclarationsValue
+    {
+        public const string Document = "query linql($var1: ID!) {\n  __typename\n  character(id: $var1) {\n    __typename\n    name\n  }\n}";
+        public static global::LinQL.LinQLQuery<global::Filtering.Query, object?> Value(string id, int? count) => global::LinQL.LinQLQuery<global::Filtering.Query, object?>.Bind(Document, global::LinQL.Description.RootOperationType.Query, global::Queries.Declarations.Value, ("var1", (object? )id));
+    }
+}

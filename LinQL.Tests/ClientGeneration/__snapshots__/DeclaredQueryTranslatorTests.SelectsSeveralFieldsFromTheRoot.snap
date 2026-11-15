@@ -1,0 +1,11 @@
+﻿query linql {
+  __typename
+  hero {
+    __typename
+    name
+  }
+  heroes {
+    __typename
+    name
+  }
+}

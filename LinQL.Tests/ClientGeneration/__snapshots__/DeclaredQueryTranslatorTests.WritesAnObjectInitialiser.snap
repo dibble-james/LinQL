@@ -1,0 +1,7 @@
+﻿query linql {
+  __typename
+  search(where: { name: "hero", friends: [{ name: "other" }] }) {
+    __typename
+    name
+  }
+}

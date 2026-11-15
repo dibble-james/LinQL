@@ -17,6 +17,27 @@ internal class DocumentWalkerContext(string file, SourceProductionContext contex
 
     public SourceProductionContext Context { get; } = context;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the walk reports diagnostics.
+    /// </summary>
+    /// <remarks>
+    /// A declared query needs a schema to read, not another copy of the diagnostics the client's own walk
+    /// already reported, so building its model walks with this off.
+    /// </remarks>
+    public bool ReportsDiagnostics { get; set; } = true;
+
+    /// <summary>
+    /// Reports a diagnostic, unless the walk is only building the model.
+    /// </summary>
+    /// <param name="diagnostic">The diagnostic.</param>
+    public void Report(Diagnostic diagnostic)
+    {
+        if (this.ReportsDiagnostics)
+        {
+            this.Context.ReportDiagnostic(diagnostic);
+        }
+    }
+
     public override string ToString()
     {
         var ns = NamespaceDeclaration(IdentifierName(graphNamespace))

@@ -1,0 +1,10 @@
+﻿query linql {
+  __typename
+  hero {
+    __typename
+    ... on Character {
+      __typename
+      name
+    }
+  }
+}

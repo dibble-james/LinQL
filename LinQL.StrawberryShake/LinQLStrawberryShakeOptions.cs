@@ -23,13 +23,13 @@ public sealed class LinQLStrawberryShakeOptions
     public JsonSerializerOptions Serializer { get; set; } = new(JsonSerializerDefaults.Web);
 
     /// <summary>
-    /// Gets or sets the strategy used by <see cref="StrawberryShakeLinQLClient.Watch{TRoot, TData}"/>.
+    /// Gets or sets the strategy used by <c>Watch</c>.
     /// </summary>
     /// <remarks>
     /// The strategy applies to the LinQL-owned operation cache: <see cref="ExecutionStrategy.CacheFirst"/> replays a
     /// cached result without contacting the server, <see cref="ExecutionStrategy.CacheAndNetwork"/> replays the
     /// cached result and then refreshes it, and <see cref="ExecutionStrategy.NetworkOnly"/> never replays. Results
-    /// returned by <see cref="StrawberryShakeLinQLClient.SendAsync{TRoot, TData}"/> are always fetched from the
+    /// returned by <c>SendAsync</c> are always fetched from the
     /// server and are only written to the cache.
     /// </remarks>
     public ExecutionStrategy Strategy { get; set; } = ExecutionStrategy.NetworkOnly;

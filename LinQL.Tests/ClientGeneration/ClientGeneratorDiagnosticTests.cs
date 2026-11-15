@@ -172,6 +172,230 @@ public class ClientGeneratorDiagnosticTests
         Assert.DoesNotContain(Generate(DeclaredFilterInputSdl, "record"), x => x.Id == "LINQLGEN07");
     }
 
+    [Fact]
+    public void DeclaredQueryBoundToItsSchemaIsNotReported()
+        => Assert.DoesNotContain(
+            Generate(PlainSdl, source: DeclaredQuerySource("Filtering")),
+            x => x.Id is "LINQLGEN12" or "LINQLGEN13" or "LINQLGEN14");
+
+    [Fact]
+    public void DeclaredQueryNamingAnUnknownSchemaIsReported()
+    {
+        var diagnostic = Assert.Single(Generate(PlainSdl, source: DeclaredQuerySource("Nope")), x => x.Id == "LINQLGEN12");
+
+        Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Nope'", diagnostic.GetMessage(), StringComparison.Ordinal);
+
+        // The diagnostic points at the declared field, not at the file.
+        Assert.Equal(21, diagnostic.Location.GetLineSpan().StartLinePosition.Line);
+    }
+
+    [Fact]
+    public void DeclaredQueryUsingARootTypeTheSchemaDoesNotGenerateIsReported()
+    {
+        var diagnostic = Assert.Single(Generate(PlainSdl, source: DeclaredQuerySource("Filtering", "Product")), x => x.Id == "LINQLGEN13");
+
+        Assert.Contains("'Filtering'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Product'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DeclaredQuerySelectingATypeFieldImplicitlyIsReported()
+    {
+        var diagnostic = Assert.Single(Generate(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero")), x => x.Id == "LINQLGEN08");
+
+        Assert.Contains("'hero'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Character'", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DeclaredQueryReadingAValueInItsProjectionIsReported()
+    {
+        var diagnostic = Assert.Single(
+            Generate(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero.Select(h => new { h.Name, Prefix = name })", values: "name")),
+            x => x.Id == "LINQLGEN10");
+
+        Assert.Contains("'name'", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DeclaredQueryDocumentIsEmitted()
+        => Snapshot.Match(DeclaredQueryTree("x.Hero.Select(h => new { h.Name })"));
+
+    [Fact]
+    public void DeclaredQueryArgumentsBecomeVariables()
+        => Snapshot.Match(DeclaredQueryTree("x.ExecuteCharacter(id).Select(c => new { c.Name })", "id"));
+
+    [Fact]
+    public void DeclaredQueryLiteralBecomesAValue()
+        => Snapshot.Match(DeclaredQueryTree("""x.ExecuteCharacter("1").SelectAll()"""));
+
+    [Fact]
+    public void DeclaredQueryBinderTakesTheDeclarationsParameters()
+        => Snapshot.Match(Assert.Single(
+            Run(PlainSdl, source: TypedParameterSource).GeneratedTrees,
+            x => x.FilePath.EndsWith("DeclarationsValue.g.cs", StringComparison.Ordinal)).ToString());
+
+    [Fact]
+    public void DeclarationWithAProblemEmitsNoDeclaredQuery()
+        => Assert.DoesNotContain(
+            Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero")).GeneratedTrees,
+            x => x.FilePath.EndsWith("DeclarationsValue.g.cs", StringComparison.Ordinal));
+
+    [Fact]
+    public void EmittedBinderCompiles()
+    {
+        // The declaration is compiled against the client the generator emits itself, so this covers what a
+        // snapshot cannot: that the binder's return type, projection reference and bound values type-check.
+        var result = Run(PlainSdl, source: DeclaredQueryWithoutClientTypes);
+
+        var compilation = CSharpCompilation.Create(
+            "Emitted",
+            [CSharpSyntaxTree.ParseText(DeclaredQueryWithoutClientTypes, cancellationToken: TestContext.Current.CancellationToken), .. result.GeneratedTrees],
+            References,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        Assert.Empty(compilation.GetDiagnostics(TestContext.Current.CancellationToken).Where(x => x.Severity == DiagnosticSeverity.Error));
+    }
+
+    [Fact]
+    public void DeclarationThatIsNotAParameterisedExpressionIsReported()
+    {
+        var diagnostic = Assert.Single(Generate(PlainSdl, source: NotAQuerySource), x => x.Id == "LINQLGEN14");
+
+        Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DeclarationInitialisedByAFactoryIsReported()
+    {
+        var result = Run(PlainSdl, source: FactorySource);
+
+        var diagnostic = Assert.Single(result.Diagnostics, x => x.Id == "LINQLGEN15");
+
+        Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.DoesNotContain(result.GeneratedTrees, x => x.FilePath.Contains("DeclarationsValue.g.cs", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void DeclarationsNamedAlikeInTwoNamespacesAreBothEmitted()
+    {
+        var result = Run(PlainSdl, source: TwoNamespacesSource);
+
+        Assert.DoesNotContain(result.Diagnostics, x => x.Severity == DiagnosticSeverity.Error);
+        Assert.Equal(
+            2,
+            result.GeneratedTrees.Count(x => x.FilePath.Contains("DeclarationsValue.g.cs", StringComparison.Ordinal)));
+    }
+
+    private const string TypedParameterSource = """
+        using System;
+        using System.Linq.Expressions;
+        using LinQL.Description;
+
+        namespace Filtering
+        {
+            public class Query
+            {
+                public string? Hero { get; set; }
+            }
+        }
+
+        namespace Queries
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, string, int?, object?>> Value =
+                    (x, id, count) => x.ExecuteCharacter(id).Select(c => new { c.Name });
+            }
+        }
+        """;
+
+    /// <summary>
+    /// A declaration written against the client types the generator emits, so the emitted binder can be compiled.
+    /// </summary>
+    private const string DeclaredQueryWithoutClientTypes = """
+        using System;
+        using System.Linq.Expressions;
+        using LinQL;
+        using LinQL.Description;
+
+        namespace Queries
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, string, object?>> Value =
+                    (x, id) => x.ExecuteCharacter(id).SelectAll();
+            }
+        }
+        """;
+
+    /// <summary>
+    /// A declaration whose expression is produced by a method, so there is no source to read.
+    /// </summary>
+    private const string FactorySource = """
+        using System;
+        using System.Linq.Expressions;
+        using LinQL.Description;
+
+        namespace Queries
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, object?>> Value = Build();
+
+                private static Expression<Func<Filtering.Query, object?>> Build()
+                    => x => x.Hero.Select(h => new { h.Name });
+            }
+        }
+        """;
+
+    /// <summary>
+    /// Two declarations that agree on their containing type and field name, which is legal across namespaces.
+    /// </summary>
+    private const string TwoNamespacesSource = """
+        using System;
+        using System.Linq.Expressions;
+        using LinQL.Description;
+
+        namespace First
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, object?>> Value
+                    = x => x.Hero.Select(h => new { h.Name });
+            }
+        }
+
+        namespace Second
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public static readonly Expression<Func<Filtering.Query, object?>> Value
+                    = x => x.Hero.Select(h => new { h.Name });
+            }
+        }
+        """;
+
+    private const string NotAQuerySource = """
+        using LinQL.Description;
+
+        namespace Queries
+        {
+            public static class Declarations
+            {
+                [LinQLQuery("Filtering")]
+                public const string Value = "not a query";
+            }
+        }
+        """;
+
     private const string PlainSdl = """
         schema {
           query: Query
@@ -179,6 +403,7 @@ public class ClientGeneratorDiagnosticTests
 
         type Query {
           hero: Character
+          character(id: ID!): Character
         }
 
         type Character {
@@ -186,16 +411,88 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    private static ImmutableArray<Diagnostic> Generate(string sdl, string? typesAs = null)
-        => [.. Run(sdl, typesAs).Diagnostics];
+    /// <summary>
+    /// Gets the generated declared-query file a source produces.
+    /// </summary>
+    /// <param name="body">The lambda's body.</param>
+    /// <param name="values">The declaration's lambda parameters after the root, comma separated.</param>
+    /// <returns>The generated source.</returns>
+    private static string DeclaredQueryTree(string body, string? values = null)
+        => Assert.Single(
+            Run(PlainSdl, source: DeclaredQuerySource("Filtering", body: body, values: values)).GeneratedTrees,
+            x => x.FilePath.EndsWith("DeclarationsValue.g.cs", StringComparison.Ordinal)).ToString();
 
-    private static GeneratorDriverRunResult Run(string sdl, string? typesAs = null)
-        => CSharpGeneratorDriver.Create(
+    private static ImmutableArray<Diagnostic> Generate(string sdl, string? typesAs = null, string? source = null)
+        => [.. Run(sdl, typesAs, source).Diagnostics];
+
+    private static GeneratorDriverRunResult Run(string sdl, string? typesAs = null, string? source = null)
+    {
+        SyntaxTree[] trees = source is null ? [] : [CSharpSyntaxTree.ParseText(source)];
+
+        return CSharpGeneratorDriver.Create(
             generators: [new ClientGenerator().AsSourceGenerator()],
             additionalTexts: [new SdlFile("SDLs/Filtering.graphql", sdl)],
             optionsProvider: new NamespaceOptions(typesAs))
-        .RunGenerators(CSharpCompilation.Create("Filtering"))
+        .RunGenerators(CSharpCompilation.Create(
+            "Filtering",
+            trees,
+            References,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)))
         .GetRunResult();
+    }
+
+    /// <summary>
+    /// The references a declared query needs to be understood: the framework, and LinQL itself for the
+    /// attribute and the root type it names.
+    /// </summary>
+    private static readonly MetadataReference[] References =
+    [
+        .. (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? string.Empty)
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => MetadataReference.CreateFromFile(x)),
+        MetadataReference.CreateFromFile(typeof(LinQLOptions).Assembly.Location),
+    ];
+
+    /// <summary>
+    /// Builds a source file declaring one query.
+    /// </summary>
+    /// <param name="clientNamespace">The schema the query names.</param>
+    /// <param name="rootType">The root type its expression uses.</param>
+    /// <param name="body">The lambda's body.</param>
+    /// <param name="values">The declaration's lambda parameters after the root, comma separated, or <see langword="null"/> for none.</param>
+    /// <returns>The source, whose declared field is on line 22.</returns>
+    private static string DeclaredQuerySource(string clientNamespace, string rootType = "Query", string body = "null", string? values = null)
+    {
+        var parameters = values is null ? "x" : $"(x, {values})";
+        var valueTypes = values is null ? string.Empty : string.Concat(Enumerable.Repeat(", object?", values.Split(',').Length));
+
+        return $$"""
+            using System.Linq.Expressions;
+            using LinQL.Description;
+
+            namespace Filtering
+            {
+                public class Query
+                {
+                    public string? Hero { get; set; }
+                }
+
+                public class Product
+                {
+                    public string? Name { get; set; }
+                }
+            }
+
+            namespace Queries
+            {
+                public static class Declarations
+                {
+                    [LinQLQuery("{{clientNamespace}}")]
+                    public static readonly Expression<System.Func<Filtering.{{rootType}}{{valueTypes}}, object?>> Value = {{parameters}} => {{body}};
+                }
+            }
+            """;
+    }
 
     private sealed class SdlFile(string path, string content) : AdditionalText
     {

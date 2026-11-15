@@ -46,6 +46,17 @@ internal static class SchemaNames
         => char.ToUpperInvariant(field.First()) + field.ToCamelCase().Substring(1);
 
     /// <summary>
+    /// Gets the name of the method that selects a field carrying arguments.
+    /// </summary>
+    /// <param name="field">The GraphQL field name.</param>
+    /// <returns>The method's name.</returns>
+    /// <remarks>
+    /// A field with arguments is selected through a method rather than a property, so the generator that
+    /// emits it and the translators that read it back all go through this one spelling.
+    /// </remarks>
+    public static string ExecuteName(string field) => "Execute" + FieldName(field);
+
+    /// <summary>
     /// Gets the identifier for a GraphQL name, escaping it when it is a C# keyword.
     /// </summary>
     /// <param name="name">The GraphQL name.</param>

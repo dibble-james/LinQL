@@ -383,3 +383,184 @@ The SDL must contain the filter input types, so export it from a server with `Ad
 the Hot Chocolate CLI to produce the SDL.
 
 Filtering lives in `LinQL` itself, so the Strawberry Shake adapter supports it the same way.
+
+### Declared queries
+
+Everything above is translated when the query is sent: the expression becomes a document, the document is
+cached against its own text, and the response is projected. A declared query moves that translation to build
+time. The expression is written once, the document is generated once, and a call site only supplies values.
+
+```csharp
+using System.Linq.Expressions;
+using LinQL.Description;
+
+public static class Queries
+{
+    [LinQLQuery("StarWars.Types")]
+    public static readonly Expression<Func<Root, string, string?>> FilmTitleById =
+        (q, id) => q.ExecuteFilm(id).Select(f => f.Title);
+}
+```
+
+The first lambda parameter is the schema's root type, as it is for a runtime expression. The remaining
+parameters are the query's values, and the last type argument is what the response is projected to — a
+projection to an anonymous type declares `object?`, because the type cannot be named in a field declaration.
+
+#### The attribute
+
+`[LinQLQuery]` takes the `LinQLClientNamespace` of the SDL the query is written against, which is the same
+value you put on the `<AdditionalFiles>` item. It is required rather than inferred: a project may reference
+several SDLs, and a declaration's meaning should not depend on which other types happen to be in scope.
+
+It is applied to a field that is `static` and holds an `Expression<Func<TRoot, …>>`. Anything else is
+`LINQLGEN14`, including a `const string` that looks like a query, because there is no expression to translate.
+
+#### What the generator emits
+
+A companion class in the declaration's namespace, named after the declaring type and field — `Queries` and
+`FilmTitleById` become `QueriesFilmTitleById` — holding the document as a constant and a binder named after
+the field:
+
+```csharp
+public static global::LinQL.LinQLQuery<global::StarWars.Types.Root, string?> FilmTitleById(string id)
+    => global::LinQL.LinQLQuery<global::StarWars.Types.Root, string?>.Bind(
+        Document,
+        global::LinQL.Description.RootOperationType.Query,
+        global::Queries.FilmTitleById,
+        ("var1", (object?)id));
+```
+
+The binder keeps the lambda's parameters and their declared types, so a call reads like any other method:
+
+```csharp
+var title = await client.SendAsync(QueriesFilmTitleById.FilmTitleById("1"));
+```
+
+A declaration with any diagnostic produces no document and no binder. Emitting the part that could be
+translated would build a query that silently differs from the code it was generated from, which is worse than
+a build failure.
+
+#### Values and variables
+
+An argument is either one of the query's parameters, which becomes a variable, or a value the compiler can
+see, which is written into the document. There is no runtime translator to fall back on, so the split is
+decided at build time:
+
+| Declaration | Document |
+|---|---|
+| `q.ExecuteCharacter(id)` with parameter `id` | `character(id: $var1)`, `$var1: ID!` |
+| `q.ExecuteCharacter("1")` | `character(id: "1")` |
+| `q.ExecuteCharacter(Id)` where `const string Id = "1"` | `character(id: "1")` |
+| `q.ExecuteEpisodes(Episode.EMPIRE)` | `episodes(only: EMPIRE)` |
+| `q.ExecuteCharacters(new[] { "1", "2" })` | `characters(ids: ["1", "2"])` |
+| `q.ExecuteSearch(new SearchInput { Name = name })` | `search(where: { name: $var1 })`, `$var1: String` |
+
+- Variable names are `var1`…`varN` in traversal order, the same numbering a runtime expression produces.
+- A variable's type comes from the SDL argument, not from the C# parameter: `names(ids: [ID!]!)` yields
+  `$var1: [ID!]!`. A parameter filling two arguments therefore attaches two variables, which the binder maps
+  back to its one value.
+- Values and variables mix inside an input object, because GraphQL input literals allow it. A parameter
+  standing in an initialiser is still `$varN`, typed from the position it stands in.
+- Anything else is `LINQLGEN11`: a method call, a property getter, `DateTime.Now`, a captured local or field.
+  There is no runtime fallback by design — a value that looks precomputed but is evaluated per call would
+  make the document a lie.
+
+Names and types come from the SDL throughout, and a value that is valid C# but wrong for the schema is left
+for the server to reject, as it is on the runtime path. Declared queries do not add build-time type
+validation.
+
+#### What translates
+
+Selections and fragments are the ones described above, because they are checked against the same schema:
+
+| Declaration | Document |
+|---|---|
+| `q.Hero.Select(h => new { h.Name })` | `hero { __typename name }` |
+| `q.Hero.SelectAll()` | every scalar field the SDL lists for `Hero` |
+| `q.Hero.Includes(h => h.Friend.Select(f => new { f.Name }))` | adds `friend` to `hero`'s selection |
+| `q.Result.On((Character c) => c.Name)` | `result { __typename ... on Character { __typename name } }` |
+| `((Character)q.Result).Name` | the same fragment, written without `On` |
+| `q.Results.OfType<Film>().Select(f => new { f.Title })` | `results { __typename ... on Film { __typename title } }` |
+
+- **`Includes`, `On`, casts and `OfType` attach to the selection they are called on**, exactly as they do at
+  runtime, so the same expression produces the same document on either path.
+- **A chain is read from the outside in**, so `Select`, `SelectAll`, `Includes` and `On` combine in source
+  order without needing a merge step.
+- **A cast is a type condition**, so `((Film)q.Result).Title` and `q.Result.On((Film f) => f.Title)` write the
+  same inline fragment. A cast with nothing selected from it writes the type's scalar fields, as `SelectAll`
+  does. A cast found inside a `Select` body belongs to the projection's own selection set, not the enclosing
+  one.
+- **`OfType<T>()` filters a collection to a possible type**, so its fragment lives in the field's selection and
+  whatever is chained after it selects from the filtered type.
+- **A type the schema does not declare is reported**, naming the type. Whether it can actually be a member of
+  the union is the server's business, as above.
+
+#### The projection rule
+
+The document does not depend on the values, so a projection that read one would be compiled with `default`
+substituted for it and return a result that looks computed and is not. `LINQLGEN10` reports a value used
+anywhere in a selection:
+
+```csharp
+// Reported: the projection is the value itself.
+(q, name) => q.Hero.Select(h => name)
+
+// Reported: the value is part of the projected object.
+(q, name) => q.Hero.Select(h => new { h.Id, Label = name })
+
+// Reported: the value is read from, not just mentioned.
+(q, name) => q.Hero.Select(h => name.ToUpper())
+
+// Accepted: an argument is the one place a value belongs.
+(q, name) => q.ExecuteSearch(new SearchInput { Name = name })
+```
+
+A value is checked for before a shape, so `h.Select(name)` names the value as the problem rather than
+reporting that a projection has to be an expression taking the field's type.
+
+#### Diagnostics
+
+| Id | Reported when |
+|----|---------------|
+| `LINQLGEN08` | a field returning a type is selected without `.Select(...)` or `.SelectAll()` |
+| `LINQLGEN09` | the construct cannot be translated: a member the schema does not declare, an argument the field does not declare, or a fragment the document cannot name |
+| `LINQLGEN10` | a projection reads one of the query's values |
+| `LINQLGEN11` | an argument's value cannot be written: it is not a parameter, a constant, an enum member, or an initialiser of those |
+| `LINQLGEN12` | the named client namespace is not declared by any SDL in the project |
+| `LINQLGEN13` | the schema exists but does not generate the root type the expression uses |
+| `LINQLGEN14` | the member is not a static `Expression<Func<TRoot, TData>>` field |
+| `LINQLGEN15` | the field is not initialised with a lambda, so there is no expression source to read |
+
+All are errors on the declaration. 08–11 are the translator's rules and match the runtime path's behaviour;
+12–15 happen before translation, when the declaration is matched to a schema and its source is read.
+
+The document is generated from the lambda's *source*, which is why `15` exists: a field built by a method —
+`= Build()` — cannot be translated, and reporting that is better than emitting nothing and leaving the call
+site to fail on a missing binder.
+
+#### Sending one
+
+`SendAsync` runs a declared query or mutation on both adapters. A declared subscription uses the adapter's
+stream method — `Watch` on Strawberry Shake, `CreateSubscriptionStream` on `GraphQL.Client`:
+
+```csharp
+var title = await client.SendAsync(QueriesFilmTitleById.FilmTitleById("1"));
+
+var numbers = client.Watch(QueriesNumbers.Numbers());
+var stream = graph.CreateSubscriptionStream(QueriesNumbers.Numbers());
+```
+
+`SendAsync` refuses a subscription, because a subscription is a stream rather than a single response. The
+declared path still goes through the same cache as the runtime one, but the document is a constant, so cached
+operations differ only by their variables.
+
+#### Not covered
+
+- Fields that both a projection and an `Includes` select are not de-duplicated. GraphQL merges them, so the
+  document is valid, just redundant.
+- A `Select`, `SelectAll` or `Includes` argument must be a lambda; there is no inline-value form to translate.
+- A declared query's projection is compiled per call, exactly as a runtime expression's is.
+- No `Filter` shorthand: `.Filter(f => f.Price(p => p.Gt(10)))` builds a filter from a lambda at runtime, so a
+  declared query reports it as a construct the pass cannot translate. Pass a `where` argument as an
+  initialiser instead — `q.ExecuteProducts(new ProductFilterInput { Price = new IntOperationFilterInput { Gt = 10 } })`
+  — which is a value like any other.
