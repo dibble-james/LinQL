@@ -2,11 +2,11 @@
   __typename
   simpleType {
     __typename
-    ...on someOtherSimpleType {
+    ... on someOtherSimpleType {
       __typename
       number
     }
-    ...on simpleScalarType {
+    ... on simpleScalarType {
       __typename
       text
     }

@@ -478,6 +478,8 @@ Selections and fragments are the ones described above, because they are checked 
 | `q.Hero.Select(h => new { h.Name })` | `hero { __typename name }` |
 | `q.Hero.SelectAll()` | every scalar field the SDL lists for `Hero` |
 | `q.Hero.Includes(h => h.Friend.Select(f => new { f.Name }))` | adds `friend` to `hero`'s selection |
+| `q.Products.Filter(p => p.Price(x => x.Gt(min)))` | `products(where: $var1)`, `$var1: ProductFilterInput` |
+| `q.Products.Sort(order)` | `products(order: $var1)`, `$var1: [ProductSortInput!]` |
 | `q.Result.On((Character c) => c.Name)` | `result { __typename ... on Character { __typename name } }` |
 | `((Character)q.Result).Name` | the same fragment, written without `On` |
 | `q.Results.OfType<Film>().Select(f => new { f.Title })` | `results { __typename ... on Film { __typename title } }` |
@@ -494,6 +496,44 @@ Selections and fragments are the ones described above, because they are checked 
   whatever is chained after it selects from the filtered type.
 - **A type the schema does not declare is reported**, naming the type. Whether it can actually be a member of
   the union is the server's business, as above.
+
+#### Filters and sorting
+
+`Filter`, `Order` and `Sort` are read from the same extensions the generated client gives the field, so a filter
+is written the way it is at runtime:
+
+```csharp
+[LinQLQuery("StarWars.Types")]
+public static readonly Expression<Func<Root, decimal, Product[]>> ExpensiveProducts =
+    (q, min) => q.Products.Filter(p => p.Price(x => x.Gt(min))).SelectAll();
+```
+
+A filter is **one variable holding the whole filter**, because that is the shape Hot Chocolate's `where`
+argument takes: nested dictionaries, not a variable per operation. The values inside the lambda are therefore
+rebuilt when the query is sent, through `FilterValue`, rather than becoming variables of their own:
+
+```csharp
+public static global::LinQL.LinQLQuery<global::StarWars.Types.Root, Product[]> ExpensiveProducts(decimal min)
+    => global::LinQL.LinQLQuery<…>.Bind(
+        Document,
+        global::LinQL.Description.RootOperationType.Query,
+        global::Queries.ExpensiveProducts,
+        ("var1", global::LinQL.Filters.FilterValue.Create()
+            .Set("price", global::LinQL.Filters.FilterValue.Create().Set("gt", (object?)min))));
+```
+
+- The document is the same whatever `min` is, which is what keeps a declared query cacheable.
+- `and` and `or` fold everything built before them into their first branch, exactly as the runtime
+  translator's `Combine` does, so `p.Price(x => x.Gt(10)).And(a => a.Name(n => n.Eq("x")))` is
+  `{ and: [{ price: { gt: 10 } }, { name: { eq: "x" } }] }`.
+- A filter value may be a parameter, a constant, an enum member, or a list of those. Anything the compiler
+  cannot see through — a method call, a property, a captured local — is `LINQLGEN11`, never a runtime fallback.
+- An empty filter is `LINQLGEN09`: there is no operation to send, so the filter should be omitted instead.
+- `Sort`/`Order` are ordinary arguments. `Sort(order)` binds `$var1`, and an initialiser is written into the
+  document with any parameter inside it still a variable — `Sort(new[] { new ProductSortInput { Name = direction } })`
+  is `order: [{ name: $var1 }]`.
+- An argument attached twice is `LINQLGEN09` naming the field and the argument, because `Order` and `Sort` both
+  name `order`.
 
 #### The projection rule
 
@@ -560,7 +600,5 @@ operations differ only by their variables.
   document is valid, just redundant.
 - A `Select`, `SelectAll` or `Includes` argument must be a lambda; there is no inline-value form to translate.
 - A declared query's projection is compiled per call, exactly as a runtime expression's is.
-- No `Filter` shorthand: `.Filter(f => f.Price(p => p.Gt(10)))` builds a filter from a lambda at runtime, so a
-  declared query reports it as a construct the pass cannot translate. Pass a `where` argument as an
-  initialiser instead — `q.ExecuteProducts(new ProductFilterInput { Price = new IntOperationFilterInput { Gt = 10 } })`
-  — which is a value like any other.
+- A filter argument the schema declares as a list is not translated, because a filter is one value: the pass
+  reports it rather than guessing which entry a lambda sets.

@@ -61,6 +61,7 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
 
     protected override Expression VisitExtension(Expression node) => node switch
     {
+        SpreadExpression spread => this.VisitSpread(spread),
         TypeFieldExpression field => this.VisitField(field),
         ScalarFieldExpression scalar => this.VisitScalar(scalar),
         _ => base.VisitExtension(node),
@@ -132,6 +133,39 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
         }
 
         return field;
+    }
+
+    /// <summary>
+    /// Writes a spread as the inline fragment it is.
+    /// </summary>
+    /// <remarks>
+    /// A fragment carries <c>__typename</c> for the same reason a field does: the type of a value selected
+    /// through a fragment is only known at runtime.
+    /// </remarks>
+    private Expression VisitSpread(SpreadExpression spread)
+    {
+        var parent = this.selections
+            ?? throw new InvalidOperationException($"The spread of '{spread.Type.Name}' has to be selected inside a field.");
+
+        var selections = new List<ISelectionNode> { new FieldNode("__typename") };
+        this.selections = selections;
+
+        try
+        {
+            base.VisitExtension(spread);
+        }
+        finally
+        {
+            this.selections = parent;
+        }
+
+        parent.Add(new InlineFragmentNode(
+            location: null,
+            typeCondition: new NamedTypeNode(spread.TypeCondition.GetTypeName()),
+            directives: [],
+            selectionSet: new SelectionSetNode(selections)));
+
+        return spread;
     }
 
     private Expression VisitScalar(ScalarFieldExpression scalar)

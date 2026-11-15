@@ -2,11 +2,11 @@
   __typename
   arrayOfInterfaces {
     __typename
-    ...on simpleScalarType {
+    ... on simpleScalarType {
       __typename
       text
     }
-    ...on someOtherSimpleType {
+    ... on someOtherSimpleType {
       __typename
       float
     }

@@ -29,7 +29,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// An <c>Includes</c> call grows the selection it is attached to rather than the document root, which is what the
 /// runtime translator does, so <c>q.Hero.Includes(h => h.Name)</c> writes into <c>hero</c>'s selection set. An
 /// <c>On</c> spread attaches in the same way and writes an inline fragment, so <c>q.Result.On((Film f) => f.Title)</c>
-/// writes <c>...on Film</c> into <c>result</c>'s selection set. A cast and an <c>OfType</c> write the same fragment by a
+/// writes a fragment on <c>Film</c> into <c>result</c>'s selection set. A cast and an <c>OfType</c> write the same fragment by a
 /// shorter route — <c>((Film)q.Result).Title</c> and <c>q.Results.OfType&lt;Film&gt;().Select(f => f.Title)</c> — because on the
 /// wire both are a type condition over the field's selection.
 /// </remarks>
@@ -39,7 +39,7 @@ internal sealed class DeclaredQueryTranslator
     private readonly IReadOnlyDictionary<int, DeclaredValue> declaredValues;
     private readonly List<Diagnostic> problems = [];
     private readonly List<VariableDefinitionNode> variables = [];
-    private readonly Dictionary<string, List<string>> bindings = new(StringComparer.Ordinal);
+    private readonly List<DeclaredQueryBinding> bindings = [];
     private IReadOnlyList<string> values = [];
     private RootOperationType operation = RootOperationType.Query;
 
@@ -758,6 +758,25 @@ internal sealed class DeclaredQueryTranslator
             }
 
             default:
+                // A field can carry arguments from the extensions the generator emits for them, such as
+                // q.Products.Filter(…) and q.Products.Sort(…), so the call is read against the field it extends.
+                if (expression is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax applied } appliedCall)
+                {
+                    var reported = this.problems.Count;
+                    var receiver = this.FieldOf(applied.Expression, typeName, parameter, values);
+
+                    if (receiver is not null)
+                    {
+                        return this.AttachArgument(receiver, applied.Name, appliedCall.ArgumentList, values);
+                    }
+
+                    // The receiver was already reported, so reporting the call as well would only repeat it.
+                    if (this.problems.Count != reported)
+                    {
+                        return null;
+                    }
+                }
+
                 if (RootIdentifier(expression) is { } name && values.Contains(name))
                 {
                     this.ReportProjection(expression, name);
@@ -828,6 +847,336 @@ internal sealed class DeclaredQueryTranslator
         }
 
         return new ResolvedField(field, attached);
+    }
+
+    /// <summary>
+    /// Attaches the argument a call names to the field it is called on.
+    /// </summary>
+    /// <param name="receiver">The field the call extends.</param>
+    /// <param name="name">The method the call makes, which the schema names the argument after.</param>
+    /// <param name="arguments">The call's arguments.</param>
+    /// <param name="values">The lambda parameters that become variables.</param>
+    /// <returns>
+    /// The field with the argument attached, or <see langword="null"/> when the call cannot be one.
+    /// </returns>
+    /// <remarks>
+    /// The extensions the generator emits are named after the arguments they attach, except that every filter is
+    /// called <c>Filter</c>: a filter's argument is therefore found by its filter input type, and <c>Sort</c> is read
+    /// as the schema's <c>order</c>. A filter is one variable holding the whole filter, so it is rebuilt by the
+    /// binder rather than bound as a parameter; every other argument goes through the same value reading a field's
+    /// own argument does.
+    /// </remarks>
+    private ResolvedField? AttachArgument(
+        ResolvedField receiver,
+        SimpleNameSyntax name,
+        ArgumentListSyntax arguments,
+        IReadOnlyList<string> values)
+    {
+        var method = name.Identifier.ValueText;
+        var field = receiver.Definition.Name.Value;
+
+        InputValueDefinitionNode? argument;
+
+        if (method == "Filter")
+        {
+            var filters = receiver.Definition.Arguments
+                .Where(x => SchemaNames.IsFilterInputType(x.Type.NamedType().Name.Value))
+                .ToList();
+
+            if (filters.Count != 1)
+            {
+                this.Report(
+                    name,
+                    filters.Count == 0
+                        ? $"'{field}' declares no filter argument to attach"
+                        : $"'{field}' declares more than one filter argument, so '{method}' does not say which one it sets");
+
+                return null;
+            }
+
+            argument = filters[0];
+        }
+        else
+        {
+            argument = receiver.Definition.Arguments.FirstOrDefault(x =>
+                SchemaNames.FieldName(x.Name.Value) == method
+                || (method == "Sort" && SchemaNames.FieldName(x.Name.Value) == "Order"));
+
+            if (argument is null)
+            {
+                this.Report(name, $"'{method}' is not a field of the type being selected, and '{field}' declares no argument by that name");
+
+                return null;
+            }
+        }
+
+        // A second call for the same argument would write it twice, which the runtime translator rejects too:
+        // Order(…) and Sort(…) both name 'order', so the aliased spelling makes this reachable by accident.
+        if (receiver.Arguments.Any(x => x.Name.Value == argument.Name.Value))
+        {
+            this.Report(name, $"'{field}' is given '{argument.Name.Value}' twice; a field can carry each argument once");
+
+            return null;
+        }
+
+        if (arguments.Arguments.Count > 1)
+        {
+            this.Report(arguments, $"'{method}' attaches at most one value");
+
+            return null;
+        }
+
+        var expression = arguments.Arguments.FirstOrDefault()?.Expression;
+
+        if (SchemaNames.IsFilterInputType(argument.Type.NamedType().Name.Value))
+        {
+            // A filter is one value however the schema spells its argument, so a list of filters has no shape
+            // the binder can build.
+            if (argument.Type.IsListType() || (argument.Type.IsNonNullType() && argument.Type.InnerType().IsListType()))
+            {
+                this.Report(arguments, $"'{field}' declares its filter as a list, which a declared query cannot build as one value");
+
+                return null;
+            }
+
+            if (expression is not LambdaExpressionSyntax lambda)
+            {
+                this.Report((SyntaxNode?)expression ?? arguments, $"a filter on '{field}' has to be written as a lambda over its builder");
+
+                return null;
+            }
+
+            if (this.FilterValue(lambda, argument.Type) is not { } filter)
+            {
+                return null;
+            }
+
+            return new ResolvedField(
+                receiver.Definition,
+                [.. receiver.Arguments, new ArgumentNode(argument.Name.Value, this.Declare(filter, argument.Type))]);
+        }
+
+        // An extension with an optional parameter can be called with nothing, which the runtime path attaches
+        // as an explicit null rather than as an omitted argument.
+        if (expression is null)
+        {
+            return new ResolvedField(
+                receiver.Definition,
+                [.. receiver.Arguments, new ArgumentNode(argument.Name.Value, new NullValueNode(location: null))]);
+        }
+
+        return this.ValueOf(expression, argument.Type, values) is { } value
+            ? new ResolvedField(receiver.Definition, [.. receiver.Arguments, new ArgumentNode(argument.Name.Value, value)])
+            : null;
+    }
+
+    /// <summary>
+    /// Reads a filter lambda as the value its variable carries.
+    /// </summary>
+    /// <param name="lambda">The filter's lambda.</param>
+    /// <param name="type">The type the schema declares the filter argument as.</param>
+    /// <returns>The value, or <see langword="null"/> when the lambda cannot be one.</returns>
+    /// <remarks>
+    /// A filter is one variable holding the whole filter, so the values inside it are not variables of their own:
+    /// the binder rebuilds the dictionary from the declaration's parameters when the query is sent.
+    /// </remarks>
+    private DeclaredQueryFilterValue? FilterValue(LambdaExpressionSyntax lambda, ITypeNode type)
+    {
+        if (ParameterName(lambda) is not { } parameter || lambda.Body is not ExpressionSyntax body)
+        {
+            this.Report(lambda, "a filter has to be an expression over the filter's builder, the way f => f.Name(n => n.Eq(\"x\")) is");
+
+            return null;
+        }
+
+        var fields = this.FilterFields(body, type.NamedType().Name.Value, parameter);
+
+        if (fields is null)
+        {
+            return null;
+        }
+
+        if (fields.Count == 0)
+        {
+            this.Report(lambda, "a filter has to set at least one operation; omit the filter to query without one");
+
+            return null;
+        }
+
+        return new DeclaredQueryFilterValue(fields);
+    }
+
+    /// <summary>
+    /// Reads a chain of filter builder calls as the fields it sets.
+    /// </summary>
+    /// <param name="expression">The chain, whose outermost call is the last field it sets.</param>
+    /// <param name="filterType">The filter input type the chain builds.</param>
+    /// <param name="parameter">The lambda parameter the chain is called on.</param>
+    /// <returns>The fields, inner-most first, or <see langword="null"/> when one of them cannot be read.</returns>
+    private List<DeclaredQueryFilterField>? FilterFields(ExpressionSyntax expression, string filterType, string parameter)
+    {
+        var chain = Unparenthesised(expression);
+
+        if (IsOnParameter(chain, parameter))
+        {
+            return [];
+        }
+
+        if (chain is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } call)
+        {
+            this.Report(expression, "a filter is built from the filter builder's methods, the way f.Name(n => n.Eq(\"x\")) is");
+
+            return null;
+        }
+
+        var fields = this.FilterFields(access.Expression, filterType, parameter);
+
+        if (fields is null)
+        {
+            return null;
+        }
+
+        var member = access.Name.Identifier.ValueText;
+        var field = this.model.FieldsOf(filterType).FirstOrDefault(x => SchemaNames.FieldName(x.Name.Value) == member);
+
+        if (field is null)
+        {
+            this.Report(access.Name, $"'{member}' is not a filter on '{filterType}'");
+
+            return null;
+        }
+
+        if (call.ArgumentList.Arguments.Count != 1)
+        {
+            this.Report(call, $"'{member}' takes exactly one value");
+
+            return null;
+        }
+
+        var fieldType = field.Type.NamedType().Name.Value;
+        var value = this.FilterFieldValue(call.ArgumentList.Arguments[0].Expression, field.Type, member);
+
+        if (value is null)
+        {
+            return null;
+        }
+
+        // A list of a filter input type is a combinator, which the runtime translator folds rather than sets.
+        var isList = SchemaNames.IsFilterInputType(fieldType)
+            && (field.Type.IsListType() || (field.Type.IsNonNullType() && field.Type.InnerType().IsListType()));
+
+        fields.Add(new DeclaredQueryFilterField(field.Name.Value, isList, value));
+
+        return fields;
+    }
+
+    /// <summary>
+    /// Reads the value a filter builder call passes.
+    /// </summary>
+    /// <param name="expression">The value the call passes.</param>
+    /// <param name="type">The type the schema declares the filter field as.</param>
+    /// <param name="member">The filter builder method, for a diagnostic.</param>
+    /// <returns>The value, or <see langword="null"/> when it cannot be rebuilt.</returns>
+    private DeclaredQueryBoundValue? FilterFieldValue(ExpressionSyntax expression, ITypeNode type, string member)
+    {
+        var nestedType = type.NamedType().Name.Value;
+
+        if (!SchemaNames.IsFilterInputType(nestedType))
+        {
+            return this.FilterLeaf(expression);
+        }
+
+        if (expression is not LambdaExpressionSyntax lambda
+            || ParameterName(lambda) is not { } parameter
+            || lambda.Body is not ExpressionSyntax body)
+        {
+            this.Report(expression, $"'{member}' builds a nested filter, so it takes a lambda");
+
+            return null;
+        }
+
+        var fields = this.FilterFields(body, nestedType, parameter);
+
+        if (fields is null)
+        {
+            return null;
+        }
+
+        if (fields.Count == 0)
+        {
+            this.Report(expression, $"'{member}' has to set at least one filter");
+
+            return null;
+        }
+
+        return new DeclaredQueryFilterValue(fields);
+    }
+
+    /// <summary>
+    /// Reads a filter operation's value, which the binder rebuilds at call time.
+    /// </summary>
+    /// <param name="expression">The value the operation is given.</param>
+    /// <returns>The value, or <see langword="null"/> when it cannot be rebuilt.</returns>
+    private DeclaredQueryBoundValue? FilterLeaf(ExpressionSyntax expression)
+    {
+        if (expression is IdentifierNameSyntax identifier && this.values.Contains(identifier.Identifier.ValueText))
+        {
+            return new DeclaredQueryParameterValue(identifier.Identifier.ValueText);
+        }
+
+        if (!this.declaredValues.TryGetValue(expression.SpanStart, out var value))
+        {
+            this.ReportValue(
+                expression,
+                "only a parameter, a constant the compiler can see, or a list of those can be a filter value");
+
+            return null;
+        }
+
+        return this.BoundValue(value, expression);
+    }
+
+    /// <summary>
+    /// Reads a value the compiler saw as one the binder can rebuild.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="location">Where it was written, for a diagnostic.</param>
+    /// <returns>The value, or <see langword="null"/> when it cannot be rebuilt.</returns>
+    /// <remarks>
+    /// An enum member is bound by name, because that is the form it takes on the wire. An object initialiser is
+    /// not rebuildable inside a filter: a filter operation takes a scalar or a list of scalars.
+    /// </remarks>
+    private DeclaredQueryBoundValue? BoundValue(DeclaredValue value, SyntaxNode location) => value switch
+    {
+        DeclaredConstant constant => new DeclaredQueryConstantValue(constant.Constant),
+        DeclaredEnumMember member => new DeclaredQueryConstantValue(member.Member),
+        DeclaredParameter parameter when this.values.Contains(parameter.Name) => new DeclaredQueryParameterValue(parameter.Name),
+        DeclaredList list => this.BoundList(list, location),
+        _ => this.UnsupportedBound(location, "only a parameter, a constant, an enum member, or a list of those can be a filter value"),
+    };
+
+    private DeclaredQueryBoundValue? BoundList(DeclaredList list, SyntaxNode location)
+    {
+        List<DeclaredQueryBoundValue> items = [];
+
+        foreach (var item in list.Items)
+        {
+            if (this.BoundValue(item, location) is not { } value)
+            {
+                return null;
+            }
+
+            items.Add(value);
+        }
+
+        return new DeclaredQueryListValue(items);
+    }
+
+    private DeclaredQueryBoundValue? UnsupportedBound(SyntaxNode node, string reason)
+    {
+        this.ReportValue(node, reason);
+
+        return null;
     }
 
     /// <summary>
@@ -943,6 +1292,15 @@ internal sealed class DeclaredQueryTranslator
     /// <param name="type">The type the schema declares the position as.</param>
     /// <returns>The reference to the variable.</returns>
     private VariableNode Variable(string parameter, ITypeNode type)
+        => this.Declare(new DeclaredQueryParameterValue(parameter), type);
+
+    /// <summary>
+    /// Declares a variable whose value the binder computes, typed from the position it stands in.
+    /// </summary>
+    /// <param name="value">How the binder produces the value.</param>
+    /// <param name="type">The type the schema declares the position as.</param>
+    /// <returns>The reference to the variable.</returns>
+    private VariableNode Declare(DeclaredQueryBoundValue value, ITypeNode type)
     {
         var name = "var" + (this.variables.Count + 1);
 
@@ -955,7 +1313,7 @@ internal sealed class DeclaredQueryTranslator
                 defaultValue: null,
                 directives: []));
 
-        this.Bind(parameter, name);
+        this.bindings.Add(new DeclaredQueryBinding(name, value));
 
         return new VariableNode(name);
     }
@@ -1001,23 +1359,11 @@ internal sealed class DeclaredQueryTranslator
             ? field.Arguments.FirstOrDefault(x => x.Name.Value == named.Name.Identifier.ValueText)
             : position < field.Arguments.Count ? field.Arguments[position] : null;
 
-    private void Bind(string parameter, string variable)
-    {
-        if (!this.bindings.TryGetValue(parameter, out var variables))
-        {
-            variables = [];
-            this.bindings[parameter] = variables;
-        }
-
-        variables.Add(variable);
-    }
-
     /// <summary>
-    /// Gets the variables each of the declaration's parameters fills.
+    /// Gets the variables the document declares and how the binder computes each one.
     /// </summary>
-    /// <returns>The bindings in declaration order, so the binder's parameters read as the lambda wrote them.</returns>
-    private IReadOnlyList<DeclaredQueryBinding> Bindings()
-        => [.. this.values.Where(this.bindings.ContainsKey).Select(x => new DeclaredQueryBinding(x, this.bindings[x]))];
+    /// <returns>The bindings in the document's variable order.</returns>
+    private IReadOnlyList<DeclaredQueryBinding> Bindings() => [.. this.bindings];
 
     private static bool IsOnParameter(ExpressionSyntax expression, string parameter)
         => Unparenthesised(expression) is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == parameter;

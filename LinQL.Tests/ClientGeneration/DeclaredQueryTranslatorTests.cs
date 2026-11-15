@@ -81,6 +81,58 @@ public class DeclaredQueryTranslatorTests
         """;
 
     /// <summary>
+    /// A schema whose fields take a filter and an order, so the two argument extensions can be read.
+    /// </summary>
+    private const string FilteringSdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          products(where: ProductFilterInput, order: [ProductSortInput!]): [Product!]!
+          hero: Character
+        }
+
+        type Product {
+          name: String!
+          price: Decimal!
+        }
+
+        type Character {
+          name: String!
+        }
+
+        input ProductFilterInput {
+          name: StringOperationFilterInput
+          price: DecimalOperationFilterInput
+          and: [ProductFilterInput!]
+          or: [ProductFilterInput!]
+        }
+
+        input StringOperationFilterInput {
+          eq: String
+          contains: String
+        }
+
+        input DecimalOperationFilterInput {
+          gt: Decimal
+          lt: Decimal
+        }
+
+        input ProductSortInput {
+          name: SortEnumType
+          price: SortEnumType
+        }
+
+        enum SortEnumType {
+          ASC
+          DESC
+        }
+
+        scalar Decimal
+        """;
+
+    /// <summary>
     /// The framework a value has to resolve against for the compiler to see it.
     /// </summary>
     private static readonly MetadataReference[] References =
@@ -285,6 +337,113 @@ public class DeclaredQueryTranslatorTests
     [Fact]
     public void WritesAParameterInsideAnInitialiserAsAVariable()
         => Snapshot.Match(Translate("q.ExecuteSearch(new SearchInput { Name = name }).SelectAll()", ["name"]).Document);
+
+    [Fact]
+    public void AFilterBecomesOneVariableHoldingItsOperations()
+        => Snapshot.Match(Translate("q.Products.Filter(p => p.Name(n => n.Eq(\"widget\"))).SelectAll()", sdl: FilteringSdl).Document);
+
+    [Fact]
+    public void AFilterReadsAParameterWithoutItsOwnVariable()
+        => Snapshot.Match(Translate("q.Products.Filter(p => p.Name(n => n.Contains(term))).Select(p => new { p.Name })", ["term"], sdl: FilteringSdl).Document);
+
+    [Fact]
+    public void AFilterCombinatorHoldsANestedFilter()
+        => Snapshot.Match(Translate("q.Products.Filter(p => p.Price(x => x.Gt(min)).And(a => a.Name(n => n.Eq(\"widget\")))).SelectAll()", ["min"], sdl: FilteringSdl).Document);
+
+    [Fact]
+    public void ASortArgumentBecomesAVariableTypedByTheSchema()
+        => Snapshot.Match(Translate("q.Products.Sort(order).SelectAll()", ["order"], sdl: FilteringSdl).Document);
+
+    [Fact]
+    public void ASortInitialiserIsWrittenIntoTheDocument()
+        => Snapshot.Match(Translate(
+            "q.Products.Sort(new[] { new ProductSortInput { Name = SortEnumType.ASC } }).SelectAll()",
+            declarations: "public class ProductSortInput { public object? Name { get; set; } } public enum SortEnumType { ASC, DESC }",
+            sdl: FilteringSdl).Document);
+
+    [Fact]
+    public void ASortValueReadsAParameterAsAVariable()
+        => Snapshot.Match(Translate(
+            "q.Products.Sort(new[] { new ProductSortInput { Name = direction } }).SelectAll()",
+            ["direction"],
+            declarations: "public class ProductSortInput { public object? Name { get; set; } }",
+            sdl: FilteringSdl).Document);
+
+    [Fact]
+    public void AnArgumentAttachedTwiceIsReported()
+    {
+        var translation = Translate(
+            "q.Products.Sort(order).Order(new[] { new ProductSortInput { Name = SortEnumType.ASC } }).SelectAll()",
+            ["order"],
+            declarations: "public class ProductSortInput { public object? Name { get; set; } } public enum SortEnumType { ASC, DESC }",
+            sdl: FilteringSdl);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        translation.Problems[0].GetMessage().Should().Contain("'products'").And.Contain("'order'");
+    }
+
+    [Fact]
+    public void AFilterWithNoOperationsIsReported()
+    {
+        var translation = Translate("q.Products.Filter(p => p).SelectAll()", sdl: FilteringSdl);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        translation.Problems[0].GetMessage().Should().Contain("at least one operation");
+    }
+
+    [Fact]
+    public void AFilterFieldTheSchemaDoesNotDeclareIsReported()
+    {
+        var translation = Translate("q.Products.Filter(p => p.Nope(n => n.Eq(\"widget\"))).SelectAll()", sdl: FilteringSdl);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        translation.Problems[0].GetMessage().Should().Contain("'Nope'").And.Contain("'ProductFilterInput'");
+    }
+
+    [Fact]
+    public void AFilterValueTheCompilerCannotSeeIsReported()
+    {
+        var translation = Translate("q.Products.Filter(p => p.Name(n => n.Contains(\"widget\".ToUpper()))).SelectAll()", sdl: FilteringSdl);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN11");
+
+        translation.Problems[0].GetMessage().Should().Contain("cannot become a value");
+    }
+
+    [Fact]
+    public void AFilterOnAFieldThatDeclaresNoneIsReported()
+    {
+        var translation = Translate("q.Hero.Filter(c => c.Name(n => n.Eq(\"widget\"))).SelectAll()", sdl: FilteringSdl);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        translation.Problems[0].GetMessage().Should().Contain("declares no filter argument");
+    }
+
+    [Fact]
+    public void AnArgumentExtensionTheFieldDoesNotDeclareIsReported()
+    {
+        var translation = Translate("q.Products.Grouped(1).SelectAll()", sdl: FilteringSdl);
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        translation.Problems[0].GetMessage().Should().Contain("'Grouped'");
+    }
 
     [Fact]
     public void AValueTheCompilerCannotSeeIsReported()
