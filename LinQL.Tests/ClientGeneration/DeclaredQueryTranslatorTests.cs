@@ -22,7 +22,16 @@ public class DeclaredQueryTranslatorTests
           characters(ids: [ID!]!): [Character!]!
           search(where: SearchInput): [Character!]!
           episodes(only: Episode): [Character!]!
+          result: Result
+          film: Film
         }
+
+        type Film {
+          title: String!
+          hero: Character
+        }
+
+        union Result = Character | Film
 
         type Character {
           name: String!
@@ -78,6 +87,42 @@ public class DeclaredQueryTranslatorTests
     [Fact]
     public void IncludesOnTheLambdasOwnParameterGrowsThatSelection()
         => Snapshot.Match(Translate("q.Hero.Select(h => h.Includes(x => x.Name))").Document);
+
+    [Fact]
+    public void WritesAnInlineFragmentForASpread()
+        => Snapshot.Match(Translate("q.Result.On((Character c) => c.Name)").Document);
+
+    [Fact]
+    public void ChainedSpreadsWriteSiblingFragments()
+        => Snapshot.Match(Translate("q.Result.On((Character c) => c.Name).On((Film f) => f.Title)").Document);
+
+    [Fact]
+    public void SpreadOnTheLambdasOwnParameterGrowsThatSelection()
+        => Snapshot.Match(Translate("q.Hero.Select(h => h.On((Character c) => c.Name))").Document);
+
+    [Fact]
+    public void ASpreadWithoutATypeNameIsReported()
+    {
+        var translation = Translate("q.Result.On(c => c.Name)");
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        translation.Problems[0].GetMessage().Should().Contain("has to name the type");
+    }
+
+    [Fact]
+    public void ASpreadOfATypeTheSchemaDoesNotDeclareIsReported()
+    {
+        var translation = Translate("q.Result.On((Nope n) => n.Whatever)");
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        translation.Problems[0].GetMessage().Should().Contain("'Nope'");
+    }
 
     [Fact]
     public void AValuePassedToIncludesIsReported()

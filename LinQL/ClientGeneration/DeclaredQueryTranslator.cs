@@ -26,7 +26,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// reported as <see cref="DeclaredQueryDiagnostics.ProjectionReadsValue"/>, because the document does not depend
 /// on the values and a projection that did would silently read the default substituted for them.
 /// An <c>Includes</c> call grows the selection it is attached to rather than the document root, which is what the
-/// runtime translator does, so <c>q.Hero.Includes(h => h.Name)</c> writes into <c>hero</c>'s selection set.
+/// runtime translator does, so <c>q.Hero.Includes(h => h.Name)</c> writes into <c>hero</c>'s selection set. An
+/// <c>On</c> spread attaches in the same way and writes an inline fragment, so <c>q.Result.On((Film f) => f.Title)</c>
+/// writes <c>...on Film</c> into <c>result</c>'s selection set.
 /// </remarks>
 internal sealed class DeclaredQueryTranslator
 {
@@ -184,6 +186,11 @@ internal sealed class DeclaredQueryTranslator
             case InvocationExpressionSyntax invocation when invocation.Expression is MemberAccessExpressionSyntax access
                 && access.Name.Identifier.ValueText == nameof(IncludesExtensions.Includes):
                 this.AddIncludedSelections(invocation, typeName, parameter, values, selections);
+                break;
+
+            case InvocationExpressionSyntax invocation when invocation.Expression is MemberAccessExpressionSyntax access
+                && access.Name.Identifier.ValueText == nameof(SelectExtentions.On):
+                this.AddSpreadSelections(invocation, typeName, parameter, values, selections);
                 break;
 
             case IdentifierNameSyntax identifier when values.Contains(identifier.Identifier.ValueText):
@@ -368,6 +375,164 @@ internal sealed class DeclaredQueryTranslator
 
         return (expression, selections);
     }
+
+    /// <summary>
+    /// Adds the fragments a spread writes to the selection it is called on.
+    /// </summary>
+    /// <param name="invocation">The outermost <c>On</c> call.</param>
+    /// <param name="typeName">The type the enclosing selection is made on.</param>
+    /// <param name="parameter">The lambda parameter that type is bound to.</param>
+    /// <param name="values">The lambda parameters that become variables.</param>
+    /// <param name="selections">The selection set being built.</param>
+    /// <remarks>
+    /// Like an include, a spread attaches to the selection it is called on: on a field it writes the fragments into
+    /// that field's selection, and on the enclosing lambda's own parameter into the selection the lambda is already
+    /// inside. A chain writes one sibling fragment per call, because the runtime translator resolves each
+    /// <c>On</c> to its own spread.
+    /// </remarks>
+    private void AddSpreadSelections(
+        InvocationExpressionSyntax invocation,
+        string typeName,
+        string parameter,
+        IReadOnlyList<string> values,
+        List<ISelectionNode> selections)
+    {
+        var (target, spreads) = SpreadsOf(invocation);
+
+        if (IsOnParameter(target, parameter))
+        {
+            foreach (var spread in spreads)
+            {
+                if (this.Fragment(spread, values) is { } fragment)
+                {
+                    selections.Add(fragment);
+                }
+            }
+
+            return;
+        }
+
+        if (this.FieldOf(target, typeName, parameter, values) is not { } field)
+        {
+            return;
+        }
+
+        var childType = field.Definition.Type.NamedType().Name.Value;
+        var children = new List<ISelectionNode> { new FieldNode("__typename") };
+
+        foreach (var spread in spreads)
+        {
+            if (this.Fragment(spread, values) is { } fragment)
+            {
+                children.Add(fragment);
+            }
+        }
+
+        selections.Add(Field(field, new SelectionSetNode(children)));
+    }
+
+    /// <summary>
+    /// Writes one spread as an inline fragment.
+    /// </summary>
+    /// <param name="spread">The spread's lambda.</param>
+    /// <param name="values">The lambda parameters that become variables.</param>
+    /// <returns>The fragment, or <see langword="null"/> when the spread cannot be written.</returns>
+    /// <remarks>
+    /// The fragment's type is read from the lambda's parameter, because a generator has no semantic model to ask
+    /// what the extension's constraint resolved to. The type has to be one the schema declares, since the document
+    /// names it; whether the type can actually be a member of the union is left to the server, as every other name
+    /// in the document is.
+    /// </remarks>
+    private ISelectionNode? Fragment(ExpressionSyntax spread, IReadOnlyList<string> values)
+    {
+        if (spread is not LambdaExpressionSyntax lambda
+            || ParameterName(lambda) is not { } parameter
+            || lambda.Body is not ExpressionSyntax body)
+        {
+            this.Report(spread, "a spread has to be a lambda selecting the type it spreads as");
+
+            return null;
+        }
+
+        if (SpreadTypeName(lambda) is not { } typeName)
+        {
+            this.Report(lambda, "a spread has to name the type it spreads as, the way (Film film) => film.Title does");
+
+            return null;
+        }
+
+        if (!this.model.DeclaredTypesByName.ContainsKey(typeName))
+        {
+            this.Report(lambda, $"the schema declares no type named '{typeName}' to spread as");
+
+            return null;
+        }
+
+        var children = new List<ISelectionNode> { new FieldNode("__typename") };
+
+        this.AddSelections(body, typeName, parameter, values, children);
+
+        return new InlineFragmentNode(
+            location: null,
+            typeCondition: new NamedTypeNode(typeName),
+            directives: [],
+            selectionSet: new SelectionSetNode(children));
+    }
+
+    /// <summary>
+    /// Reads a chain of spreads from the outside in.
+    /// </summary>
+    /// <param name="invocation">The outermost <c>On</c> call.</param>
+    /// <returns>
+    /// The expression the chain is called on, and each spread's argument in source order.
+    /// </returns>
+    private static (ExpressionSyntax Target, IReadOnlyList<ExpressionSyntax> Spreads) SpreadsOf(InvocationExpressionSyntax invocation)
+    {
+        List<ExpressionSyntax> spreads = [];
+        ExpressionSyntax target = invocation;
+
+        while (target is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } call
+            && access.Name.Identifier.ValueText == nameof(SelectExtentions.On))
+        {
+            if (call.ArgumentList.Arguments.FirstOrDefault()?.Expression is { } spread)
+            {
+                spreads.Add(spread);
+            }
+
+            target = access.Expression;
+        }
+
+        spreads.Reverse();
+
+        return (target, spreads);
+    }
+
+    /// <summary>
+    /// Reads the type a spread's lambda is written for.
+    /// </summary>
+    /// <param name="lambda">The spread.</param>
+    /// <returns>The type's name, or <see langword="null"/> when the parameter does not name one.</returns>
+    private static string? SpreadTypeName(LambdaExpressionSyntax lambda) => lambda switch
+    {
+        SimpleLambdaExpressionSyntax simple => TypeName(simple.Parameter.Type),
+        ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters.Count: 1 } parenthesized
+            => TypeName(parenthesized.ParameterList.Parameters[0].Type),
+        _ => null,
+    };
+
+    /// <summary>
+    /// Reads the name a type syntax declares.
+    /// </summary>
+    /// <param name="type">The type syntax.</param>
+    /// <returns>The name, or <see langword="null"/> when it is not one the schema could declare.</returns>
+    private static string? TypeName(TypeSyntax? type) => type switch
+    {
+        IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+        QualifiedNameSyntax qualified => TypeName(qualified.Right),
+        AliasQualifiedNameSyntax alias => TypeName(alias.Name),
+        NullableTypeSyntax nullable => TypeName(nullable.ElementType),
+        _ => null,
+    };
 
     /// <summary>
     /// Adds a field that has no selection of its own.
