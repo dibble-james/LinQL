@@ -16,6 +16,7 @@
 -   [x] Interfaces/Unions
 -   [x] Auto-generating types via introspection
 -   [x] Subscriptions
+-   [x] Declared queries (`[LinQLQuery]`, translated at build time)
 -   [x] Custom Scalars
 -   [x] Strawberry Shake support
 
@@ -59,7 +60,7 @@ public class StarWarsClient
     public StarWarsClient(IGraphQLClient graph) => this.graph = graph;
 
     public async Task<Film> GetFilmById(string id, CancellationToken cancellationToken)
-        => await this.graph.SendAsync((Root x) => x.GetFilm(id), cancellationToken);
+        => await this.graph.SendAsync((Root x) => x.ExecuteFilm(id), cancellationToken);
 }
 ```
 
@@ -83,7 +84,7 @@ using var client = connection.WithLinQL(options =>
     options.Strategy = ExecutionStrategy.CacheAndNetwork;
 });
 
-var film = await client.SendAsync((Root q) => q.GetFilm("1"));
+var film = await client.SendAsync((Root q) => q.ExecuteFilm("1"));
 ```
 
 `Watch` observes queries and subscriptions; `SendAsync` executes queries and mutations.
@@ -141,6 +142,76 @@ the schema.
 
 See [Writing Queries](https://github.com/dibble-james/LinQL/blob/main/docs/Writing-Queries.md#filtering)
 for nested, `and`/`or` and collection filters, and the null rules.
+
+### Declared queries
+
+A query whose shape is fixed can be written once, translated at build time, and sent without translating it
+again at runtime: only its values vary, and they travel as variables. Mark a static `Expression` field with
+`[LinQLQuery]`:
+
+```csharp
+using System.Linq.Expressions;
+using LinQL.Description;
+
+public static class Queries
+{
+    [LinQLQuery("StarWars.Types")]
+    public static readonly Expression<Func<Root, string, string?>> FilmTitleById =
+        (q, id) => q.ExecuteFilm(id).Select(f => f.Title);
+}
+```
+
+The first lambda parameter is the schema's root type; the rest are the query's values, and the last type
+argument is what the response is projected to — a projection to an anonymous type declares `object?`, since the
+type cannot be named. The attribute names the `LinQLClientNamespace` of the SDL the query is written against,
+because a project may generate more than one schema and the root type's name alone would be ambiguous.
+
+The generator emits the document and a binder in the declaration's namespace: a static class named after the
+declaring type and field — `QueriesFilmTitleById` for `Queries.FilmTitleById` — with a method named after the
+field. Calling it reads like any other method:
+
+```csharp
+var title = await client.SendAsync(QueriesFilmTitleById.FilmTitleById("1"));
+
+// query linql($var1: ID!) {
+//   __typename
+//   film(id: $var1) {
+//     __typename
+//     title
+//   }
+// }
+// $var1 = "1"
+```
+
+`SendAsync` runs a declared query or mutation on both adapters. A declared subscription goes through the
+adapter's stream method — `Watch` on Strawberry Shake, `CreateSubscriptionStream` on `GraphQL.Client`:
+
+```csharp
+var numbers = client.Watch(QueriesNumbers.Numbers());
+var stream = graph.CreateSubscriptionStream(QueriesNumbers.Numbers());
+```
+
+Everything the document needs has to be visible to the compiler, because nothing is translated at runtime:
+`Select`, `SelectAll`, `Includes`, `On` spreads, casts and `OfType` all translate, and an argument is either
+one of the query's parameters — which becomes a variable, `var1`…`varN` in order — or a constant, enum member
+or initialiser the compiler can see, which is written into the document. A query is bound to its values by
+name, so the document never changes with them.
+
+A declaration with any diagnostic produces **no** document: a query that silently differs from what was
+written is worse than one that does not compile.
+
+| Id | Reported when |
+|----|---------------|
+| `LINQLGEN08` | a field returning a type is selected without `.Select(...)` or `.SelectAll()` |
+| `LINQLGEN09` | the construct cannot be translated: a member the schema does not declare, an argument the field does not declare, or a fragment the document cannot name |
+| `LINQLGEN10` | a projection reads one of the query's values — the result has to depend on the response alone |
+| `LINQLGEN11` | an argument's value cannot be written: it is not a parameter, a constant, an enum member, or an initialiser of those |
+| `LINQLGEN12` | the named client namespace is not declared by any SDL in the project |
+| `LINQLGEN13` | the schema exists but does not generate the root type the expression uses |
+| `LINQLGEN14` | the member is not a static `Expression<Func<TRoot, TData>>` field |
+
+A union or interface field needs a selection, as it does at runtime: `On((Film f) => …)`, a cast
+`((Film)q.Result).Title`, or `q.Results.OfType<Film>()` each write the same `... on Film` fragment.
 
 ### What can I do with it?
 A range of expressions can be converted as demonstrated by [the `TranslationProviderTests`](https://github.com/dibble-james/LinQL/blob/interface-support/LinQL.Tests/Translation/TranslationProviderTests.cs). 

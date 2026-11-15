@@ -257,9 +257,8 @@ public class ClientGenerator : IIncrementalGenerator
     /// <param name="translation">Its document and the variables its parameters fill.</param>
     /// <remarks>
     /// The document does not depend on a call, so it is a constant; the binder takes the lambda's own parameters
-    /// and binds them to the names the document gave the variables. The projection and the request type that
-    /// carries it to an adapter are the next step, which is why the binder returns
-    /// <c>LinQLDeclaredQueryRequest</c> rather than an operation.
+    /// and binds them to the names the document gave the variables, returning the <c>LinQLQuery</c> an adapter
+    /// sends.
     /// </remarks>
     private static void EmitDeclaredQuery(SourceProductionContext output, DeclaredQuery query, DeclaredQueryTranslation translation)
     {
