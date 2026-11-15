@@ -1,0 +1,10 @@
+﻿query linql {
+  __typename
+  results {
+    __typename
+    ... on Character {
+      __typename
+      name
+    }
+  }
+}

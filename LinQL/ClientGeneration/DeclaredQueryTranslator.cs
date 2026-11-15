@@ -6,6 +6,7 @@ using System.Linq;
 using HotChocolate.Language;
 using LinQL.Description;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
@@ -28,7 +29,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 /// An <c>Includes</c> call grows the selection it is attached to rather than the document root, which is what the
 /// runtime translator does, so <c>q.Hero.Includes(h => h.Name)</c> writes into <c>hero</c>'s selection set. An
 /// <c>On</c> spread attaches in the same way and writes an inline fragment, so <c>q.Result.On((Film f) => f.Title)</c>
-/// writes <c>...on Film</c> into <c>result</c>'s selection set.
+/// writes <c>...on Film</c> into <c>result</c>'s selection set. A cast and an <c>OfType</c> write the same fragment by a
+/// shorter route — <c>((Film)q.Result).Title</c> and <c>q.Results.OfType&lt;Film&gt;().Select(f => f.Title)</c> — because on the
+/// wire both are a type condition over the field's selection.
 /// </remarks>
 internal sealed class DeclaredQueryTranslator
 {
@@ -161,6 +164,14 @@ internal sealed class DeclaredQueryTranslator
     {
         switch (expression)
         {
+            case { } wrapped when CastOf(wrapped) is { } cast:
+                this.AddCastSelections(expression, cast, typeName, parameter, values, selections);
+                break;
+
+            case { } wrapped when OfTypeOf(wrapped) is { } ofType:
+                this.AddOfTypeSelections(expression, ofType, typeName, parameter, values, selections);
+                break;
+
             case ParenthesizedExpressionSyntax parenthesized:
                 this.AddSelections(parenthesized.Expression, typeName, parameter, values, selections);
                 break;
@@ -377,6 +388,171 @@ internal sealed class DeclaredQueryTranslator
     }
 
     /// <summary>
+    /// Adds the fragment a cast writes to the selection it is applied to.
+    /// </summary>
+    /// <param name="expression">The whole selection expression, which carries the cast.</param>
+    /// <param name="cast">The cast, the field it is applied to, and the type it casts to.</param>
+    /// <param name="typeName">The type the enclosing selection is made on.</param>
+    /// <param name="parameter">The lambda parameter that type is bound to.</param>
+    /// <param name="values">The lambda parameters that become variables.</param>
+    /// <param name="selections">The selection set being built.</param>
+    /// <remarks>
+    /// A cast is a spread: <c>((Film)q.Result).Title</c> writes <c>result</c>'s selection as a fragment on <c>Film</c>
+    /// holding <c>title</c>, and a cast applied to a lambda's own parameter writes the fragment into the selection
+    /// that lambda is already inside. The selections inside the fragment are the ones the cast was applied to with
+    /// the cast replaced by the parameter, so they are read against the fragment's type instead of the field's.
+    /// A cast with nothing selected from it is the fragment's scalar fields, which is what <c>SelectAll</c> writes.
+    /// </remarks>
+    private void AddCastSelections(
+        ExpressionSyntax expression,
+        (SyntaxNode Node, ExpressionSyntax Operand, string? Type) cast,
+        string typeName,
+        string parameter,
+        IReadOnlyList<string> values,
+        List<ISelectionNode> selections)
+    {
+        var inner = cast.Node == expression
+            ? null
+            : expression.ReplaceNode(cast.Node, SyntaxFactory.IdentifierName(parameter));
+
+        if (IsOnParameter(cast.Operand, parameter))
+        {
+            if (this.InlineFragment(cast.Type, cast.Node, (fragment, children) => this.AddFragmentSelections(inner, fragment, parameter, values, children)) is { } spread)
+            {
+                selections.Add(spread);
+            }
+
+            return;
+        }
+
+        if (this.FieldOf(cast.Operand, typeName, parameter, values) is not { } field)
+        {
+            return;
+        }
+
+        var children = new List<ISelectionNode> { new FieldNode("__typename") };
+
+        if (this.InlineFragment(cast.Type, cast.Node, (fragment, innerChildren) => this.AddFragmentSelections(inner, fragment, parameter, values, innerChildren)) is { } castFragment)
+        {
+            children.Add(castFragment);
+        }
+
+        selections.Add(Field(field, new SelectionSetNode(children)));
+    }
+
+    /// <summary>
+    /// Adds the selections a fragment carries.
+    /// </summary>
+    /// <param name="inner">The selections, or <see langword="null"/> when the fragment selects the type's scalars.</param>
+    /// <param name="typeName">The type the fragment is on.</param>
+    /// <param name="parameter">The lambda parameter that type is bound to.</param>
+    /// <param name="values">The lambda parameters that become variables.</param>
+    /// <param name="selections">The fragment's selection set being built.</param>
+    private void AddFragmentSelections(ExpressionSyntax? inner, string typeName, string parameter, IReadOnlyList<string> values, List<ISelectionNode> selections)
+    {
+        if (inner is null)
+        {
+            selections.AddRange(this.ScalarFieldsOf(typeName).Select(x => Field(x, selectionSet: null)));
+
+            return;
+        }
+
+        this.AddSelections(inner, typeName, parameter, values, selections);
+    }
+
+    /// <summary>
+    /// Adds the fragment an <c>OfType</c> writes to the field it filters.
+    /// </summary>
+    /// <param name="expression">The whole selection expression, which carries the call.</param>
+    /// <param name="ofType">The <c>OfType</c> call.</param>
+    /// <param name="typeName">The type the enclosing selection is made on.</param>
+    /// <param name="parameter">The lambda parameter that type is bound to.</param>
+    /// <param name="values">The lambda parameters that become variables.</param>
+    /// <param name="selections">The selection set being built.</param>
+    /// <remarks>
+    /// <c>OfType</c> filters a collection to one of its possible types, so the fragment belongs to the field's
+    /// selection and whatever is chained after the call selects from the filtered type. With nothing chained the
+    /// fragment selects that type's scalars, which is what the runtime path writes.
+    /// </remarks>
+    private void AddOfTypeSelections(
+        ExpressionSyntax expression,
+        InvocationExpressionSyntax ofType,
+        string typeName,
+        string parameter,
+        IReadOnlyList<string> values,
+        List<ISelectionNode> selections)
+    {
+        var (target, inner) = SelectionsOf(expression);
+
+        if (target != ofType || ofType.Expression is not MemberAccessExpressionSyntax access)
+        {
+            this.Report(expression, "'OfType' has to be called on a field, with nothing but selections between it and the field");
+
+            return;
+        }
+
+        if (this.FieldOf(access.Expression, typeName, parameter, values) is not { } field)
+        {
+            return;
+        }
+
+        var fragmentType = access.Name is GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } generic
+            ? TypeName(generic.TypeArgumentList.Arguments[0])
+            : null;
+
+        List<ExpressionSyntax?> chosen = inner.Count == 0 ? [null] : [.. inner];
+
+        var children = new List<ISelectionNode> { new FieldNode("__typename") };
+
+        if (this.InlineFragment(fragmentType, ofType, (fragment, fragmentChildren) =>
+        {
+            foreach (var selection in chosen)
+            {
+                this.AddIncludedSelection(selection, fragment, values, fragmentChildren);
+            }
+        }) is { } ofTypeFragment)
+        {
+            children.Add(ofTypeFragment);
+        }
+
+        selections.Add(Field(field, new SelectionSetNode(children)));
+    }
+
+    /// <summary>
+    /// Writes an inline fragment of the given type.
+    /// </summary>
+    /// <param name="typeName">The type the fragment is on, or <see langword="null"/> when the syntax does not name one.</param>
+    /// <param name="location">Where to report a type the document cannot name.</param>
+    /// <param name="children">Adds the fragment's selections, given the fragment's type.</param>
+    /// <returns>The fragment, or <see langword="null"/> when the document cannot write it.</returns>
+    private ISelectionNode? InlineFragment(string? typeName, SyntaxNode location, Action<string, List<ISelectionNode>> children)
+    {
+        if (typeName is null)
+        {
+            this.Report(location, "the type a fragment is written on has to be one the syntax names");
+
+            return null;
+        }
+
+        if (!this.model.DeclaredTypesByName.ContainsKey(typeName))
+        {
+            this.Report(location, $"the schema declares no type named '{typeName}' to write a fragment on");
+
+            return null;
+        }
+
+        var selections = new List<ISelectionNode> { new FieldNode("__typename") };
+
+        children(typeName, selections);
+
+        return new InlineFragmentNode(
+            location: null,
+            typeCondition: new NamedTypeNode(typeName),
+            directives: [],
+            selectionSet: new SelectionSetNode(selections));
+    }
+
+    /// <summary>
     /// Adds the fragments a spread writes to the selection it is called on.
     /// </summary>
     /// <param name="invocation">The outermost <c>On</c> call.</param>
@@ -461,22 +637,7 @@ internal sealed class DeclaredQueryTranslator
             return null;
         }
 
-        if (!this.model.DeclaredTypesByName.ContainsKey(typeName))
-        {
-            this.Report(lambda, $"the schema declares no type named '{typeName}' to spread as");
-
-            return null;
-        }
-
-        var children = new List<ISelectionNode> { new FieldNode("__typename") };
-
-        this.AddSelections(body, typeName, parameter, values, children);
-
-        return new InlineFragmentNode(
-            location: null,
-            typeCondition: new NamedTypeNode(typeName),
-            directives: [],
-            selectionSet: new SelectionSetNode(children));
+        return this.InlineFragment(typeName, lambda, (fragment, children) => this.AddSelections(body, fragment, parameter, values, children));
     }
 
     /// <summary>
@@ -860,7 +1021,116 @@ internal sealed class DeclaredQueryTranslator
         => [.. this.values.Where(this.bindings.ContainsKey).Select(x => new DeclaredQueryBinding(x, this.bindings[x]))];
 
     private static bool IsOnParameter(ExpressionSyntax expression, string parameter)
-        => expression is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == parameter;
+        => Unparenthesised(expression) is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == parameter;
+
+    /// <summary>
+    /// Removes the parentheses around an expression.
+    /// </summary>
+    /// <param name="expression">The expression.</param>
+    /// <returns>The expression inside them, which is the same one when there are none.</returns>
+    private static ExpressionSyntax Unparenthesised(ExpressionSyntax expression)
+        => expression is ParenthesizedExpressionSyntax parenthesized ? Unparenthesised(parenthesized.Expression) : expression;
+
+    /// <summary>
+    /// Finds the cast a selection is applied through.
+    /// </summary>
+    /// <param name="expression">The selection expression.</param>
+    /// <returns>
+    /// The cast node, the expression it is applied to and the type it casts to, or <see langword="null"/> when the
+    /// selection has no cast in it.
+    /// </returns>
+    /// <remarks>
+    /// Outermost first, because that is the cast whose fragment wraps the whole selection, and never inside a lambda:
+    /// a cast in a projection belongs to that projection's own selection.
+    /// </remarks>
+    private static (SyntaxNode Node, ExpressionSyntax Operand, string? Type)? CastOf(ExpressionSyntax expression)
+    {
+        foreach (var node in expression.DescendantNodesAndSelf())
+        {
+            if (node != expression && !IsReceiver(node, expression))
+            {
+                continue;
+            }
+
+            if (node is CastExpressionSyntax cast)
+            {
+                return (cast, Unparenthesised(cast.Expression), TypeName(cast.Type));
+            }
+
+            if (node is BinaryExpressionSyntax binary
+                && binary.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.AsExpression)
+                && binary.Right is TypeSyntax right)
+            {
+                return (binary, Unparenthesised(binary.Left), TypeName(right));
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Finds the <c>OfType</c> call a selection is applied through.
+    /// </summary>
+    /// <param name="expression">The selection expression.</param>
+    /// <returns>The call, or <see langword="null"/> when the selection has none.</returns>
+    private static InvocationExpressionSyntax? OfTypeOf(ExpressionSyntax expression)
+    {
+        foreach (var node in expression.DescendantNodesAndSelf())
+        {
+            if (node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } invocation
+                && access.Name.Identifier.ValueText == nameof(Enumerable.OfType)
+                && !WithinLambda(node, expression))
+            {
+                return invocation;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets whether a node is what a member is selected from.
+    /// </summary>
+    /// <param name="node">The node.</param>
+    /// <param name="expression">The selection expression it belongs to.</param>
+    /// <returns><see langword="true"/> when the node is the receiver of a member access outside any lambda.</returns>
+    private static bool IsReceiver(SyntaxNode node, SyntaxNode expression)
+    {
+        var current = node;
+
+        while (current.Parent is ParenthesizedExpressionSyntax parenthesized)
+        {
+            current = parenthesized;
+        }
+
+        return current.Parent is MemberAccessExpressionSyntax access
+            && access.Expression == current
+            && !WithinLambda(current, expression);
+    }
+
+    /// <summary>
+    /// Gets whether a node is inside a lambda in the expression being read.
+    /// </summary>
+    /// <param name="node">The node.</param>
+    /// <param name="expression">The expression the node belongs to.</param>
+    /// <returns><see langword="true"/> when a lambda stands between the node and the expression.</returns>
+    private static bool WithinLambda(SyntaxNode node, SyntaxNode expression)
+    {
+        if (node == expression)
+        {
+            return false;
+        }
+
+        for (var ancestor = node.Parent; ancestor is not null && ancestor != expression; ancestor = ancestor.Parent)
+        {
+            if (ancestor is AnonymousFunctionExpressionSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// Finds the identifier an expression is built on, so a value used through a member or a call is still

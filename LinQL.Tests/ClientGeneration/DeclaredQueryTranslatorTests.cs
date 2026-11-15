@@ -23,6 +23,7 @@ public class DeclaredQueryTranslatorTests
           search(where: SearchInput): [Character!]!
           episodes(only: Episode): [Character!]!
           result: Result
+          results: [Result!]!
           film: Film
         }
 
@@ -99,6 +100,54 @@ public class DeclaredQueryTranslatorTests
     [Fact]
     public void SpreadOnTheLambdasOwnParameterGrowsThatSelection()
         => Snapshot.Match(Translate("q.Hero.Select(h => h.On((Character c) => c.Name))").Document);
+
+    [Fact]
+    public void WritesAFragmentForACastOnAField()
+        => Snapshot.Match(Translate("((Character)q.Result).Name").Document);
+
+    [Fact]
+    public void WritesAFragmentForAnAsExpression()
+        => Snapshot.Match(Translate("(q.Result as Character).Name").Document);
+
+    [Fact]
+    public void WritesAFragmentForACastOnAParameter()
+        => Snapshot.Match(Translate("q.Results.Select(r => ((Character)r).Name)").Document);
+
+    [Fact]
+    public void ABareCastSelectsTheTypeScalarFields()
+        => Snapshot.Match(Translate("(Character)q.Result").Document);
+
+    [Fact]
+    public void WritesAFragmentForOfType()
+        => Snapshot.Match(Translate("q.Results.OfType<Character>()").Document);
+
+    [Fact]
+    public void WritesAFragmentForOfTypeWithASelection()
+        => Snapshot.Match(Translate("q.Results.OfType<Film>().Select(f => new { f.Title })").Document);
+
+    [Fact]
+    public void ACastToATypeTheSchemaDoesNotDeclareIsReported()
+    {
+        var translation = Translate("((Nope)q.Result).Name");
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        translation.Problems[0].GetMessage().Should().Contain("'Nope'");
+    }
+
+    [Fact]
+    public void AnOfTypeOfATypeTheSchemaDoesNotDeclareIsReported()
+    {
+        var translation = Translate("q.Results.OfType<Nope>()");
+
+        translation.Document.Should().BeNull();
+        translation.Problems.Should().ContainSingle()
+            .Which.Id.Should().Be("LINQLGEN09");
+
+        translation.Problems[0].GetMessage().Should().Contain("'Nope'");
+    }
 
     [Fact]
     public void ASpreadWithoutATypeNameIsReported()
