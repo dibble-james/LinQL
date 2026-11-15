@@ -22,11 +22,22 @@ public class TypeFieldExpression(string field, Type fieldType, Type declaringTyp
         => this.fields.GetOrAdd(field.FieldName, () => field);
 
     internal TypeFieldExpression ReplaceType(Type type)
-        => new(this.FieldName, type, this.DeclaringType, this.Root)
-        {
-            fields = this.fields,
-            Arguments = this.Arguments,
-        };
+    {
+        var replaced = this.CreateReplacement(type);
+
+        replaced.fields = this.fields;
+        replaced.Arguments = this.Arguments;
+
+        return replaced;
+    }
+
+    /// <summary>
+    /// Creates the field that carries <paramref name="type"/> in place of this one.
+    /// </summary>
+    /// <param name="type">The type of the value the selection produces.</param>
+    /// <returns>The replacement.</returns>
+    protected virtual TypeFieldExpression CreateReplacement(Type type)
+        => new(this.FieldName, type, this.DeclaringType, this.Root);
 
     /// <inheritdoc />
     protected override Expression VisitChildren(ExpressionVisitor visitor)

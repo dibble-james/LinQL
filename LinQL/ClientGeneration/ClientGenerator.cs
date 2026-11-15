@@ -1,6 +1,7 @@
 namespace LinQL.ClientGeneration;
 
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -322,13 +323,76 @@ public class ClientGenerator : IIncrementalGenerator
 
         foreach (var binding in translation.Bindings)
         {
-            var parameter = SchemaNames.IdentifierFor(binding.Parameter).Text;
-
-            arguments.AddRange(binding.Variables.Select(variable => $"({SymbolDisplay.FormatLiteral(variable, quote: true)}, (object?){parameter})"));
+            arguments.Add($"({SymbolDisplay.FormatLiteral(binding.Variable, quote: true)}, {BoundValue(binding.Value)})");
         }
 
         return $"{queryType}.Bind({string.Join(", ", arguments)})";
     }
+
+    /// <summary>
+    /// Writes the expression that produces a variable's value at call time.
+    /// </summary>
+    /// <param name="value">The value the translation recorded.</param>
+    /// <returns>The expression, fully qualified so the generated file needs no usings.</returns>
+    /// <remarks>
+    /// A filter is one variable holding the whole filter, so its value is built here rather than read from a
+    /// parameter. Emitting that construction is what makes a filter's values follow the declaration's parameters
+    /// without the document depending on them.
+    /// </remarks>
+    private static string BoundValue(DeclaredQueryBoundValue value) => value switch
+    {
+        DeclaredQueryParameterValue parameter => $"(object?){SchemaNames.IdentifierFor(parameter.Parameter).Text}",
+        DeclaredQueryConstantValue constant => $"(object?){ConstantLiteral(constant.Constant)}",
+        DeclaredQueryListValue list => $"(object?)new object?[] {{ {string.Join(", ", list.Items.Select(BoundValue))} }}",
+        DeclaredQueryFilterValue filter => FilterValue(filter),
+        _ => "(object?)null",
+    };
+
+    /// <summary>
+    /// Writes the calls that rebuild a filter through <c>FilterValue</c>.
+    /// </summary>
+    /// <param name="filter">The filter.</param>
+    /// <returns>The expression.</returns>
+    /// <remarks>
+    /// The calls mirror the runtime translator: a combinator folds what was built so far into its first branch,
+    /// and every other field is set under the name the schema gives it.
+    /// </remarks>
+    private static string FilterValue(DeclaredQueryFilterValue filter)
+    {
+        var code = "global::LinQL.Filters.FilterValue.Create()";
+
+        foreach (var field in filter.Fields)
+        {
+            var name = SymbolDisplay.FormatLiteral(field.Name, quote: true);
+
+            code += field.IsList && field.Value is DeclaredQueryFilterValue nested
+                ? $".Combine({name}, {FilterValue(nested)})"
+                : $".Set({name}, {BoundValue(field.Value)})";
+        }
+
+        return code;
+    }
+
+    /// <summary>
+    /// Writes a constant as a C# literal of the same type.
+    /// </summary>
+    /// <param name="constant">The constant.</param>
+    /// <returns>The literal, in the invariant culture.</returns>
+    private static string ConstantLiteral(object? constant) => constant switch
+    {
+        null => "null",
+        string text => SymbolDisplay.FormatLiteral(text, quote: true),
+        char character => SymbolDisplay.FormatLiteral(character, quote: true),
+        bool flag => flag ? "true" : "false",
+        decimal number => number.ToString(CultureInfo.InvariantCulture) + "m",
+        float number => number.ToString("R", CultureInfo.InvariantCulture) + "F",
+        double number => number.ToString("R", CultureInfo.InvariantCulture) + "D",
+        long number => number.ToString(CultureInfo.InvariantCulture) + "L",
+        ulong number => number.ToString(CultureInfo.InvariantCulture) + "UL",
+        uint number => number.ToString(CultureInfo.InvariantCulture) + "U",
+        IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture) ?? "null",
+        _ => "null",
+    };
 
     /// <summary>
     /// Names the declared field a call's projection comes from.
