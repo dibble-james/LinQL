@@ -39,15 +39,15 @@ using var client = connection.WithLinQL(options =>
 `SendAsync` executes a query or mutation and returns a single result:
 
 ```csharp
-var film = await client.SendAsync((Root q) => q.GetFilm("1"), cancellationToken: token);
+var film = await client.SendAsync((Root q) => q.ExecuteFilm("1"), cancellationToken: token);
 Console.WriteLine(film.Data.Title);
 ```
 
 `Watch` observes a query or a subscription:
 
 ```csharp
-IObservable<LinQLResult<IReadOnlyList<Film>>> stream =
-    client.Watch((Root q) => q.GetFilms());
+IObservable<LinQLResult<Film[]>> stream =
+    client.Watch((Root q) => q.Films);
 
 using var subscription = stream.Subscribe(
     result => Console.WriteLine(result.Data.Count),
@@ -57,6 +57,28 @@ using var subscription = stream.Subscribe(
 
 Subscriptions must be consumed through `Watch`; `SendAsync` rejects them.
 
+## Declared queries
+
+A query declared with `[LinQLQuery]` is sent through the same two methods, by overloads that take the binder
+the generator emits instead of an expression:
+
+```csharp
+[LinQLQuery("StarWars.Types")]
+public static readonly Expression<Func<Root, string, string?>> FilmTitleById =
+    (q, id) => q.ExecuteFilm(id).Select(f => f.Title);
+
+LinQLResult<string?> film = await client.SendAsync(QueriesFilmTitleById.FilmTitleById("1"), token);
+
+IObservable<LinQLResult<int>> numbers = client.Watch(QueriesNumbers.Numbers());
+```
+
+Both overloads take a `CancellationToken` after the query and go through the same executor as the expression
+ones, so the configured `ExecutionStrategy` and the operation cache apply unchanged. The document is a
+constant, so cached operations differ only by their variables. `Watch` tracks the subscription and stops it
+when the client is disposed. `SendAsync` rejects a declared subscription exactly as it rejects an expression
+one — a subscription is a stream, and `Watch` is the way to consume it. See
+[Writing queries](Writing-Queries.md#declared-queries) for what a declaration may contain.
+
 ## Errors
 
 A failed operation does not throw. `result.Errors` holds the `IClientError`
@@ -64,7 +86,7 @@ values from the GraphQL `errors` array — message, code, path and locations —
 plus a `ClientError` wrapping the exception when the transport itself failed:
 
 ```csharp
-var result = await client.SendAsync((Root q) => q.GetFilm("1"));
+var result = await client.SendAsync((Root q) => q.ExecuteFilm("1"));
 
 if (result.HasErrors)
 {

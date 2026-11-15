@@ -44,4 +44,45 @@ IObservable<GraphQLExpressionResponse<TRoot, TData>> CreateSubscriptionStream<TR
 Both return a `GraphQLExpressionResponse<TRoot, TData>` which is just a
 `GraphQLResponse<TData>` but with the translated expression available
 so you can debug when was sent to the server.
+
+## Declared queries
+
+A query declared with `[LinQLQuery]` has no expression to translate, so it is sent through its own
+overloads:
+
+```csharp
+Task<LinQLQueryResponse<TData>> SendAsync<TRoot, TData>(
+        this IGraphQLClient client,
+        LinQLQuery<TRoot, TData> query,
+        CancellationToken cancellationToken = default)
+        where TRoot : RootType<TRoot>
+
+IObservable<LinQLQueryResponse<TData>> CreateSubscriptionStream<TRoot, TData>(
+        this IGraphQLClient client,
+        LinQLQuery<TRoot, TData> query)
+        where TRoot : RootType<TRoot>
+```
+
+The binder the generator emits supplies the document and the values:
+
+```csharp
+[LinQLQuery("StarWars.Types")]
+public static readonly Expression<Func<Root, string, string?>> FilmTitleById =
+    (q, id) => q.ExecuteFilm(id).Select(f => f.Title);
+
+var title = await client.SendAsync(QueriesFilmTitleById.FilmTitleById("1"));
+```
+
+A declared subscription has to go through `CreateSubscriptionStream`, because a subscription is a stream
+rather than one response — `SendAsync` throws `NotSupportedException` for it:
+
+```csharp
+using var stream = graph
+    .CreateSubscriptionStream(QueriesNumbers.Numbers())
+    .Subscribe(response => Console.WriteLine(response.Data.Number));
+```
+
+`LinQLQueryResponse<TData>` carries `Document` — the text that was sent, which is the generated constant
+here — alongside `Data`, `Errors` and `Extensions`, so a declared query is as easy to debug as a translated
+one. See [Writing queries](Writing-Queries.md#declared-queries) for what a declaration may contain.
 ````
