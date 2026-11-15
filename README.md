@@ -213,6 +213,9 @@ written is worse than one that does not compile.
 A union or interface field needs a selection, as it does at runtime: `On((Film f) => …)`, a cast
 `((Film)q.Result).Title`, or `q.Results.OfType<Film>()` each write the same `... on Film` fragment.
 
+See [Writing Queries](docs/Writing-Queries.md#declared-queries) for the full rules, the diagnostics and the
+differences from the runtime path.
+
 ### What can I do with it?
 A range of expressions can be converted as demonstrated by [the `TranslationProviderTests`](https://github.com/dibble-james/LinQL/blob/interface-support/LinQL.Tests/Translation/TranslationProviderTests.cs). 
 If you come accross something that doesn't work, please raise an issue or a pull request with a supporting test.
