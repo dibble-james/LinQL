@@ -163,13 +163,13 @@ public class DeclaredQueryConformanceTests
     [Fact]
     public void WritesTheSameInterfaceFragment()
         => AssertConforms<ConformanceQuery, object>(
-            x => x.Node!.On((ConformanceCharacter c) => c.Name),
+            x => x.Node.On((ConformanceCharacter c) => c.Name),
             "q.Node.On((Character c) => c.Name)");
 
     [Fact]
     public void WritesTheSameUnionFragment()
         => AssertConforms<ConformanceQuery, object>(
-            x => x.Result!.On((ConformanceFilm f) => f.Title),
+            x => x.Result.On((ConformanceFilm f) => f.Title),
             "q.Result.On((Film f) => f.Title)");
 
     [Fact]
@@ -193,7 +193,7 @@ public class DeclaredQueryConformanceTests
     [Fact]
     public void WritesTheSameSiblingFragmentsForAChain()
         => AssertConforms<ConformanceQuery, object>(
-            x => x.Result!.On((ConformanceCharacter c) => c.Name).On((ConformanceFilm f) => f.Title),
+            x => x.Result.On((ConformanceCharacter c) => c.Name).On((ConformanceFilm f) => f.Title),
             "q.Result.On((Character c) => c.Name).On((Film f) => f.Title)");
 
     [Fact]
@@ -296,7 +296,7 @@ public class DeclaredQueryConformanceTests
 
         // A value the runtime path compiled into a variable has the definition the declaration read from the SDL,
         // so the rendered model is where the two translators have to agree.
-        Utf8GraphQLParser.Parse(request.Query).ToString().Should().Be(translation.Document!.ToString());
+        Utf8GraphQLParser.Parse(request.Query).ToString().Should().Be(translation.Document.ToString());
 
         var inputs = (parameters ?? []).Zip(values ?? [], (parameter, value) => (parameter, value))
             .ToDictionary(x => x.parameter, x => x.value, StringComparer.Ordinal);
@@ -419,7 +419,7 @@ public class DeclaredQueryConformanceTests
     [GraphQLType(Name = "Node")]
     internal interface IConformanceNode
     {
-        string Id { get; }
+        public string Id { get; }
     }
 
     [GraphQLType(Name = "Character")]

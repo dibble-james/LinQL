@@ -37,6 +37,12 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
+      # The formatter has to run after a build. On a clean checkout dotnet format
+      # loads the workspace before the source generator has been compiled, so the
+      # generated types look missing and every using that names them is flagged.
+      - name: Build
+        run: dotnet build --no-restore
+
       # Whitespace, code style and analyzers. C# sources are LF on every platform
       # (.editorconfig and .gitattributes agree), so this passes on the Linux runner too.
       - name: Verify formatting
