@@ -127,7 +127,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
         if (scalarOptions is null)
         {
-            context.Context.ReportDiagnostic(
+            context.Report(
                 Diagnostic.Create(
                     MissingDirective,
                     Microsoft.CodeAnalysis.Location.Create(
@@ -141,7 +141,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 
         if (clrType is null)
         {
-            context.Context.ReportDiagnostic(
+            context.Report(
                 Diagnostic.Create(
                     MissingClrType,
                     Microsoft.CodeAnalysis.Location.Create(
@@ -204,7 +204,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
                     continue;
                 }
 
-                context.Context.ReportDiagnostic(
+                context.Report(
                     Diagnostic.Create(
                         ConflictingFilterArgument,
                         Microsoft.CodeAnalysis.Location.Create(
@@ -257,7 +257,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
                         continue;
                     }
 
-                    context.Context.ReportDiagnostic(
+                    context.Report(
                         Diagnostic.Create(
                             MissingFilterInputType,
                             Microsoft.CodeAnalysis.Location.Create(

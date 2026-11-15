@@ -201,6 +201,15 @@ public class ClientGeneratorDiagnosticTests
     }
 
     [Fact]
+    public void DeclaredQuerySelectingATypeFieldImplicitlyIsReported()
+    {
+        var diagnostic = Assert.Single(Generate(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero")), x => x.Id == "LINQLGEN08");
+
+        Assert.Contains("'hero'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Character'", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void DeclarationThatIsNotAParameterisedExpressionIsReported()
     {
         var diagnostic = Assert.Single(Generate(PlainSdl, source: NotAQuerySource), x => x.Id == "LINQLGEN14");
@@ -272,7 +281,7 @@ public class ClientGeneratorDiagnosticTests
     /// <param name="clientNamespace">The schema the query names.</param>
     /// <param name="rootType">The root type its expression uses.</param>
     /// <returns>The source, whose declared field is on line 22.</returns>
-    private static string DeclaredQuerySource(string clientNamespace, string rootType = "Query")
+    private static string DeclaredQuerySource(string clientNamespace, string rootType = "Query", string body = "null")
         => $$"""
             using System.Linq.Expressions;
             using LinQL.Description;
@@ -295,7 +304,7 @@ public class ClientGeneratorDiagnosticTests
                 public static class Declarations
                 {
                     [LinQLQuery("{{clientNamespace}}")]
-                    public static readonly Expression<System.Func<Filtering.{{rootType}}, string?>> Value = x => null;
+                    public static readonly Expression<System.Func<Filtering.{{rootType}}, object?>> Value = x => {{body}};
                 }
             }
             """;

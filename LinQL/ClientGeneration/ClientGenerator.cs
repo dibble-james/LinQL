@@ -37,32 +37,6 @@ public class ClientGenerator : IIncrementalGenerator
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    // LINQLGEN08 to LINQLGEN11 are left for the syntax translator's own rules, which report on a declared
-    // query's body; binding a declaration to a schema comes first and takes the numbers above them.
-    private static readonly DiagnosticDescriptor UnknownDeclaredQuerySchema = new(
-        id: "LINQLGEN12",
-        title: "Declared query names an unknown schema",
-        messageFormat: "The declared query '{0}' names schema '{1}', but no SDL in this project declares that client namespace. Use the LinQLClientNamespace of the schema the query is written against.",
-        category: "LinQLClientGenerator",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
-    private static readonly DiagnosticDescriptor UnknownDeclaredQueryRootType = new(
-        id: "LINQLGEN13",
-        title: "Declared query uses a root type the schema does not generate",
-        messageFormat: "Schema '{0}' does not generate a root type named '{1}', which the declared query '{2}' uses as its root. Use the root type of the schema the query is written against.",
-        category: "LinQLClientGenerator",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
-    private static readonly DiagnosticDescriptor UnsupportedDeclaredQuery = new(
-        id: "LINQLGEN14",
-        title: "Declared query is not a parameterised expression",
-        messageFormat: "'{0}' is marked with LinQLQuery but is not a static field of type Expression<Func<TRoot, TData>>. A declared query is a static field holding a parameterised expression.",
-        category: "LinQLClientGenerator",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
     private const string TypesAsProperty = "build_property.LinQLTypesAs";
 
     private const string DeclaredQueryAttributeName = "LinQL.Description.LinQLQueryAttribute";
@@ -122,9 +96,16 @@ public class ClientGenerator : IIncrementalGenerator
         // A declared query is bound by the client namespace of the schema it is written against, so every
         // schema's namespace and root types are collected and compared with what each declaration uses.
         var schemaBindings = schemas
-            .Select(static (schema, _) => (
-                Namespace: schema.Options.TryGetValue("build_metadata.additionalfiles.LinQLClientNamespace", out var clientNamespace) ? clientNamespace : null,
-                Roots: ReadRootTypes(schema.Contents?.ToString() ?? string.Empty)))
+            .Select(static (schema, _) =>
+            {
+                var sdl = string.Join("\n", schema.Contents?.ToString(), schema.Extensions?.ToString() ?? string.Empty);
+
+                return (
+                    Namespace: schema.Options.TryGetValue("build_metadata.additionalfiles.LinQLClientNamespace", out var clientNamespace) ? clientNamespace : null,
+                    Roots: ReadRootTypes(sdl),
+                    sdl,
+                    schema.TypesAs);
+            })
             .Collect();
 
         var declaredQueries = context.SyntaxProvider
@@ -196,7 +177,7 @@ public class ClientGenerator : IIncrementalGenerator
     /// <param name="queries">The declarations found.</param>
     private static void ReportDeclaredQueries(
         SourceProductionContext output,
-        ImmutableArray<(string? Namespace, string Roots)> schemas,
+        ImmutableArray<(string? Namespace, string Roots, string Sdl, string? TypesAs)> schemas,
         ImmutableArray<DeclaredQuery> queries)
     {
         if (queries.IsDefaultOrEmpty)
@@ -205,8 +186,10 @@ public class ClientGenerator : IIncrementalGenerator
         }
 
         var roots = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        var declarations = new Dictionary<string, (string Sdl, string? TypesAs)>(StringComparer.Ordinal);
+        var models = new Dictionary<string, SchemaModel>(StringComparer.Ordinal);
 
-        foreach (var (clientNamespace, declaredRoots) in schemas)
+        foreach (var (clientNamespace, declaredRoots, sdl, typesAs) in schemas)
         {
             if (clientNamespace is null)
             {
@@ -215,27 +198,72 @@ public class ClientGenerator : IIncrementalGenerator
             }
 
             roots[clientNamespace] = [.. declaredRoots.Split([';'], StringSplitOptions.RemoveEmptyEntries)];
+            declarations[clientNamespace] = (sdl, typesAs);
         }
 
         foreach (var query in queries)
         {
-            if (!query.IsStatic || query.RootType is null)
+            if (!query.IsStatic || query.RootType is not { } rootType)
             {
-                output.ReportDiagnostic(Diagnostic.Create(UnsupportedDeclaredQuery, query.Location, query.FieldName));
+                output.ReportDiagnostic(Diagnostic.Create(DeclaredQueryDiagnostics.NotAnExpression, query.Location, query.FieldName));
                 continue;
             }
 
             if (!roots.TryGetValue(query.ClientNamespace, out var rootTypes))
             {
-                output.ReportDiagnostic(Diagnostic.Create(UnknownDeclaredQuerySchema, query.Location, query.FieldName, query.ClientNamespace));
+                output.ReportDiagnostic(Diagnostic.Create(DeclaredQueryDiagnostics.UnknownSchema, query.Location, query.FieldName, query.ClientNamespace));
                 continue;
             }
 
-            if (!rootTypes.Contains(query.RootType))
+            if (!rootTypes.Contains(rootType))
             {
-                output.ReportDiagnostic(Diagnostic.Create(UnknownDeclaredQueryRootType, query.Location, query.ClientNamespace, query.RootType, query.FieldName));
+                output.ReportDiagnostic(Diagnostic.Create(DeclaredQueryDiagnostics.UnknownRootType, query.Location, query.ClientNamespace, rootType, query.FieldName));
+                continue;
+            }
+
+            // Only a declaration bound to a schema has a document to translate, and the schema is built once
+            // per namespace however many declarations name it.
+            if (!models.TryGetValue(query.ClientNamespace, out var model))
+            {
+                var (schemaSdl, schemaTypesAs) = declarations[query.ClientNamespace];
+
+                _ = TryParseTypesAs(schemaTypesAs, out var typesAs);
+
+                model = CreateModel(schemaSdl, query.ClientNamespace, typesAs);
+                models[query.ClientNamespace] = model;
+            }
+
+            var (_, problems) = DeclaredQueryTranslator.Translate(query.Body, model, rootType);
+
+            foreach (var problem in problems)
+            {
+                output.ReportDiagnostic(problem);
             }
         }
+    }
+
+    /// <summary>
+    /// Builds the schema model an SDL describes, without emitting a client from it.
+    /// </summary>
+    /// <param name="sdl">The SDL.</param>
+    /// <param name="graphNamespace">The client namespace the schema declares.</param>
+    /// <param name="typesAs">The kind of declaration the schema generates.</param>
+    /// <returns>The model.</returns>
+    /// <remarks>
+    /// The walk is turned away from reporting: the client's own walk already reports the filter diagnostics,
+    /// and repeating them once per declared query would multiply them.
+    /// </remarks>
+    internal static SchemaModel CreateModel(string sdl, string graphNamespace, LinQLTypesAs typesAs)
+    {
+        var document = HotChocolate.Language.Utf8GraphQLParser.Parse(sdl);
+        var context = new DocumentWalkerContext("declared-queries", default, graphNamespace, [], typesAs)
+        {
+            ReportsDiagnostics = false,
+        };
+
+        new DocumentWalker().Visit(document, context);
+
+        return context.Model;
     }
 
     /// <summary>

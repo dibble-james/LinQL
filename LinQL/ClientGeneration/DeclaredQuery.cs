@@ -2,6 +2,7 @@ namespace LinQL.ClientGeneration;
 
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
 /// A <c>[LinQLQuery]</c> declaration the generator found, before it is bound to a schema.
@@ -10,8 +11,9 @@ using Microsoft.CodeAnalysis;
 /// <param name="FieldName">The declared field's name.</param>
 /// <param name="RootType">The root type of the query's expression, or <see langword="null"/> when the field is not one.</param>
 /// <param name="IsStatic">Whether the field is static, which a declared query has to be.</param>
+/// <param name="Body">The lambda the field holds, which the translator reads.</param>
 /// <param name="Location">The declaration.</param>
-internal sealed record DeclaredQuery(string ClientNamespace, string FieldName, string? RootType, bool IsStatic, Location Location)
+internal sealed record DeclaredQuery(string ClientNamespace, string FieldName, string? RootType, bool IsStatic, LambdaExpressionSyntax? Body, Location Location)
 {
     /// <summary>
     /// Reads a declaration from the attribute application marking its field.
@@ -32,6 +34,7 @@ internal sealed record DeclaredQuery(string ClientNamespace, string FieldName, s
             field.Name,
             RootTypeOf(field.Type),
             field.IsStatic,
+            (attribute.TargetNode as VariableDeclaratorSyntax)?.Initializer?.Value as LambdaExpressionSyntax,
             field.Locations.FirstOrDefault() ?? Location.None);
     }
 
