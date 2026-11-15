@@ -6,8 +6,6 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <!-- Runs the .editorconfig code-style rules during the build, not only in the IDE. The
-         test projects still set TreatWarningsAsErrors=false, so a warning there stays a warning. -->
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- IDE0005 only runs in the build when GenerateDocumentationFile is set; the projects without
          one report this advisory instead, and the format gate covers IDE0005 for them. -->

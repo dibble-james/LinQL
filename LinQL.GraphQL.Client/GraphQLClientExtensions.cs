@@ -74,9 +74,6 @@ public static class GraphQLClientExtensions
             RootOperationType.Query => client.SendQueryAsync<TRoot>(request, cancellationToken),
             RootOperationType.Mutation => client.SendMutationAsync<TRoot>(request, cancellationToken),
             RootOperationType.Subscription => throw new NotSupportedException($"Can't Send a {query.OperationType}"),
-
-            // Naming every member keeps IDE0072 satisfied; the fallback stays because an enum can
-            // hold a value it does not name, which CS8524 refuses to compile without.
             _ => throw new NotSupportedException($"Can't Send a {query.OperationType}"),
         }).ConfigureAwait(false);
 
@@ -115,8 +112,6 @@ public static class GraphQLClientExtensions
             RootOperationType.Subscription => client.CreateSubscriptionStream<TRoot>(request),
             RootOperationType.Query => throw new NotSupportedException($"Can't Subscribe to a {query.OperationType}"),
             RootOperationType.Mutation => throw new NotSupportedException($"Can't Subscribe to a {query.OperationType}"),
-
-            // See the fallback in SendAsync: the members are named for IDE0072, the arm is for CS8524.
             _ => throw new NotSupportedException($"Can't Subscribe to a {query.OperationType}"),
         };
 
