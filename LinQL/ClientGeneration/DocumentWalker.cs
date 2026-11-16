@@ -8,6 +8,10 @@ using Microsoft.CodeAnalysis.Text;
 
 internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
 {
+    private const string EntityKeyDirective = "key";
+
+    private const string EntityKeyFieldsArgument = "fields";
+
     private static readonly DiagnosticDescriptor MissingDirective = new(
         id: "LINQLGEN03",
         title: "Missing scalar directive",
@@ -48,6 +52,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         // once the whole document has been walked.
         ReportMissingFilterInputTypes(context);
         ReportConflictingFilterExtensions(context);
+        ResolveEntityKeys(context);
 
         return action;
     }
@@ -78,6 +83,24 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         return base.VisitChildren(node, context);
     }
 
+    protected override ISyntaxVisitorAction VisitChildren(ObjectTypeExtensionNode node, DocumentWalkerContext context)
+    {
+        // The @key annotations live in the schema's .extensions.graphql companion, where they extend the
+        // types the schema declares. Nothing else an object extension carries is read: an extension that
+        // adds fields is not part of the model today, and this must not start adding them.
+        CollectEntityKeyPatterns(node.Directives, node.Name.Value, context);
+
+        return base.VisitChildren(node, context);
+    }
+
+    protected override ISyntaxVisitorAction VisitChildren(SchemaExtensionNode node, DocumentWalkerContext context)
+    {
+        // A key on the schema is the global pattern: it applies to every object type that declares the field.
+        CollectEntityKeyPatterns(node.Directives, typeName: null, context);
+
+        return base.VisitChildren(node, context);
+    }
+
     protected override ISyntaxVisitorAction VisitChildren(InterfaceTypeDefinitionNode node, DocumentWalkerContext context)
     {
         context.Model.AddDeclaredType(node.Name.Value, DeclaredTypeKind.Interface, node.Fields);
@@ -100,6 +123,7 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
     protected override ISyntaxVisitorAction VisitChildren(EnumTypeDefinitionNode node, DocumentWalkerContext context)
     {
         context.Model.AddType(new EnumTypeClass(node.Name.Value, node.Values));
+        context.Model.AddEnumType(node.Name.Value);
 
         return base.VisitChildren(node, context);
     }
@@ -272,5 +296,145 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Records the <c>@key</c> patterns a node's directives carry.
+    /// </summary>
+    /// <param name="directives">The directives written on the node.</param>
+    /// <param name="typeName">The type the node extends, or <see langword="null"/> for the schema.</param>
+    /// <param name="context">The walk.</param>
+    /// <remarks>
+    /// The pattern is recorded as written. Whether it names a usable field is decided once the whole document
+    /// has been read, because the type it extends may be declared after its extension.
+    /// </remarks>
+    private static void CollectEntityKeyPatterns(
+        IReadOnlyList<DirectiveNode> directives,
+        string? typeName,
+        DocumentWalkerContext context)
+    {
+        foreach (var directive in directives.Where(x => x.Name.Value == EntityKeyDirective))
+        {
+            var fields = directive.Arguments.FirstOrDefault(x => x.Name.Value == EntityKeyFieldsArgument)?.Value;
+
+            context.Model.AddEntityKeyPattern(new EntityKeyPattern(
+                typeName,
+                fields is StringValueNode literal
+                    ? literal.Value.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                    : [],
+                directive.Location));
+        }
+    }
+
+    /// <summary>
+    /// Turns the patterns the document declared into the key each entity type is identified by.
+    /// </summary>
+    /// <param name="context">The walk.</param>
+    /// <remarks>
+    /// A global pattern applies wherever its field exists, which is how Strawberry Shake applies one: a type
+    /// that does not declare the field is simply not an entity, and that is not a diagnostic. A per-type
+    /// pattern is explicit, so it is reported when it cannot be used and the type is left uncached rather than
+    /// silently falling back to the global key the author replaced.
+    /// Root operation types and interfaces are never entities.
+    /// </remarks>
+    private static void ResolveEntityKeys(DocumentWalkerContext context)
+    {
+        var model = context.Model;
+        var global = model.EntityKeyPatterns.FirstOrDefault(x => x.TypeName is null);
+
+        if (global is not null && global.Fields.Count != 1)
+        {
+            ReportEntityKey(context, EntityKeyDiagnostics.MultipleFields, "the schema", global.Fields, global.Location);
+        }
+
+        var overrides = new Dictionary<string, EntityKeyPattern>(StringComparer.Ordinal);
+
+        foreach (var pattern in model.EntityKeyPatterns)
+        {
+            if (pattern.TypeName is { } name)
+            {
+                // The first pattern for a type wins: an entity has one key, and a second annotation cannot
+                // be expressed by the generated code.
+                if (!overrides.ContainsKey(name))
+                {
+                    overrides[name] = pattern;
+                }
+            }
+        }
+
+        var roots = new HashSet<string>(model.RootOperations.Select(x => x.Name), StringComparer.Ordinal);
+
+        foreach (var type in model.DeclaredTypes.Where(x => x.Kind is DeclaredTypeKind.Object && !roots.Contains(x.Name)))
+        {
+            var declared = overrides.TryGetValue(type.Name, out var found) ? found : null;
+            var pattern = declared ?? global;
+
+            if (pattern is null)
+            {
+                continue;
+            }
+
+            if (pattern.Fields.Count != 1)
+            {
+                if (declared is not null)
+                {
+                    ReportEntityKey(context, EntityKeyDiagnostics.MultipleFields, $"'{type.Name}'", pattern.Fields, pattern.Location);
+                }
+
+                continue;
+            }
+
+            var fieldName = pattern.Fields[0];
+            var field = type.Fields.FirstOrDefault(x => x.Name.Value == fieldName);
+
+            if (field is null)
+            {
+                if (declared is not null)
+                {
+                    ReportEntityKey(context, EntityKeyDiagnostics.UnknownField, type.Name, pattern.Fields, pattern.Location);
+                }
+
+                continue;
+            }
+
+            if (!model.IsLeafType(field.Type.NamedType().Name.Value))
+            {
+                if (declared is not null)
+                {
+                    ReportEntityKey(context, EntityKeyDiagnostics.NotALeafField, type.Name, pattern.Fields, pattern.Location);
+                }
+
+                continue;
+            }
+
+            model.AddEntityKey(new EntityKey(type.Name, fieldName));
+        }
+    }
+
+    /// <summary>
+    /// Reports a diagnostic at the pattern that produced it.
+    /// </summary>
+    /// <param name="context">The walk.</param>
+    /// <param name="descriptor">The diagnostic.</param>
+    /// <param name="target">The type the pattern extends, or the schema.</param>
+    /// <param name="fields">The fields the pattern names.</param>
+    /// <param name="location">Where the directive was written.</param>
+    private static void ReportEntityKey(
+        DocumentWalkerContext context,
+        DiagnosticDescriptor descriptor,
+        string target,
+        IReadOnlyList<string> fields,
+        HotChocolate.Language.Location? location)
+    {
+        var span = location is null
+            ? Microsoft.CodeAnalysis.Location.None
+            : Microsoft.CodeAnalysis.Location.Create(
+                context.File,
+                TextSpan.FromBounds(location.Start, location.End),
+                new LinePositionSpan(
+                    new LinePosition(location.Line - 1, location.Column - 1),
+                    new LinePosition(location.Line - 1, location.Column - 1)));
+
+        context.Report(Diagnostic.Create(descriptor, span, target, string.Join(" ", fields)));
     }
 }

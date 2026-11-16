@@ -1,5 +1,7 @@
 directive @customScalar(clrType: String!) on SCALAR
 
+extend schema @key(fields: "id")
+
 extend scalar UUID
     @customScalar(clrType: "System.Guid")
 

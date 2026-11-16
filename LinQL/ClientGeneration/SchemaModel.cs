@@ -20,6 +20,9 @@ internal sealed class SchemaModel
     private readonly List<FieldExtension> fieldExtensions = [];
     private readonly List<DeclaredType> declaredTypes = [];
     private readonly Dictionary<string, DeclaredType> declaredTypesByName = new(StringComparer.Ordinal);
+    private readonly List<EntityKeyPattern> entityKeyPatterns = [];
+    private readonly Dictionary<string, EntityKey> entityKeys = new(StringComparer.Ordinal);
+    private readonly HashSet<string> enumTypes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Scalar> scalars = Scalar.NativeScalars.ToDictionary(x => x.Name, StringComparer.InvariantCultureIgnoreCase);
 
     /// <summary>
@@ -60,6 +63,21 @@ internal sealed class SchemaModel
     public IReadOnlyDictionary<string, Scalar> KnownScalars => this.scalars;
 
     /// <summary>
+    /// Gets the <c>@key</c> patterns the document's extensions declare, in document order.
+    /// </summary>
+    /// <remarks>
+    /// A pattern with no type name is the global one, which applies to every object type that declares the
+    /// field. The walker resolves the patterns once the whole document has been read, because a pattern may
+    /// name a type or field that is declared later in it.
+    /// </remarks>
+    public IReadOnlyList<EntityKeyPattern> EntityKeyPatterns => this.entityKeyPatterns;
+
+    /// <summary>
+    /// Gets the field each entity type is identified by, by type name.
+    /// </summary>
+    public IReadOnlyDictionary<string, EntityKey> EntityKeys => this.entityKeys;
+
+    /// <summary>
     /// Records a root operation.
     /// </summary>
     /// <param name="operation">The root type declaration.</param>
@@ -89,6 +107,36 @@ internal sealed class SchemaModel
         this.declaredTypes.Add(type);
         this.declaredTypesByName[name] = type;
     }
+
+    /// <summary>
+    /// Records a <c>@key</c> pattern the document declares.
+    /// </summary>
+    /// <param name="pattern">The pattern.</param>
+    public void AddEntityKeyPattern(EntityKeyPattern pattern) => this.entityKeyPatterns.Add(pattern);
+
+    /// <summary>
+    /// Records the key an entity type is identified by.
+    /// </summary>
+    /// <param name="key">The key.</param>
+    public void AddEntityKey(EntityKey key) => this.entityKeys[key.TypeName] = key;
+
+    /// <summary>
+    /// Records an enum the document declares.
+    /// </summary>
+    /// <param name="name">The enum's name.</param>
+    /// <remarks>
+    /// Enums are leaves for the purpose of an entity key, so they are recorded apart from the types that
+    /// declare fields: a key may name one, and the emitters never read their members.
+    /// </remarks>
+    public void AddEnumType(string name) => this.enumTypes.Add(name);
+
+    /// <summary>
+    /// Gets whether a GraphQL type is a leaf.
+    /// </summary>
+    /// <param name="typeName">The type's name.</param>
+    /// <returns><see langword="true"/> for a scalar or an enum.</returns>
+    public bool IsLeafType(string typeName)
+        => this.scalars.ContainsKey(typeName) || this.enumTypes.Contains(typeName);
 
     /// <summary>
     /// Gets the fields a type declares.
@@ -147,6 +195,23 @@ internal sealed record DeclaredType(string Name, DeclaredTypeKind Kind, IReadOnl
     /// </remarks>
     public bool IsSelectable => this.Kind is DeclaredTypeKind.Object or DeclaredTypeKind.Interface;
 }
+
+/// <summary>
+/// A <c>@key</c> pattern the document declares.
+/// </summary>
+/// <param name="TypeName">
+/// The type the pattern extends, or <see langword="null"/> for the global pattern.
+/// </param>
+/// <param name="Fields">The fields the pattern names, in source order.</param>
+/// <param name="Location">Where the directive was written, for a diagnostic.</param>
+internal sealed record EntityKeyPattern(string? TypeName, IReadOnlyList<string> Fields, Location? Location);
+
+/// <summary>
+/// The field an entity type is identified by.
+/// </summary>
+/// <param name="TypeName">The type's name.</param>
+/// <param name="FieldName">The leaf field the type's id is read from.</param>
+internal sealed record EntityKey(string TypeName, string FieldName);
 
 /// <summary>
 /// What a document declares a type as.
