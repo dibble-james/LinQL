@@ -1,4 +1,3 @@
-#pragma warning disable CA1852 // Seal internal types
 namespace LinQL.Tests.Translation;
 
 using System;
@@ -180,7 +179,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class FilterRootType : RootType<FilterRootType>
+    private sealed class FilterRootType : RootType<FilterRootType>
     {
         public FilterProduct[] Products { get; set; } = [];
 

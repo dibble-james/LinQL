@@ -7,7 +7,7 @@ using System.Collections.Generic;
 /// </summary>
 /// <param name="Name">The graphql type name</param>
 /// <param name="RuntimeType">The type represented in dotnet</param>
-public record struct Scalar(string Name, string RuntimeType)
+public readonly record struct Scalar(string Name, string RuntimeType)
 {
     /// <summary>
     /// Creates a new instance of the <see cref="Scalar"/> type.

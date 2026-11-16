@@ -16,66 +16,25 @@ root = true
 charset = utf-8
 indent_style = space
 indent_size = 4
+tab_width = 4
 insert_final_newline = true
 trim_trailing_whitespace = true
-csharp_indent_labels = no_change
-csharp_space_around_binary_operators = before_and_after
-csharp_using_directive_placement = inside_namespace:error
-csharp_prefer_simple_using_statement = true:suggestion
-csharp_prefer_braces = true:error
-csharp_style_namespace_declarations = file_scoped:error
-csharp_style_expression_bodied_methods = true:error
-csharp_style_expression_bodied_constructors = true:error
-csharp_style_expression_bodied_operators = true:error
-csharp_style_expression_bodied_properties = true:error
-csharp_style_expression_bodied_indexers = true:error
-csharp_style_expression_bodied_accessors = true:error
-csharp_style_expression_bodied_lambdas = true:error
-csharp_style_expression_bodied_local_functions = true:error
-csharp_style_prefer_null_check_over_type_check = true:error
-csharp_style_throw_expression = true:error
-csharp_prefer_simple_default_expression = true:error
-csharp_style_prefer_local_over_anonymous_function = true:suggestion
-csharp_style_prefer_index_operator = true:error
-csharp_style_prefer_range_operator = true:error
-csharp_style_implicit_object_creation_when_type_is_apparent = true:error
-csharp_style_prefer_tuple_swap = true:suggestion
-csharp_style_inlined_variable_declaration = true:error
-csharp_style_deconstructed_variable_declaration = true:error
-csharp_style_unused_value_assignment_preference = discard_variable:suggestion
-csharp_style_unused_value_expression_statement_preference = discard_variable:suggestion
-csharp_prefer_static_local_function = true:error
-csharp_style_allow_embedded_statements_on_same_line_experimental = true:silent
-csharp_style_allow_blank_line_after_colon_in_constructor_initializer_experimental = true:silent
-csharp_style_allow_blank_lines_between_consecutive_braces_experimental = true:silent
-csharp_style_conditional_delegate_call = true:error
-csharp_style_prefer_pattern_matching = true:error
-csharp_style_prefer_switch_expression = true:error
-csharp_style_pattern_matching_over_as_with_null_check = true:error
-csharp_style_pattern_matching_over_is_with_cast_check = true:error
-csharp_style_prefer_extended_property_pattern = true:suggestion
-csharp_style_prefer_not_pattern = true:error
-csharp_style_prefer_method_group_conversion = true:silent
-csharp_style_prefer_top_level_statements = true:silent
-csharp_style_prefer_parameter_null_checking = true:suggestion
-csharp_style_var_for_built_in_types = true:error
-csharp_style_var_when_type_is_apparent = true:error
-csharp_style_var_elsewhere = true:error
+# The repository stores LF (`* text=auto eol=lf` in .gitattributes) and checks every text
+# file out as LF, so declaring CRLF here would only make the whitespace formatter disagree
+# with the checkout it is run against.
+end_of_line = lf
 
 ##########################################
 # File Extension Settings
 ##########################################
-
-# Visual Studio Solution Files
-[*.sln]
-indent_style = tab
 
 # Visual Studio XML Project Files
 [*.{csproj,vbproj,vcxproj.filters,proj,projitems,shproj}]
 indent_size = 2
 
 # XML Configuration Files
-[*.{xml,config,props,targets,nuspec,resx,ruleset,vsixmanifest,vsct}]
+# .slnx is the XML solution format .NET 9+ writes, so it is indented like the other XML files
+[*.{xml,config,props,targets,nuspec,resx,ruleset,vsixmanifest,vsct,slnx}]
 indent_size = 2
 
 # JSON Files
@@ -98,10 +57,6 @@ indent_size = 2
 [*.{cmd,bat}]
 end_of_line = crlf
 
-# Bash Files
-[*.sh]
-end_of_line = lf
-
 # Makefiles
 [Makefile]
 indent_style = tab
@@ -114,6 +69,12 @@ indent_style = tab
 [*.{cs,csx,cake,vb,vbx}]
 # Default Severity for all .NET Code Style rules below
 dotnet_analyzer_diagnostic.severity = error
+
+# A blanket severity only applies to rules that are enabled by default, so any code-quality rule
+# worth having has to be named. CA2007 matters because this is a netstandard2.0 library other
+# applications consume; every await in the shipping projects already passes false to
+# ConfigureAwait, so naming it locks the practice in rather than creating work.
+dotnet_diagnostic.CA2007.severity = error
 
 ##########################################
 # Language Rules
@@ -194,7 +155,7 @@ csharp_style_prefer_not_pattern = true:error
 # Expression-level preferences
 csharp_style_inlined_variable_declaration = true:error
 csharp_prefer_simple_default_expression = true:error
-csharp_style_pattern_local_over_anonymous_function = true:error
+csharp_style_prefer_local_over_anonymous_function = true:error
 csharp_style_deconstructed_variable_declaration = true:error
 csharp_style_prefer_index_operator = true:error
 csharp_style_prefer_range_operator = true:error
@@ -212,6 +173,22 @@ csharp_using_directive_placement = inside_namespace:error
 csharp_prefer_static_local_function = true:error
 # Undocumented
 csharp_style_namespace_declarations = file_scoped:error
+
+# C# 12-14 rules the 2021 template predates.
+csharp_style_prefer_primary_constructors = true:error
+csharp_style_prefer_readonly_struct = true:error
+csharp_style_prefer_readonly_struct_member = true:error
+dotnet_style_prefer_collection_expression = when_types_exactly_match:error
+# Expression-level preferences that were only ever declared in the catch-all [*] section, where
+# they took effect by accident of that section also matching .cs files.
+csharp_style_prefer_tuple_swap = true:suggestion
+csharp_style_prefer_extended_property_pattern = true:suggestion
+csharp_style_prefer_method_group_conversion = true:silent
+csharp_style_prefer_top_level_statements = true:silent
+csharp_style_prefer_parameter_null_checking = true:suggestion
+csharp_style_allow_embedded_statements_on_same_line_experimental = true:silent
+csharp_style_allow_blank_line_after_colon_in_constructor_initializer_experimental = true:silent
+csharp_style_allow_blank_lines_between_consecutive_braces_experimental = true:silent
 
 ##########################################
 # Unnecessary Code Rules
@@ -454,14 +431,10 @@ dotnet_naming_symbols.parameters_group.applicable_kinds = parameter
 dotnet_naming_rule.parameters_rule.symbols              = parameters_group
 dotnet_naming_rule.parameters_rule.style = camel_case_style
 dotnet_naming_rule.parameters_rule.severity = error
-tab_width = 4
-# The repository stores LF (`* text=auto`), CI checks out on Linux, and .gitattributes pins
-# *.cs to LF, so a CRLF requirement here would only make the whitespace formatter disagree
-# with the checkout it is run against.
-end_of_line = lf
+
+# Whitespace the formatter leaves alone.
 dotnet_style_allow_statement_immediately_after_block_experimental = true:silent
 dotnet_style_allow_multiple_blank_lines_experimental = true:silent
-dotnet_diagnostic.CA1715.severity = suggestion
 
 ##########################################
 # Deliberate exceptions
@@ -479,6 +452,47 @@ dotnet_diagnostic.IDE0130.severity = none
 dotnet_diagnostic.IDE0058.severity = none
 dotnet_diagnostic.IDE0060.severity = none
 dotnet_diagnostic.JSON002.severity = none
+# Two kinds of member in test code cannot be static. xunit runs test methods as instance members,
+# and the GraphQL schema stubs the tests declare (nested types exposing operations and fields) have
+# to stay instance members or the schema they describe changes. Scoping the rule by api_surface does
+# not separate them from the helpers it would usefully flag, so it is off for test code only.
+dotnet_diagnostic.CA1822.severity = none
+# Continuations in test code deliberately resume on the captured context, and an example console app
+# has no context to configure away; CA2007 is enforced in the shipping libraries, where it matters.
+dotnet_diagnostic.CA2007.severity = none
+
+# A file holding only `global using` directives has no namespace for them to sit inside, so no
+# arrangement of that file can satisfy the placement rule.
+[**/Usings.cs]
+dotnet_diagnostic.IDE0065.severity = none
+
+# `RootType<T>` is the one interface in the tree without an `I` prefix. The name is published API
+# (it is the constraint every generated root type states), so renaming it is a breaking change.
+# CA1715 reports only where the interface is declared, so this covers that declaration alone.
+[LinQL/RootType.cs]
+dotnet_diagnostic.CA1715.severity = none
+
+# The test schema names this GraphQL interface, so the CLR name is part of what the test asserts
+# on and cannot gain an `I` prefix without renaming the schema type as well.
+[LinQL.GraphQL.Client.Tests/FilterTests.cs]
+dotnet_diagnostic.CA1715.severity = none
+
+# The example is a console app, not a library, so there is no caller context for it to escape.
+[SourceGenerationExample/**]
+dotnet_diagnostic.CA2007.severity = none
+
+# These declare the concrete types of an interface that the snapshot tests select fields through.
+# Sealing them changed the query those tests generate and two snapshot tests failed, so they stay
+# unsealed even though nothing in the assembly derives from them.
+[LinQL.Tests/Translation/TranslationProviderTests.cs]
+[LinQL.Tests/Translation/TranslationProviderTests.Inheritance.cs]
+dotnet_diagnostic.CA1852.severity = none
+
+# `x.Float.ToString()` inside these tests is query syntax the translator turns into a field, not
+# string formatting: naming a format provider adds a member access the translator renders as an
+# extra field, which is what two snapshot tests caught.
+[LinQL.Tests/Translation/TranslationProviderTests.Inheritance.cs]
+dotnet_diagnostic.CA1305.severity = none
 
 ##########################################
 # License

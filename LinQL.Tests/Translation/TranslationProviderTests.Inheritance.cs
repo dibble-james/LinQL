@@ -1,5 +1,5 @@
-#pragma warning disable CA1852 // Seal internal types
 namespace LinQL.Tests.Translation;
+
 
 using LinQL.Description;
 
@@ -84,7 +84,7 @@ public partial class TranslationProviderTests
         );
 
     [OperationType]
-    private class MultipleTypeInheritence : RootType<MultipleTypeInheritence>
+    private sealed class MultipleTypeInheritence : RootType<MultipleTypeInheritence>
     {
         public IAmInterface IAmObject { get; set; } = default!;
     }

@@ -1,4 +1,3 @@
-#pragma warning disable CA1852 // Seal internal types
 namespace LinQL.Tests.Translation;
 
 using System;
@@ -16,12 +15,12 @@ public partial class TranslationProviderTests
         Snapshot.Match(request.Query);
     }
 
-    private record Projection(int Number, string? Text);
+    private sealed record Projection(int Number, string? Text);
 
-    private record NestedProjection(float Float, Projection Projection);
+    private sealed record NestedProjection(float Float, Projection Projection);
 
     [OperationType]
-    private class SimpleScalarType : ISimpleType, RootType<SimpleScalarType>
+    private sealed class SimpleScalarType : ISimpleType, RootType<SimpleScalarType>
     {
         public int Number { get; set; }
 
@@ -29,7 +28,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class NestedClassType : RootType<NestedClassType>
+    private sealed class NestedClassType : RootType<NestedClassType>
     {
         public SimpleScalarType? Nested { get; set; }
 
@@ -37,7 +36,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class NestedArrayType : RootType<NestedArrayType>
+    private sealed class NestedArrayType : RootType<NestedArrayType>
     {
         public IEnumerable<SimpleScalarType> Types { get; set; } = null!;
 
@@ -45,7 +44,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class SimpleOperationType : RootType<SimpleOperationType>
+    private sealed class SimpleOperationType : RootType<SimpleOperationType>
     {
         [GraphQLOperation]
         public SimpleScalarType GetNumber() => default!;
@@ -54,7 +53,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class OperationWithScalarParametersType : RootType<OperationWithScalarParametersType>
+    private sealed class OperationWithScalarParametersType : RootType<OperationWithScalarParametersType>
     {
         [GraphQLOperation]
         public SimpleScalarType GetNumber([GraphQLArgument(GQLType = "String!")] string value) => new() { Text = value };
@@ -63,7 +62,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class OperationWithTypeParametersType : RootType<OperationWithTypeParametersType>
+    private sealed class OperationWithTypeParametersType : RootType<OperationWithTypeParametersType>
     {
         [GraphQLOperation]
         public SimpleScalarType GetNumber([GraphQLArgument(GQLType = "SimpleScalarType!")] SimpleScalarType input) => input;
@@ -72,7 +71,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class OperationWithNullableTypeParametersType : RootType<OperationWithNullableTypeParametersType>
+    private sealed class OperationWithNullableTypeParametersType : RootType<OperationWithNullableTypeParametersType>
     {
         [GraphQLOperation]
         public SimpleScalarType? GetNumber([GraphQLArgument(GQLType = "SimpleScalarType")] SimpleScalarType? input) => input;
@@ -81,7 +80,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class NestedOperationType : RootType<NestedOperationType>
+    private sealed class NestedOperationType : RootType<NestedOperationType>
     {
         public OperationWithScalarParametersType Operation => default!;
 
@@ -91,7 +90,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class NestedOperationInOperationType : RootType<NestedOperationInOperationType>
+    private sealed class NestedOperationInOperationType : RootType<NestedOperationInOperationType>
     {
         [GraphQLOperation]
         public NestedOperationType Operation([GraphQLArgument(GQLType = "Int!")] int number) => new() { Number = number };
@@ -100,7 +99,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class RenamedType : RootType<RenamedType>
+    private sealed class RenamedType : RootType<RenamedType>
     {
         [GraphQLField(Name = "notText")]
         public string Text => default!;
@@ -118,7 +117,7 @@ public partial class TranslationProviderTests
         public int Number { get; }
     }
 
-    private class SomeOtherSimpleType : ISimpleType, ICanHaveIncludes
+    private sealed class SomeOtherSimpleType : ISimpleType, ICanHaveIncludes
     {
         public string? Text { get; }
 
@@ -130,7 +129,7 @@ public partial class TranslationProviderTests
     }
 
     [OperationType]
-    private class InterfaceRootType : RootType<InterfaceRootType>
+    private sealed class InterfaceRootType : RootType<InterfaceRootType>
     {
         public required ISimpleType SimpleType { get; set; }
 

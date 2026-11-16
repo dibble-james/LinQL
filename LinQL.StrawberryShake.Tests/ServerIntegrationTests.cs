@@ -85,7 +85,6 @@ public class ServerIntegrationTests : IDisposable
         this.server.DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
-#pragma warning disable CA1822 // Hot Chocolate resolves these as instance members on the query and mutation types.
     public class QueryType
     {
         public int GetNumber() => 12345;
@@ -118,5 +117,4 @@ public class ServerIntegrationTests : IDisposable
     {
         public int Number { get; set; }
     }
-#pragma warning restore CA1822
 }
