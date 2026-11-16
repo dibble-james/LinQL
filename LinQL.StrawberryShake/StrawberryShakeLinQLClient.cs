@@ -5,6 +5,7 @@ using System.Text.Json;
 using FastExpressionCompiler;
 using global::StrawberryShake;
 using global::StrawberryShake.Json;
+using LinQL.Caching;
 using LinQL.Description;
 using LinQL.Translation;
 
@@ -106,7 +107,7 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
         }
 
         var operation = LinQLOperationRequest.Create(query.OperationType, query.Document, query.Variables);
-        var executor = this.CreateExecutor(query.Projection, query.Document);
+        var executor = this.CreateExecutor(query.Projection, query.Document, query.Cache);
 
         var result = await executor
             .ExecuteAsync(operation, cancellationToken)
@@ -131,7 +132,7 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
         ObjectDisposedException.ThrowIf(this.disposed, this);
 
         var operation = LinQLOperationRequest.Create(query.OperationType, query.Document, query.Variables);
-        var executor = this.CreateExecutor(query.Projection, query.Document);
+        var executor = this.CreateExecutor(query.Projection, query.Document, query.Cache);
 
         var results = executor.Watch(operation);
         var mapped = new MappedObservable<IOperationResult<LinQLResult<TData>>, LinQLResult<TData>>(
@@ -234,14 +235,15 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
 
     private OperationExecutor<JsonDocument, LinQLResult<TData>> CreateExecutor<TRoot, TData>(
         Expression<Func<TRoot, TData>> projection,
-        string query)
+        string query,
+        LinQLOperationCache<TRoot>? cache = null)
         where TRoot : RootType<TRoot>
     {
         var compiled = projection.CompileFast();
 
         return new(
             this.connection,
-            () => new LinQLResultBuilder<TRoot, TData>(compiled, this.options.Serializer, query),
+            () => new LinQLResultBuilder<TRoot, TData>(compiled, this.options.Serializer, query, cache, this.entityStore),
             static () => new JsonResultPatcher(),
             this.operationStore,
             this.options.Strategy);

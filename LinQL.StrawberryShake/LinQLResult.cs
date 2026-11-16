@@ -16,18 +16,24 @@ public sealed class LinQLResult<TData> : IOperationResult, IEquatable<LinQLResul
     /// <param name="extensions">Additional data provided by the server.</param>
     /// <param name="contextData">Additional data provided by the transport.</param>
     /// <param name="query">The document that was sent.</param>
+    /// <param name="dataInfo">What the result was built from, which the entity store rebuilds it with.</param>
+    /// <param name="dataFactory">The factory that rebuilds this result from the entity store.</param>
     internal LinQLResult(
         TData data,
         IReadOnlyList<IClientError> errors,
         IReadOnlyDictionary<string, object?> extensions,
         IReadOnlyDictionary<string, object?> contextData,
-        string query)
+        string query,
+        IOperationResultDataInfo? dataInfo,
+        IOperationResultDataFactory dataFactory)
     {
         this.Data = data;
         this.Errors = errors;
         this.Extensions = extensions;
         this.ContextData = contextData;
         this.Query = query;
+        this.DataInfo = dataInfo;
+        this.DataFactory = dataFactory;
     }
 
     /// <summary>
@@ -66,11 +72,21 @@ public sealed class LinQLResult<TData> : IOperationResult, IEquatable<LinQLResul
     /// <inheritdoc />
     Type IOperationResult.DataType => typeof(TData);
 
-    /// <inheritdoc />
-    IOperationResultDataInfo? IOperationResult.DataInfo => null;
+    /// <summary>
+    /// Gets what the result was built from, which the entity store rebuilds it with.
+    /// </summary>
+    internal IOperationResultDataInfo? DataInfo { get; }
+
+    /// <summary>
+    /// Gets the factory that rebuilds this result from the entity store.
+    /// </summary>
+    internal IOperationResultDataFactory DataFactory { get; }
 
     /// <inheritdoc />
-    object IOperationResult.DataFactory => LinQLResultDataFactory<TData>.Instance;
+    IOperationResultDataInfo? IOperationResult.DataInfo => this.DataInfo;
+
+    /// <inheritdoc />
+    object IOperationResult.DataFactory => this.DataFactory;
 
     /// <summary>
     /// Determines whether the specified result has the same projected data and errors as this result.

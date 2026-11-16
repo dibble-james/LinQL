@@ -254,7 +254,7 @@ public class ClientGenerator : IIncrementalGenerator
 
             if (translation.Document is not null)
             {
-                EmitDeclaredQuery(output, query, translation);
+                EmitDeclaredQuery(output, query, translation, model);
             }
         }
     }
@@ -265,14 +265,34 @@ public class ClientGenerator : IIncrementalGenerator
     /// <param name="output">The source output.</param>
     /// <param name="query">The declaration.</param>
     /// <param name="translation">Its document and the variables its parameters fill.</param>
+    /// <param name="model">The schema the declaration is bound to.</param>
     /// <remarks>
     /// The document does not depend on a call, so it is a constant; the binder takes the lambda's own parameters
     /// and binds them to the names the document gave the variables, returning the <c>LinQLQuery</c> an adapter
-    /// sends.
+    /// sends. When the selection can be normalised, the operation's entity cache is emitted beside it and the
+    /// binder attaches it, so the query takes part in entity caching without the call site changing.
     /// </remarks>
-    private static void EmitDeclaredQuery(SourceProductionContext output, DeclaredQuery query, DeclaredQueryTranslation translation)
+    private static void EmitDeclaredQuery(
+        SourceProductionContext output,
+        DeclaredQuery query,
+        DeclaredQueryTranslation translation,
+        SchemaModel model)
     {
         var name = query.ContainingType + query.FieldName;
+
+        var cache = DeclaredQueryCache.Emit(
+            translation.Document!,
+            model,
+            query.RootType!,
+            query.ClientNamespace,
+            name);
+
+        if (cache is not null)
+        {
+            output.AddSource(
+                query.Namespace is null ? $"{name}Cache.g.cs" : $"{query.Namespace}.{name}Cache.g.cs",
+                SourceText.From(cache, Encoding.UTF8));
+        }
 
         var document = FieldDeclaration(
                 VariableDeclaration(PredefinedType(Token(SyntaxKind.StringKeyword)))
@@ -281,12 +301,13 @@ public class ClientGenerator : IIncrementalGenerator
                             .WithInitializer(EqualsValueClause(ParseExpression(SymbolDisplay.FormatLiteral(translation.Document!.ToString(), quote: true))))))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.ConstKeyword));
 
-        var queryType = $"global::LinQL.LinQLQuery<global::{query.ClientNamespace}.{query.RootType}, {query.ResultType}>";
+        var resultType = Qualify(query.ResultType!, model, query.ClientNamespace);
+        var queryType = $"global::LinQL.LinQLQuery<global::{query.ClientNamespace}.{query.RootType}, {resultType}>";
 
         var binder = MethodDeclaration(ParseTypeName(queryType), SchemaNames.IdentifierFor(query.FieldName))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-            .AddParameterListParameters([.. query.Parameters.Select(x => Parameter(SchemaNames.IdentifierFor(x.Name)).WithType(ParseTypeName(x.Type)))])
-            .WithExpressionBody(ArrowExpressionClause(ParseExpression(BinderCall(query, queryType, translation))))
+            .AddParameterListParameters([.. query.Parameters.Select(x => Parameter(SchemaNames.IdentifierFor(x.Name)).WithType(ParseTypeName(Qualify(x.Type, model, query.ClientNamespace))))])
+            .WithExpressionBody(ArrowExpressionClause(ParseExpression(BinderCall(query, queryType, translation, cache is not null))))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
         var members = ClassDeclaration(Identifier(name))
@@ -311,8 +332,13 @@ public class ClientGenerator : IIncrementalGenerator
     /// <param name="query">The declaration.</param>
     /// <param name="queryType">The type the binder returns.</param>
     /// <param name="translation">Its operation and the variables its parameters fill.</param>
+    /// <param name="cached">Whether the operation has an entity cache to attach.</param>
     /// <returns>The call, with one tuple per variable.</returns>
-    private static string BinderCall(DeclaredQuery query, string queryType, DeclaredQueryTranslation translation)
+    private static string BinderCall(
+        DeclaredQuery query,
+        string queryType,
+        DeclaredQueryTranslation translation,
+        bool cached)
     {
         List<string> arguments =
         [
@@ -326,7 +352,11 @@ public class ClientGenerator : IIncrementalGenerator
             arguments.Add($"({SymbolDisplay.FormatLiteral(binding.Variable, quote: true)}, {BoundValue(binding.Value)})");
         }
 
-        return $"{queryType}.Bind({string.Join(", ", arguments)})";
+        var call = $"{queryType}.Bind({string.Join(", ", arguments)})";
+
+        return cached
+            ? $"{call}.WithCache({query.ContainingType}{query.FieldName}Cache.Instance)"
+            : call;
     }
 
     /// <summary>
@@ -393,6 +423,41 @@ public class ClientGenerator : IIncrementalGenerator
         IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture) ?? "null",
         _ => "null",
     };
+
+    /// <summary>
+    /// Qualifies a type a declaration names against the schema's client namespace.
+    /// </summary>
+    /// <param name="type">The type as the compiler displayed it.</param>
+    /// <param name="model">The schema the declaration is bound to.</param>
+    /// <param name="clientNamespace">The client namespace the schema declares.</param>
+    /// <returns>The type, qualified when the schema declares it.</returns>
+    /// <remarks>
+    /// A declaration's projection and parameters may name the types the generator emits, which the semantic
+    /// model the generator reads a declaration from cannot resolve: they are that run's output. Such a name
+    /// comes through unqualified, so a name the schema declares is completed with the namespace its client is
+    /// emitted into. A name the caller already qualified, or one the schema does not declare, is left alone.
+    /// </remarks>
+    private static string Qualify(string type, SchemaModel model, string clientNamespace)
+    {
+        var nullable = type.EndsWith("?", StringComparison.Ordinal) ? "?" : string.Empty;
+        var name = nullable.Length == 0 ? type : type.Substring(0, type.Length - 1);
+        var dimensions = 0;
+
+        while (name.EndsWith("[]", StringComparison.Ordinal))
+        {
+            name = name.Substring(0, name.Length - 2);
+            dimensions++;
+        }
+
+        if (name.Length == 0 || name.Contains('.') || name.Contains("::") || !model.DeclaredTypesByName.ContainsKey(name))
+        {
+            return type;
+        }
+
+        var array = string.Concat(Enumerable.Repeat("[]", dimensions));
+
+        return $"global::{clientNamespace}.{name}{array}{nullable}";
+    }
 
     /// <summary>
     /// Names the declared field a call's projection comes from.

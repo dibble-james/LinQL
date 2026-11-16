@@ -1,0 +1,26 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  film(id: ID!): Film
+  films: [Film!]!
+  boom: String
+}
+
+type Mutation {
+  setFilmTitle(id: ID!, title: String!): Film!
+}
+
+type Film {
+  id: ID!
+  title: String!
+  episode: Int!
+  director: Person
+}
+
+type Person {
+  id: ID!
+  name: String!
+}

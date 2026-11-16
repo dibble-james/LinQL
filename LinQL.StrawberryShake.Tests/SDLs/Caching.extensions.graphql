@@ -1,0 +1,3 @@
+# Every type that declares an id is an entity, which is the pattern Strawberry Shake's generated clients
+# normalise against. Query and Mutation declare no id, so they are never entities.
+extend schema @key(fields: "id")

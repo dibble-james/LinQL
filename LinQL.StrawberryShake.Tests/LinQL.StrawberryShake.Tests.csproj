@@ -20,7 +20,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LinQL.StrawberryShake\LinQL.StrawberryShake.csproj" />
+    <!-- The caching tests run against a generated client, so this project compiles a schema the way a consumer
+         does: the SDL and its @key companion are inputs to the generator, which emits the types and binders. -->
+    <AdditionalFiles Include="SDLs\Caching.graphql" LinQLClientNamespace="LinQL.StrawberryShake.Tests.Cached" />
+    <None Remove="SDLs\Caching.extensions.graphql" />
+    <AdditionalFiles Include="SDLs\Caching.extensions.graphql" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LinQL.StrawberryShake\LinQL.StrawberryShake.csproj" />
+    <!-- OutputItemType=Analyzer is what runs the generator; the assembly reference stays so the generated
+         client can link against LinQL. -->
+    <ProjectReference Include="..\LinQL\LinQL.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+  </ItemGroup>
+
+  <!-- Manually reference the generator props because we locally reference the generator. When added via NuGet this happens automatically -->
+  <Import Project="..\LinQL\LinQL.props" />
 
 </Project>
