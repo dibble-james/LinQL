@@ -500,6 +500,69 @@ public class ClientGeneratorDiagnosticTests
         """;
 
     /// <summary>
+    /// A schema whose types cover the ways an entity key can be written.
+    /// </summary>
+    private const string EntityKeySdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          film: Film
+        }
+
+        type Film {
+          id: ID!
+          title: String!
+          hero: Character
+        }
+
+        type Character {
+          id: ID!
+          name: String!
+        }
+        """;
+
+    [Fact]
+    public void MultiFieldEntityKeyIsReported()
+    {
+        var diagnostics = Generate(EntityKeySdl, extensions: "extend schema @key(fields: \"id sku\")");
+
+        var diagnostic = Assert.Single(diagnostics, x => x.Id == "LINQLGEN16");
+
+        Assert.Contains("the schema", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'id sku'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void UnknownEntityKeyFieldIsReported()
+    {
+        var diagnostics = Generate(EntityKeySdl, extensions: "extend type Film @key(fields: \"sku\")");
+
+        var diagnostic = Assert.Single(diagnostics, x => x.Id == "LINQLGEN17");
+
+        Assert.Contains("'Film'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'sku'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NonLeafEntityKeyFieldIsReported()
+    {
+        var diagnostics = Generate(EntityKeySdl, extensions: "extend type Film @key(fields: \"hero\")");
+
+        var diagnostic = Assert.Single(diagnostics, x => x.Id == "LINQLGEN18");
+
+        Assert.Contains("'Film'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'hero'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AUsableEntityKeyIsNotReported()
+        => Assert.DoesNotContain(
+            Generate(EntityKeySdl, extensions: "extend schema @key(fields: \"id\")"),
+            x => x.Id is "LINQLGEN16" or "LINQLGEN17" or "LINQLGEN18");
+
+    /// <summary>
     /// Gets the generated declared-query file a source produces.
     /// </summary>
     /// <param name="body">The lambda's body.</param>
@@ -511,16 +574,20 @@ public class ClientGeneratorDiagnosticTests
             Run(sdl, source: DeclaredQuerySource("Filtering", body: body, values: values)).GeneratedTrees,
             x => x.FilePath.EndsWith("DeclarationsValue.g.cs", StringComparison.Ordinal)).ToString();
 
-    private static ImmutableArray<Diagnostic> Generate(string sdl, string? typesAs = null, string? source = null)
-        => [.. Run(sdl, typesAs, source).Diagnostics];
+    private static ImmutableArray<Diagnostic> Generate(string sdl, string? typesAs = null, string? source = null, string? extensions = null)
+        => [.. Run(sdl, typesAs, source, extensions).Diagnostics];
 
-    private static GeneratorDriverRunResult Run(string sdl, string? typesAs = null, string? source = null)
+    private static GeneratorDriverRunResult Run(string sdl, string? typesAs = null, string? source = null, string? extensions = null)
     {
         SyntaxTree[] trees = source is null ? [] : [CSharpSyntaxTree.ParseText(source)];
 
+        AdditionalText[] additionalTexts = extensions is null
+            ? [new SdlFile("SDLs/Filtering.graphql", sdl)]
+            : [new SdlFile("SDLs/Filtering.graphql", sdl), new SdlFile("SDLs/Filtering.extensions.graphql", extensions)];
+
         return CSharpGeneratorDriver.Create(
             generators: [new ClientGenerator().AsSourceGenerator()],
-            additionalTexts: [new SdlFile("SDLs/Filtering.graphql", sdl)],
+            additionalTexts: additionalTexts,
             optionsProvider: new NamespaceOptions(typesAs))
         .RunGenerators(CSharpCompilation.Create(
             "Filtering",
