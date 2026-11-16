@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Threading;
 using LinQL.ClientGeneration;
 using Microsoft.CodeAnalysis;
@@ -103,9 +104,9 @@ public class ClientGeneratorDiagnosticTests
 
         var diagnostic = Assert.Single(diagnostics, x => x.Id == "LINQLGEN05");
 
-        Assert.Contains("'where'", diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("'products'", diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("'ProductFilterInput'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'where'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'products'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'ProductFilterInput'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
 
         // The diagnostic points at the argument itself, not at the file.
         var position = diagnostic.Location.GetLineSpan().StartLinePosition;
@@ -127,11 +128,11 @@ public class ClientGeneratorDiagnosticTests
 
         var diagnostic = Assert.Single(diagnostics, x => x.Id == "LINQLGEN06");
 
-        Assert.Contains("'filter'", diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("'recommended'", diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("'where'", diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("'products'", diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("'Product[]'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'filter'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'recommended'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'where'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'products'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'Product[]'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
 
         // The diagnostic points at the argument that is ignored, not at the file.
         var position = diagnostic.Location.GetLineSpan().StartLinePosition;
@@ -162,7 +163,7 @@ public class ClientGeneratorDiagnosticTests
     {
         var diagnostic = Assert.Single(Generate(DeclaredFilterInputSdl, "Structs"), x => x.Id == "LINQLGEN07");
 
-        Assert.Contains("'Structs'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Structs'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -183,8 +184,8 @@ public class ClientGeneratorDiagnosticTests
     {
         var diagnostic = Assert.Single(Generate(PlainSdl, source: DeclaredQuerySource("Nope")), x => x.Id == "LINQLGEN12");
 
-        Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("'Nope'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Value'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'Nope'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
 
         // The diagnostic points at the declared field, not at the file.
         Assert.Equal(21, diagnostic.Location.GetLineSpan().StartLinePosition.Line);
@@ -195,9 +196,9 @@ public class ClientGeneratorDiagnosticTests
     {
         var diagnostic = Assert.Single(Generate(PlainSdl, source: DeclaredQuerySource("Filtering", "Product")), x => x.Id == "LINQLGEN13");
 
-        Assert.Contains("'Filtering'", diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("'Product'", diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Filtering'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'Product'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'Value'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -205,8 +206,8 @@ public class ClientGeneratorDiagnosticTests
     {
         var diagnostic = Assert.Single(Generate(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero")), x => x.Id == "LINQLGEN08");
 
-        Assert.Contains("'hero'", diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("'Character'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'hero'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'Character'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -216,7 +217,7 @@ public class ClientGeneratorDiagnosticTests
             Generate(PlainSdl, source: DeclaredQuerySource("Filtering", body: "x.Hero.Select(h => new { h.Name, Prefix = name })", values: "name")),
             x => x.Id == "LINQLGEN10");
 
-        Assert.Contains("'name'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'name'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -300,7 +301,7 @@ public class ClientGeneratorDiagnosticTests
     {
         var diagnostic = Assert.Single(Generate(PlainSdl, source: NotAQuerySource), x => x.Id == "LINQLGEN14");
 
-        Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Value'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -310,7 +311,7 @@ public class ClientGeneratorDiagnosticTests
 
         var diagnostic = Assert.Single(result.Diagnostics, x => x.Id == "LINQLGEN15");
 
-        Assert.Contains("'Value'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Value'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
         Assert.DoesNotContain(result.GeneratedTrees, x => x.FilePath.Contains("DeclarationsValue.g.cs", StringComparison.Ordinal));
     }
 

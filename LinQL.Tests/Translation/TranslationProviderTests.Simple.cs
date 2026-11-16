@@ -1,4 +1,3 @@
-#pragma warning disable CA1852 // Seal internal types
 namespace LinQL.Tests.Translation;
 
 public partial class TranslationProviderTests

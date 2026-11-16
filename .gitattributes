@@ -1,15 +1,9 @@
 ###############################################################################
-# Set default behavior to automatically normalize line endings.
+# Set default behavior to automatically normalize line endings. `eol=lf` checks every text file
+# out as LF on every platform, which is what .editorconfig asks for, so the whitespace formatter
+# sees identical bytes whichever OS the checkout happened on. Binary files are unaffected.
 ###############################################################################
-* text=auto
-
-###############################################################################
-# Check C# sources out with LF on every platform. The whitespace formatter enforces the
-# end_of_line .editorconfig asks for, so a Windows checkout that turned line endings into
-# CRLF would fail the same check that passes on Linux.
-###############################################################################
-*.cs  text eol=lf
-*.csx text eol=lf
+* text=auto eol=lf
 
 ###############################################################################
 # Set default behavior for command prompt diff.

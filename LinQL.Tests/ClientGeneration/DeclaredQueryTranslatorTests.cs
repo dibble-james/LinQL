@@ -1,6 +1,7 @@
 namespace LinQL.Tests.ClientGeneration;
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using LinQL.ClientGeneration;
 using Microsoft.CodeAnalysis;
@@ -227,7 +228,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("'Nope'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'Nope'");
     }
 
     [Fact]
@@ -239,7 +240,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("'Nope'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'Nope'");
     }
 
     [Fact]
@@ -251,7 +252,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("has to name the type");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("has to name the type");
     }
 
     [Fact]
@@ -263,7 +264,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("'Nope'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'Nope'");
     }
 
     [Fact]
@@ -275,7 +276,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN10");
 
-        translation.Problems[0].GetMessage().Should().Contain("'name'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'name'");
     }
 
     [Fact]
@@ -287,7 +288,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("an include has to be an expression selecting fields");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("an include has to be an expression selecting fields");
     }
 
     [Fact]
@@ -299,7 +300,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN08");
 
-        translation.Problems[0].GetMessage().Should().Contain("'hero'").And.Contain("'Character'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'hero'").And.Contain("'Character'");
     }
 
     [Fact]
@@ -382,7 +383,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("'products'").And.Contain("'order'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'products'").And.Contain("'order'");
     }
 
     [Fact]
@@ -394,7 +395,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("at least one operation");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("at least one operation");
     }
 
     [Fact]
@@ -406,7 +407,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("'Nope'").And.Contain("'ProductFilterInput'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'Nope'").And.Contain("'ProductFilterInput'");
     }
 
     [Fact]
@@ -418,7 +419,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN11");
 
-        translation.Problems[0].GetMessage().Should().Contain("cannot become a value");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("cannot become a value");
     }
 
     [Fact]
@@ -430,7 +431,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("declares no filter argument");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("declares no filter argument");
     }
 
     [Fact]
@@ -442,7 +443,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("'Grouped'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'Grouped'");
     }
 
     [Fact]
@@ -454,7 +455,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN11");
 
-        translation.Problems[0].GetMessage().Should().Contain("cannot become a value");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("cannot become a value");
     }
 
     [Fact]
@@ -466,7 +467,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN10");
 
-        translation.Problems[0].GetMessage().Should().Contain("'name'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'name'");
     }
 
     [Fact]
@@ -478,7 +479,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN10");
 
-        translation.Problems[0].GetMessage().Should().Contain("'name'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'name'");
     }
 
     [Fact]
@@ -490,7 +491,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN10");
 
-        translation.Problems[0].GetMessage().Should().Contain("'name'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'name'");
     }
 
     [Fact]
@@ -502,7 +503,7 @@ public class DeclaredQueryTranslatorTests
         translation.Problems.Should().ContainSingle()
             .Which.Id.Should().Be("LINQLGEN09");
 
-        translation.Problems[0].GetMessage().Should().Contain("'missing'");
+        translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'missing'");
     }
 
     /// <summary>
