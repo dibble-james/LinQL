@@ -204,6 +204,12 @@ selection cannot be described to the store, and it keeps the operation cache:
 -   a declaration that selects an entity without selecting its key field cannot
     identify what it read, so it opts out rather than inventing an entity.
 
+Both of the last two are reported on the declaration, because the feature's
+absence is otherwise invisible: `LINQLGEN19` when the selection covers a type
+that cannot be normalised, and `LINQLGEN20` when an entity was read without its
+key. A schema with no `@key` patterns reports neither — entity caching is not
+configured there, rather than declined.
+
 The write merges the way a generated client's does. A selection covers part of
 a type, so the properties it did not select are copied forward from the stored
 entity. On a **first** write there is nothing to copy, and the unselected

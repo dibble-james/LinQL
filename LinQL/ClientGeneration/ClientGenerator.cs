@@ -280,12 +280,19 @@ public class ClientGenerator : IIncrementalGenerator
     {
         var name = query.ContainingType + query.FieldName;
 
-        var cache = DeclaredQueryCache.Emit(
+        var (cache, problems) = DeclaredQueryCache.Emit(
             translation.Document!,
             model,
             query.RootType!,
             query.ClientNamespace,
-            name);
+            name,
+            $"{query.ContainingType}.{query.FieldName}",
+            query.Location);
+
+        foreach (var problem in problems)
+        {
+            output.ReportDiagnostic(problem);
+        }
 
         if (cache is not null)
         {

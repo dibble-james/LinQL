@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using HotChocolate.Language;
+using Microsoft.CodeAnalysis;
+using Location = Microsoft.CodeAnalysis.Location;
 
 /// <summary>
 /// Emits the entity-cache hook of a declared query.
@@ -22,10 +24,14 @@ internal sealed class DeclaredQueryCache
 {
     private readonly SchemaModel model;
     private readonly string clientNamespace;
+    private readonly string declaration;
+    private readonly Location location;
+    private readonly List<Diagnostic> problems = [];
     private int locals;
 
-    private DeclaredQueryCache(SchemaModel model, string clientNamespace)
-        => (this.model, this.clientNamespace, this.locals) = (model, clientNamespace, 0);
+    private DeclaredQueryCache(SchemaModel model, string clientNamespace, string declaration, Location location)
+        => (this.model, this.clientNamespace, this.declaration, this.location, this.locals)
+            = (model, clientNamespace, declaration, location, 0);
 
     /// <summary>
     /// Emits the cache class of a declared query.
@@ -35,13 +41,20 @@ internal sealed class DeclaredQueryCache
     /// <param name="rootTypeName">The root operation type's name.</param>
     /// <param name="clientNamespace">The client namespace the schema declares.</param>
     /// <param name="name">The name of the class to emit.</param>
-    /// <returns>The class, or <see langword="null"/> when the operation cannot be cached.</returns>
-    public static string? Emit(
+    /// <param name="declaration">The declaration, as it reads in a diagnostic.</param>
+    /// <param name="location">The declaration's location.</param>
+    /// <returns>
+    /// The class, or <see langword="null"/> when the operation cannot be cached, and the reason it could not be if
+    /// there is one to give.
+    /// </returns>
+    public static (string? Source, IReadOnlyList<Diagnostic> Problems) Emit(
         DocumentNode document,
         SchemaModel model,
         string rootTypeName,
         string clientNamespace,
-        string name)
+        string name,
+        string declaration,
+        Location location)
     {
         var selection = document.Definitions
             .OfType<OperationDefinitionNode>()
@@ -50,22 +63,22 @@ internal sealed class DeclaredQueryCache
 
         if (selection is null)
         {
-            return null;
+            return (null, []);
         }
 
-        var emitter = new DeclaredQueryCache(model, clientNamespace);
+        var emitter = new DeclaredQueryCache(model, clientNamespace, declaration, location);
         var fields = emitter.Fields(selection, rootTypeName);
 
         if (fields is null)
         {
-            return null;
+            return (null, emitter.problems);
         }
 
         // A schema without @key has no entities to normalise, and a cache hook that stores nothing would only
         // add an empty class to the generated client.
         return fields.Any(x => emitter.ContainsEntities(x.Definition.Type.NamedType().Name.Value, x.Children))
-            ? emitter.Class(fields, rootTypeName, name)
-            : null;
+            ? (emitter.Class(fields, rootTypeName, name), emitter.problems)
+            : (null, emitter.problems);
     }
 
     /// <summary>
@@ -84,6 +97,7 @@ internal sealed class DeclaredQueryCache
             {
                 // An inline fragment selects a concrete type through an interface or union, which the generated
                 // type does not model as one CLR type, so the operation opts out rather than caching a guess.
+                this.Report("it selects through an inline fragment");
                 return null;
             }
 
@@ -96,6 +110,7 @@ internal sealed class DeclaredQueryCache
 
             if (definition is null)
             {
+                this.Report($"'{field.Name.Value}' is not a field of '{typeName}'");
                 return null;
             }
 
@@ -107,6 +122,7 @@ internal sealed class DeclaredQueryCache
                 if (!this.model.DeclaredTypesByName.TryGetValue(childType, out var declared)
                     || declared.Kind != DeclaredTypeKind.Object)
                 {
+                    this.Report($"'{childType}' is an interface or union, and only an object type can be an entity");
                     return null;
                 }
 
@@ -119,6 +135,7 @@ internal sealed class DeclaredQueryCache
             }
             else if (!this.model.IsLeafType(childType))
             {
+                this.Report($"'{field.Name.Value}' returns '{childType}' without selecting its fields");
                 return null;
             }
 
@@ -128,6 +145,13 @@ internal sealed class DeclaredQueryCache
                 && this.model.EntityKeys.TryGetValue(childType, out var key)
                 && !children.Any(x => x.Definition.Name.Value == key.FieldName))
             {
+                this.problems.Add(Diagnostic.Create(
+                    EntityCacheDiagnostics.MissingEntityKey,
+                    this.location,
+                    this.declaration,
+                    childType,
+                    key.FieldName));
+
                 return null;
             }
 
@@ -139,6 +163,23 @@ internal sealed class DeclaredQueryCache
 
     private static bool IsList(ITypeNode type)
         => type.IsListType() || (type.IsNonNullType() && type.InnerType().IsListType());
+
+    /// <summary>
+    /// Records why the operation cannot be normalised.
+    /// </summary>
+    /// <param name="reason">The reason, written to follow the declaration in the message.</param>
+    private void Report(string reason)
+    {
+        // The first failure ends the walk, so a nested set cannot add a second reason for the same operation.
+        if (this.problems.Count == 0)
+        {
+            this.problems.Add(Diagnostic.Create(
+                EntityCacheDiagnostics.NotNormalisable,
+                this.location,
+                this.declaration,
+                reason));
+        }
+    }
 
     /// <summary>
     /// Emits the cache class.
