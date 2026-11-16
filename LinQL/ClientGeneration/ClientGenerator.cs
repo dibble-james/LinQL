@@ -291,7 +291,7 @@ public class ClientGenerator : IIncrementalGenerator
         {
             output.AddSource(
                 query.Namespace is null ? $"{name}Cache.g.cs" : $"{query.Namespace}.{name}Cache.g.cs",
-                SourceText.From(cache, Encoding.UTF8));
+                SourceText.From(Nullable(cache), Encoding.UTF8));
         }
 
         var document = FieldDeclaration(
@@ -323,8 +323,20 @@ public class ClientGenerator : IIncrementalGenerator
         // type alone would fail the run instead of emitting both.
         output.AddSource(
             query.Namespace is null ? $"{name}.g.cs" : $"{query.Namespace}.{name}.g.cs",
-            SourceText.From(emitted.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
+            SourceText.From(Nullable(emitted.NormalizeWhitespace().ToFullString()), Encoding.UTF8));
     }
+
+    /// <summary>
+    /// Opens a generated file with the nullable context its annotations assume.
+    /// </summary>
+    /// <param name="source">The file's source.</param>
+    /// <returns>The source, with <c>#nullable enable</c> in front of it.</returns>
+    /// <remarks>
+    /// A generated file is a compilation unit of its own, so it does not inherit the declaring file's context. A
+    /// declaration whose result type is a generated type renders as <c>Film?</c>, which is an error outside an
+    /// annotations context.
+    /// </remarks>
+    private static string Nullable(string source) => "#nullable enable\n" + source;
 
     /// <summary>
     /// Writes the call that joins a document to its operation, its projection and its values.

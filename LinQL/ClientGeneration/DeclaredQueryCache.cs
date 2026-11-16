@@ -152,6 +152,11 @@ internal sealed class DeclaredQueryCache
         var root = $"global::{this.clientNamespace}.{rootTypeName}";
         var code = new StringBuilder();
 
+        // The graph a response deserialises into can hold null where the schema promises a value, which is what
+        // the emitted property assignments would otherwise warn about. The generated schema file suppresses the
+        // equivalent warning for the same reason.
+        code.AppendLine("#pragma warning disable CS8601");
+        code.AppendLine();
         code.AppendLine($"/// <summary>");
         code.AppendLine($"/// Writes and rebuilds the entities the declared query selects.</summary>");
         code.AppendLine($"/// <remarks>Generated from the declaration's document; do not edit.</remarks>");
