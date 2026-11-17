@@ -5,18 +5,14 @@ using HotChocolate.Language;
 using LinQL.Description;
 using Microsoft.CodeAnalysis;
 
-/// <summary>
-/// The outcome of translating a declared query's lambda.
-/// </summary>
+// The outcome of translating a declared query's lambda.
 internal sealed record DeclaredQueryTranslation(
     DocumentNode? Document,
     RootOperationType Operation,
     IReadOnlyList<DeclaredQueryBinding> Bindings,
     IReadOnlyList<Diagnostic> Problems);
 
-/// <summary>
-/// One variable a declared query declares and the value the binder computes for it.
-/// </summary>
+// One variable a declared query declares and the value the binder computes for it.
 internal sealed record DeclaredQueryBinding(string Variable, DeclaredQueryBoundValue Value);
 
 // A value the generated binder produces when a declared query is sent.
@@ -26,19 +22,13 @@ internal sealed record DeclaredQueryBinding(string Variable, DeclaredQueryBoundV
 // to-variable-name table.
 internal abstract record DeclaredQueryBoundValue;
 
-/// <summary>
-/// One of the declaration's parameters, passed through as the variable's value.
-/// </summary>
+// One of the declaration's parameters, passed through as the variable's value.
 internal sealed record DeclaredQueryParameterValue(string Parameter) : DeclaredQueryBoundValue;
 
-/// <summary>
-/// A constant the compiler folded, written into the binder.
-/// </summary>
+// A constant the compiler folded, written into the binder.
 internal sealed record DeclaredQueryConstantValue(object? Constant) : DeclaredQueryBoundValue;
 
-/// <summary>
-/// A list of values the binder builds item by item.
-/// </summary>
+// A list of values the binder builds item by item.
 internal sealed record DeclaredQueryListValue(IReadOnlyList<DeclaredQueryBoundValue> Items) : DeclaredQueryBoundValue;
 
 // A filter the binder rebuilds through FilterValue on every call.
@@ -48,7 +38,5 @@ internal sealed record DeclaredQueryListValue(IReadOnlyList<DeclaredQueryBoundVa
 // which produces the same shape the runtime translator builds from an expression.
 internal sealed record DeclaredQueryFilterValue(IReadOnlyList<DeclaredQueryFilterField> Fields) : DeclaredQueryBoundValue;
 
-/// <summary>
-/// One field of a filter, and the value it is set to.
-/// </summary>
+// One field of a filter, and the value it is set to.
 internal sealed record DeclaredQueryFilterField(string Name, bool IsList, DeclaredQueryBoundValue Value);

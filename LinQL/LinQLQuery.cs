@@ -107,9 +107,7 @@ public sealed class LinQLQuery<TRoot, TData>(
             declaration.Parameters[0]);
     }
 
-    /// <summary>
-    /// Replaces a declaration's value parameters with their defaults.
-    /// </summary>
+    // Replaces a declaration's value parameters with their defaults.
     private sealed class DefaultValues(HashSet<ParameterExpression> parameters) : ExpressionVisitor
     {
         /// <inheritdoc />

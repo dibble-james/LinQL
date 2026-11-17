@@ -132,13 +132,10 @@ internal sealed class DeclaredQueryTranslator
         _ => OperationType.Query,
     };
 
-    /// <summary>
-    /// Reads the lambda's parameters, which are the query's receiver and then its values.
-    /// </summary>
-    /// <returns>
-    /// The root parameter's name and the names of the parameters that become variables, in declaration
-    /// order, or <see langword="null"/> when the lambda does not have the shape a query has.
-    /// </returns>
+    // Reads the lambda's parameters, which are the query's receiver and then its values.
+    //
+    // Returns the root parameter's name and the names of the parameters that become variables, in declaration
+    // order, or null when the lambda does not have the shape a query has.
     private static (string Parameter, IReadOnlyList<string> Values)? Parameters(LambdaExpressionSyntax lambda) => lambda switch
     {
         SimpleLambdaExpressionSyntax simple => (simple.Parameter.Identifier.ValueText, []),
@@ -326,13 +323,10 @@ internal sealed class DeclaredQueryTranslator
         this.Report(selection, "an include has to be an expression selecting fields of the type it is attached to");
     }
 
-    /// <summary>
-    /// Reads the selections a field expression already carries, so an include can grow them.
-    /// </summary>
-    /// <returns>
-    /// The field expression the selections belong to, and each selection's argument in source order, with
-    /// <see langword="null"/> for <c>SelectAll</c>.
-    /// </returns>
+    // Reads the selections a field expression already carries, so an include can grow them.
+    //
+    // Returns the field expression the selections belong to, and each selection's argument in source order,
+    // with null for SelectAll.
     private static (ExpressionSyntax Target, IReadOnlyList<ExpressionSyntax?> Selections) SelectionsOf(ExpressionSyntax expression)
     {
         List<ExpressionSyntax?> selections = [];
@@ -550,12 +544,9 @@ internal sealed class DeclaredQueryTranslator
         return this.InlineFragment(typeName, lambda, (fragment, children) => this.AddSelections(body, fragment, parameter, values, children));
     }
 
-    /// <summary>
-    /// Reads a chain of spreads from the outside in.
-    /// </summary>
-    /// <returns>
-    /// The expression the chain is called on, and each spread's argument in source order.
-    /// </returns>
+    // Reads a chain of spreads from the outside in.
+    //
+    // Returns the expression the chain is called on, and each spread's argument in source order.
     private static (ExpressionSyntax Target, IReadOnlyList<ExpressionSyntax> Spreads) SpreadsOf(InvocationExpressionSyntax invocation)
     {
         List<ExpressionSyntax> spreads = [];
@@ -594,9 +585,7 @@ internal sealed class DeclaredQueryTranslator
         _ => null,
     };
 
-    /// <summary>
-    /// Adds a field that has no selection of its own.
-    /// </summary>
+    // Adds a field that has no selection of its own.
     private void AddLeafOrImplicitField(ExpressionSyntax expression, string typeName, string parameter, IReadOnlyList<string> values, List<ISelectionNode> selections)
     {
         if (this.FieldOf(expression, typeName, parameter, values) is not { } field)
@@ -1222,11 +1211,10 @@ internal sealed class DeclaredQueryTranslator
         return false;
     }
 
-    /// <summary>
-    /// Finds the identifier an expression is built on, so a value used through a member or a call is still
-    /// recognisable as that value.
-    /// </summary>
-    /// <returns>The identifier's name, or <see langword="null"/> when the expression is not built on one.</returns>
+    // Finds the identifier an expression is built on, so a value used through a member or a call is still
+    // recognisable as that value.
+    //
+    // Returns the identifier's name, or null when the expression is not built on one.
     private static string? RootIdentifier(ExpressionSyntax expression) => expression switch
     {
         IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
@@ -1274,8 +1262,6 @@ internal sealed class DeclaredQueryTranslator
         return null;
     }
 
-    /// <summary>
-    /// A field the declaration selects, with the arguments it attaches.
-    /// </summary>
+    // A field the declaration selects, with the arguments it attaches.
     private sealed record ResolvedField(FieldDefinitionNode Definition, IReadOnlyList<ArgumentNode> Arguments);
 }

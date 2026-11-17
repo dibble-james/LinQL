@@ -156,10 +156,9 @@ public class ClientGenerator : IIncrementalGenerator
         });
     }
 
-    /// <summary>
-    /// Reads the root type names an SDL declares.
-    /// </summary>
-    /// <returns>The names, joined with <c>;</c> so that the same schema compares equal between runs.</returns>
+    // Reads the root type names an SDL declares.
+    //
+    // Returns the names, joined with ; so that the same schema compares equal between runs.
     private static string ReadRootTypes(string sdl)
     {
         var schema = HotChocolate.Language.Utf8GraphQLParser.Parse(sdl).Definitions
@@ -338,10 +337,9 @@ public class ClientGenerator : IIncrementalGenerator
         return code;
     }
 
-    /// <summary>
-    /// Writes a constant as a C# literal of the same type.
-    /// </summary>
-    /// <returns>The literal, in the invariant culture.</returns>
+    // Writes a constant as a C# literal of the same type.
+    //
+    // Returns the literal, in the invariant culture.
     private static string ConstantLiteral(object? constant) => constant switch
     {
         null => "null",
@@ -358,10 +356,9 @@ public class ClientGenerator : IIncrementalGenerator
         _ => "null",
     };
 
-    /// <summary>
-    /// Names the declared field a call's projection comes from.
-    /// </summary>
-    /// <returns>The field, fully qualified so the generated file needs no usings.</returns>
+    // Names the declared field a call's projection comes from.
+    //
+    // Returns the field, fully qualified so the generated file needs no usings.
     private static string Projection(DeclaredQuery query)
         => query.Namespace is null
             ? $"global::{query.ContainingType}.{query.FieldName}"
@@ -384,10 +381,9 @@ public class ClientGenerator : IIncrementalGenerator
         return context.Model;
     }
 
-    /// <summary>
-    /// Reads the <c>LinQLTypesAs</c> property.
-    /// </summary>
-    /// <returns><see langword="true"/> when the value was understood, so an unrecognised one can be reported.</returns>
+    // Reads the LinQLTypesAs property.
+    //
+    // Returns true when the value was understood, so an unrecognised one can be reported.
     private static bool TryParseTypesAs(string? value, out LinQLTypesAs typesAs)
     {
         var trimmed = value?.Trim();

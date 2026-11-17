@@ -34,9 +34,7 @@ using Xunit;
 /// </remarks>
 public class DeclaredQueryConformanceTests
 {
-    /// <summary>
-    /// The schema both paths are written against.
-    /// </summary>
+    // The schema both paths are written against.
     private const string Sdl = """
         schema {
           query: Query
@@ -132,9 +130,7 @@ public class DeclaredQueryConformanceTests
         }
         """;
 
-    /// <summary>
-    /// The framework the declaration's source resolves against, so its values are bound.
-    /// </summary>
+    // The framework the declaration's source resolves against, so its values are bound.
     private static readonly MetadataReference[] References =
     [
         .. (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? string.Empty)
@@ -357,9 +353,7 @@ public class DeclaredQueryConformanceTests
         return value;
     }
 
-    /// <summary>
-    /// The query root the runtime expressions above are written against.
-    /// </summary>
+    // The query root the runtime expressions above are written against.
     [OperationType]
     private sealed class ConformanceQuery : RootType<ConformanceQuery>
     {
@@ -377,9 +371,7 @@ public class DeclaredQueryConformanceTests
             => [];
     }
 
-    /// <summary>
-    /// The subscription root, so the one <c>__typename</c> exception is compared too.
-    /// </summary>
+    // The subscription root, so the one __typename exception is compared too.
     [OperationType(RootOperationType.Subscription)]
     private sealed class ConformanceSubscription : RootType<ConformanceSubscription>
     {
@@ -442,10 +434,8 @@ public class DeclaredQueryConformanceTests
         DESC,
     }
 
-    /// <summary>
-    /// The filter and value builders the generator emits, hand-written here so a declaration's shape is written the
-    /// way a generated client is.
-    /// </summary>
+    // The filter and value builders the generator emits, hand-written here so a declaration's shape is written
+    // the way a generated client is.
     internal sealed class ConformanceProductFilterInputBuilder
     {
         [GraphQLFilterField(Name = "name")]
@@ -516,10 +506,8 @@ public class DeclaredQueryConformanceTests
     }
 }
 
-/// <summary>
-/// The extensions the generator emits for the conformance schema's arguments, hand-written here so the runtime path
-/// can attach them without a generated client.
-/// </summary>
+// The extensions the generator emits for the conformance schema's arguments, hand-written here so the runtime path
+// can attach them without a generated client.
 internal static class ConformanceExtensions
 {
     [GraphQLFilter(Argument = "where", GQLType = "ProductFilterInput")]

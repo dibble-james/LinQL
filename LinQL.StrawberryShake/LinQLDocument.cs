@@ -5,9 +5,7 @@ using System.Text;
 using global::StrawberryShake;
 using LinQL.Description;
 
-/// <summary>
-/// A Strawberry Shake document built from a translated LinQL query.
-/// </summary>
+// A Strawberry Shake document built from a translated LinQL query.
 internal sealed class LinQLDocument : IDocument, IEquatable<LinQLDocument>
 {
     private readonly byte[] body;

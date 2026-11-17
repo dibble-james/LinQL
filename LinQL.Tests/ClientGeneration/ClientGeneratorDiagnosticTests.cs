@@ -350,9 +350,8 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A declaration written against the client types the generator emits, so the emitted binder can be compiled.
-    /// </summary>
+    // A declaration written against the client types the generator emits, so the emitted binder can be
+    // compiled.
     private const string DeclaredQueryWithoutClientTypes = """
         using System;
         using System.Linq.Expressions;
@@ -370,9 +369,7 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A declaration whose expression is produced by a method, so there is no source to read.
-    /// </summary>
+    // A declaration whose expression is produced by a method, so there is no source to read.
     private const string FactorySource = """
         using System;
         using System.Linq.Expressions;
@@ -391,9 +388,7 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// Two declarations that agree on their containing type and field name, which is legal across namespaces.
-    /// </summary>
+    // Two declarations that agree on their containing type and field name, which is legal across namespaces.
     private const string TwoNamespacesSource = """
         using System;
         using System.Linq.Expressions;
@@ -420,9 +415,8 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A declaration filtered through the client types the generator emits, so the emitted binder can be compiled.
-    /// </summary>
+    // A declaration filtered through the client types the generator emits, so the emitted binder can be
+    // compiled.
     private const string DeclaredFilterWithoutClientTypes = """
         using System;
         using System.Linq.Expressions;
@@ -469,9 +463,7 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A schema whose query takes a filter and an order, so the binder a filter emits can be compared.
-    /// </summary>
+    // A schema whose query takes a filter and an order, so the binder a filter emits can be compared.
     private const string FilteredQuerySdl = """
         schema {
           query: Query
@@ -499,9 +491,7 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A schema whose types cover the ways an entity key can be written.
-    /// </summary>
+    // A schema whose types cover the ways an entity key can be written.
     private const string EntityKeySdl = """
         schema {
           query: Query
@@ -590,10 +580,8 @@ public class ClientGeneratorDiagnosticTests
         .GetRunResult();
     }
 
-    /// <summary>
-    /// The references a declared query needs to be understood: the framework, and LinQL itself for the
-    /// attribute and the root type it names.
-    /// </summary>
+    // The references a declared query needs to be understood: the framework, and LinQL itself for the
+    // attribute and the root type it names.
     private static readonly MetadataReference[] References =
     [
         .. (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? string.Empty)
@@ -643,9 +631,7 @@ public class ClientGeneratorDiagnosticTests
             => SourceText.From(content);
     }
 
-    /// <summary>
-    /// Supplies the additional-file metadata <c>LinQL.props</c> would add to the csproj.
-    /// </summary>
+    // Supplies the additional-file metadata LinQL.props would add to the csproj.
     private sealed class NamespaceOptions(string? typesAs) : AnalyzerConfigOptionsProvider
     {
         private readonly TestOptions options = new(typesAs);

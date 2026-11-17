@@ -6,10 +6,8 @@ using Xunit;
 
 public class EntityKeyTests
 {
-    /// <summary>
-    /// A schema whose types cover every way a key can behave: a type with the global field, a type without
-    /// it, an interface that declares it, an enum to key on, and a root operation type.
-    /// </summary>
+    // A schema whose types cover every way a key can behave: a type with the global field, a type without it,
+    // an interface that declares it, an enum to key on, and a root operation type.
     private const string Sdl = """
         schema {
           query: Query

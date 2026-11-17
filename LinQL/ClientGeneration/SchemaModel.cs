@@ -174,9 +174,7 @@ internal sealed class SchemaModel
     }
 }
 
-/// <summary>
-/// A type a document declares and the fields it declares.
-/// </summary>
+// A type a document declares and the fields it declares.
 internal sealed record DeclaredType(string Name, DeclaredTypeKind Kind, IReadOnlyList<FieldDefinitionNode> Fields)
 {
     /// <summary>
@@ -189,19 +187,10 @@ internal sealed record DeclaredType(string Name, DeclaredTypeKind Kind, IReadOnl
     public bool IsSelectable => this.Kind is DeclaredTypeKind.Object or DeclaredTypeKind.Interface;
 }
 
-/// <summary>
-/// A <c>@key</c> pattern the document declares.
-/// </summary>
 internal sealed record EntityKeyPattern(string? TypeName, IReadOnlyList<string> Fields, Location? Location);
 
-/// <summary>
-/// The field an entity type is identified by.
-/// </summary>
 internal sealed record EntityKey(string TypeName, string FieldName);
 
-/// <summary>
-/// What a document declares a type as.
-/// </summary>
 internal enum DeclaredTypeKind
 {
     /// <summary>An object type, including a root operation type.</summary>

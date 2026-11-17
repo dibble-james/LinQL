@@ -9,9 +9,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
-/// <summary>
-/// A field argument that gets an extension method.
-/// </summary>
+// A field argument that gets an extension method.
 internal sealed record FieldExtension(FieldDefinitionNode Field, InputValueDefinitionNode Argument, bool IsFilter);
 
 // Generates the extension methods that attach field arguments, so a filter is written q.Products.Filter(f =>

@@ -221,10 +221,8 @@ public class ExpressionTranslator : ExpressionVisitor
         return field;
     }
 
-    /// <summary>
-    /// Gets the selection an include adds to: the field the method is called on, or, when it is called on
-    /// a lambda's parameter, the selection that lambda is scoped to.
-    /// </summary>
+    // Gets the selection an include adds to: the field the method is called on, or, when it is called on a
+    // lambda's parameter, the selection that lambda is scoped to.
     private TypeFieldExpression TraverseIncludeTarget(MethodCallExpression include)
     {
         if (include.Arguments[0] is ParameterExpression)
@@ -253,9 +251,7 @@ public class ExpressionTranslator : ExpressionVisitor
         return field;
     }
 
-    /// <summary>
-    /// Gets the field an extension method is extending: its first argument.
-    /// </summary>
+    // Gets the field an extension method is extending: its first argument.
     private TypeFieldExpression TraverseField(MethodCallExpression extension)
         => this.Visit(extension.Arguments[0]) as TypeFieldExpression
             ?? throw new InvalidOperationException($"'{extension.Method.Name}' must be called on a field.");

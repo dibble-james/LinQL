@@ -137,10 +137,8 @@ public sealed class FilterValue
             .Where(field => field.Value is not null)
             .ToDictionary(field => field.Key, field => field.Value);
 
-    /// <summary>
-    /// Converts a value to the shape GraphQL variables take: camelCased field names, enums by name,
-    /// and nulls dropped.
-    /// </summary>
+    // Converts a value to the shape GraphQL variables take: camelCased field names, enums by name, and nulls
+    // dropped.
     internal static object? Normalize(object? value) => Normalize(value, strict: false);
 
     private static object? Normalize(object? value, bool strict) => value switch
@@ -228,25 +226,20 @@ public sealed class FilterValue
         return normalized.Count == 0 ? null : normalized;
     }
 
-    /// <summary>
-    /// Gets whether a type declares its own <see cref="JsonConverter"/>, so its shape is System.Text.Json's
-    /// to decide rather than something reflection can reproduce.
-    /// </summary>
+    // Gets whether a type declares its own JsonConverter, so its shape is System.Text.Json's to decide rather
+    // than something reflection can reproduce.
     private static bool HasConverter(Type type)
         => ConverterCache.GetOrAdd(type, static t => t.GetCustomAttribute<JsonConverterAttribute>(inherit: false) is not null);
 
-    /// <summary>
-    /// Serialises a value with System.Text.Json and keeps the result, so whatever its converter writes is
-    /// what reaches the wire — including shapes reflection could not infer, such as a scalar spelled out
-    /// from an object.
-    /// </summary>
-    /// <returns>The serialised value as a <see cref="JsonElement"/>.</returns>
+    // Serialises a value with System.Text.Json and keeps the result, so whatever its converter writes is what
+    // reaches the wire — including shapes reflection could not infer, such as a scalar spelled out from an
+    // object.
+    //
+    // Returns the serialised value as a JsonElement.
     private static JsonElement Serialize(object value) => JsonSerializer.SerializeToElement(value, value.GetType());
 
-    /// <summary>
-    /// Gets whether a property is left out of the payload, either always or because its value counts as
-    /// unset for the condition it declares.
-    /// </summary>
+    // Gets whether a property is left out of the payload, either always or because its value counts as unset
+    // for the condition it declares.
     private static bool IsIgnored(JsonIgnoreCondition? condition, Type type, object? value) => condition switch
     {
         JsonIgnoreCondition.Always or JsonIgnoreCondition.WhenWriting => true,

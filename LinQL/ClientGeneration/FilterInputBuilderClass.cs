@@ -7,10 +7,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
-/// <summary>
-/// Generates the fluent builder for a filter input type, so filters can be written as
-/// <c>f => f.Price(p => p.Gt(10))</c> instead of object initialisers.
-/// </summary>
+// Generates the fluent builder for a filter input type, so filters can be written as f => f.Price(p => p.Gt(10))
+// instead of object initialisers.
 internal class FilterInputBuilderClass(string name) : IClassFactory
 {
     public MemberDeclarationSyntax Create(SchemaModel model)

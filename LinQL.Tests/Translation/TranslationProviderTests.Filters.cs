@@ -357,9 +357,7 @@ public partial class TranslationProviderTests
     }
 }
 
-/// <summary>
-/// The extensions the generator emits, hand-written here so the translator is covered without a client.
-/// </summary>
+// The extensions the generator emits, hand-written here so the translator is covered without a client.
 internal static class FilterExtensions
 {
     [GraphQLFilter(Argument = "where", GQLType = "ProductFilterInput")]

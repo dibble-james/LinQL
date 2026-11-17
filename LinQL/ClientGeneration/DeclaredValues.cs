@@ -13,39 +13,22 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 // compare equal.
 internal abstract record DeclaredValue;
 
-/// <summary>
-/// A value the compiler folded to a constant.
-/// </summary>
+// A value the compiler folded to a constant.
 internal sealed record DeclaredConstant(object? Constant) : DeclaredValue;
 
-/// <summary>
-/// An enum member, whose name is the value's name in the document.
-/// </summary>
+// An enum member, whose name is the value's name in the document.
 internal sealed record DeclaredEnumMember(string Member) : DeclaredValue;
 
-/// <summary>
-/// An object initialiser.
-/// </summary>
 internal sealed record DeclaredObject(IReadOnlyList<DeclaredValueField> Fields) : DeclaredValue;
 
-/// <summary>
-/// One property an object initialiser sets.
-/// </summary>
 internal sealed record DeclaredValueField(string Name, DeclaredValue Value);
 
-/// <summary>
-/// A collection or array initialiser.
-/// </summary>
 internal sealed record DeclaredList(IReadOnlyList<DeclaredValue> Items) : DeclaredValue;
 
-/// <summary>
-/// One of the declaration's parameters, which becomes a variable wherever it stands.
-/// </summary>
+// One of the declaration's parameters, which becomes a variable wherever it stands.
 internal sealed record DeclaredParameter(string Name) : DeclaredValue;
 
-/// <summary>
-/// A value the declaration writes, and where in the lambda it wrote it.
-/// </summary>
+// A value the declaration writes, and where in the lambda it wrote it.
 internal sealed record DeclaredValueAt(int Start, DeclaredValue Value);
 
 // Reads the values a declared query writes as its arguments.

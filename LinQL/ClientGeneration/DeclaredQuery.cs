@@ -5,9 +5,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-/// <summary>
-/// A <c>[LinQLQuery]</c> declaration the generator found, before it is bound to a schema.
-/// </summary>
+// A [LinQLQuery] declaration the generator found, before it is bound to a schema.
 internal sealed record DeclaredQuery(
     string ClientNamespace,
     string FieldName,
@@ -92,13 +90,8 @@ internal sealed record DeclaredQuery(
                 : []);
     }
 
-    /// <summary>
-    /// The shape of a declared query's expression.
-    /// </summary>
     private sealed record Signature(string Root, string Result, IReadOnlyList<DeclaredQueryParameter> Parameters);
 }
 
-/// <summary>
-/// One of a declared query's lambda parameters after the root, which the binder takes.
-/// </summary>
+// One of a declared query's lambda parameters after the root, which the binder takes.
 internal sealed record DeclaredQueryParameter(string Name, string Type);
