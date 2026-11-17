@@ -594,6 +594,48 @@ var stream = graph.CreateSubscriptionStream(QueriesNumbers.Numbers());
 declared path still goes through the same cache as the runtime one, but the document is a constant, so cached
 operations differ only by their variables.
 
+#### Persisted operations
+
+A declared query is the same text on every call, so it can be registered on the server once and then sent by id.
+The generator emits the id beside the document, and one registry for the project:
+
+```csharp
+public static class QueriesFilmTitleById
+{
+    public const string Document = "query linql($var1: ID!) { … }";
+    public const string DocumentId = "…";
+
+    public static global::LinQL.LinQLQuery<…> FilmTitleById(string id) => …;
+}
+
+namespace LinQL.Generated;
+
+public static class PersistedQueries
+{
+    public static IReadOnlyDictionary<string, string> Documents { get; }
+}
+```
+
+- The id is the lowercase hexadecimal SHA-256 of the document's UTF-8 bytes, which is the id Hot Chocolate
+  computes with `.AddSha256DocumentHashProvider(HashFormat.Hex)`. `LinQLQuery.Id` carries the same value.
+- The build writes the files when the project sets an output directory:
+
+  ```xml
+  <LinQLPersistedOperationOutput>persisted-operations</LinQLPersistedOperationOutput>
+  ```
+
+  One `<id>.graphql` file is written per document, relative to the project unless the path is absolute — the
+  layout `AddFileSystemOperationDocumentStorage` reads, so that directory is what you deploy. The property is
+  empty by default, so a project that never sets it writes nothing. The target runs after the project builds,
+  and also removes files it wrote earlier whose declaration is gone, so a renamed query leaves no orphan. What
+  it wrote is recorded in `linql-<project>.manifest` beside the project file, which you can commit or ignore,
+  and it removes only its own documents — so several projects can share a directory and a document you wrote by
+  hand is never touched. A query two projects declare is one file, so it disappears when one of them drops it,
+  until the other builds again.
+- `PersistedQueries.Documents` is the same map for a storage that reads its documents from code instead.
+- A query written inline has no build-time id, so it is always sent as a document. On Strawberry Shake a
+  declared query is sent by id when `PersistedOperations` is set ([details](StrawberryShake.md#declared-queries)).
+
 #### Not covered
 
 - Fields that both a projection and an `Includes` select are not de-duplicated. GraphQL merges them, so the

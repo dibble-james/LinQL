@@ -23,6 +23,17 @@ public sealed class LinQLStrawberryShakeOptions
     public JsonSerializerOptions Serializer { get; set; } = new(JsonSerializerDefaults.Web);
 
     /// <summary>
+    /// Gets or sets a value indicating whether declared queries are sent as persisted operations.
+    /// </summary>
+    /// <remarks>
+    /// A declared query's id and document are generated at build time, so a server that has the document
+    /// registered can be asked for it by id alone. This applies to declared queries only: an inline expression has
+    /// no build-time id, so it is always sent as a document. Off by default, because a server that has not been
+    /// given the documents cannot execute one.
+    /// </remarks>
+    public bool PersistedOperations { get; set; }
+
+    /// <summary>
     /// Gets or sets the strategy used by <c>Watch</c>.
     /// </summary>
     /// <remarks>

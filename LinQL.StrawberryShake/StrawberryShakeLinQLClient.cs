@@ -92,7 +92,9 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
     /// <returns>The projected result.</returns>
     /// <remarks>
     /// The document was generated at build time, so nothing is translated here: the values go straight into the
-    /// request and the projection is the declaration's own expression.
+    /// request and the projection is the declaration's own expression. When
+    /// <see cref="LinQLStrawberryShakeOptions.PersistedOperations"/> is set, the request carries the generated id
+    /// instead of the document.
     /// </remarks>
     public async Task<LinQLResult<TData>> SendAsync<TRoot, TData>(
         LinQLQuery<TRoot, TData> query,
@@ -106,7 +108,7 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
             throw new NotSupportedException("Subscriptions must be consumed through Watch.");
         }
 
-        var operation = LinQLOperationRequest.Create(query.OperationType, query.Document, query.Variables);
+        var operation = LinQLOperationRequest.Create(query.OperationType, query.Document, query.Variables, this.PersistedOperationId(query));
         var executor = this.CreateExecutor(query.Projection, query.Document, query.Cache);
 
         var result = await executor
@@ -131,7 +133,7 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
     {
         ObjectDisposedException.ThrowIf(this.disposed, this);
 
-        var operation = LinQLOperationRequest.Create(query.OperationType, query.Document, query.Variables);
+        var operation = LinQLOperationRequest.Create(query.OperationType, query.Document, query.Variables, this.PersistedOperationId(query));
         var executor = this.CreateExecutor(query.Projection, query.Document, query.Cache);
 
         var results = executor.Watch(operation);
@@ -232,6 +234,17 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
             this.subscriptions.Remove(subscription);
         }
     }
+
+    /// <summary>
+    /// Gets the id a declared query is sent under, or <see langword="null"/> when it is sent as a document.
+    /// </summary>
+    /// <typeparam name="TRoot">The root operation type.</typeparam>
+    /// <typeparam name="TData">The projected result type.</typeparam>
+    /// <param name="query">The declared query.</param>
+    /// <returns>The persisted operation id, or <see langword="null"/>.</returns>
+    private string? PersistedOperationId<TRoot, TData>(LinQLQuery<TRoot, TData> query)
+        where TRoot : RootType<TRoot>
+        => this.options.PersistedOperations ? query.Id : null;
 
     private OperationExecutor<JsonDocument, LinQLResult<TData>> CreateExecutor<TRoot, TData>(
         Expression<Func<TRoot, TData>> projection,

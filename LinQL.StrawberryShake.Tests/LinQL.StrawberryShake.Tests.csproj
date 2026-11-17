@@ -6,6 +6,9 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- The generator writes the persisted operation documents during this project's build, which is what
+         PersistedOperationTests asserts on. obj/ keeps them out of the source tree. -->
+    <LinQLPersistedOperationOutput>obj/persisted-operations</LinQLPersistedOperationOutput>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,5 +39,7 @@
 
   <!-- Manually reference the generator props because we locally reference the generator. When added via NuGet this happens automatically -->
   <Import Project="..\LinQL\LinQL.props" />
+  <!-- The target that writes the persisted operation documents; a package consumer imports it automatically. -->
+  <Import Project="..\LinQL\LinQL.targets" />
 
 </Project>

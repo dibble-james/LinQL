@@ -445,6 +445,7 @@ dotnet_style_allow_multiple_blank_lines_experimental = true:silent
 [LinQL.GraphQL.Client/GraphQLClientExtensions.cs]
 dotnet_diagnostic.IDE0130.severity = none
 
+
 # A test builds expressions rather than consuming their results, so a fluent call whose value is
 # discarded is the point of the line. A lambda parameter the tree never reads still has to stay, or
 # the delegate's shape changes, and a JSON payload stub is JSON by design.

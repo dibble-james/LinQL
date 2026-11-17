@@ -192,6 +192,7 @@ public class ClientGenerator : IIncrementalGenerator
         var roots = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         var declarations = new Dictionary<string, (string Sdl, string? TypesAs)>(StringComparer.Ordinal);
         var models = new Dictionary<string, SchemaModel>(StringComparer.Ordinal);
+        var persisted = new List<(string Id, string Reference)>();
 
         foreach (var (clientNamespace, declaredRoots, sdl, typesAs) in schemas)
         {
@@ -255,9 +256,11 @@ public class ClientGenerator : IIncrementalGenerator
 
             if (translation.Document is not null)
             {
-                EmitDeclaredQuery(output, query, translation, model);
+                persisted.Add(EmitDeclaredQuery(output, query, translation, model));
             }
         }
+
+        EmitPersistedQueries(output, persisted);
     }
 
     /// <summary>
@@ -267,22 +270,28 @@ public class ClientGenerator : IIncrementalGenerator
     /// <param name="query">The declaration.</param>
     /// <param name="translation">Its document and the variables its parameters fill.</param>
     /// <param name="model">The schema the declaration is bound to.</param>
+    /// <returns>The id the document is registered under, and the type holding it.</returns>
     /// <remarks>
     /// The document does not depend on a call, so it is a constant; the binder takes the lambda's own parameters
     /// and binds them to the names the document gave the variables, returning the <c>LinQLQuery</c> an adapter
     /// sends. When the selection can be normalised, the operation's entity cache is emitted beside it and the
     /// binder attaches it, so the query takes part in entity caching without the call site changing.
+    /// The persisted operation id is emitted beside the document rather than computed by the call site, so the
+    /// build already knows what the server will be asked for.
     /// </remarks>
-    private static void EmitDeclaredQuery(
+    private static (string Id, string Reference) EmitDeclaredQuery(
         SourceProductionContext output,
         DeclaredQuery query,
         DeclaredQueryTranslation translation,
         SchemaModel model)
     {
         var name = query.ContainingType + query.FieldName;
+        var document = translation.Document!;
+        var text = document.ToString();
+        var id = PersistedQueryId.Compute(text);
 
         var (cache, problems) = DeclaredQueryCache.Emit(
-            translation.Document!,
+            document,
             model,
             query.RootType!,
             query.ClientNamespace,
@@ -302,11 +311,18 @@ public class ClientGenerator : IIncrementalGenerator
                 SourceText.From(File(cache, "#pragma warning disable CS8601"), Encoding.UTF8));
         }
 
-        var document = FieldDeclaration(
+        var documentField = FieldDeclaration(
                 VariableDeclaration(PredefinedType(Token(SyntaxKind.StringKeyword)))
                     .AddVariables(
                         VariableDeclarator(Identifier("Document"))
-                            .WithInitializer(EqualsValueClause(ParseExpression(SymbolDisplay.FormatLiteral(translation.Document!.ToString(), quote: true))))))
+                            .WithInitializer(EqualsValueClause(ParseExpression(SymbolDisplay.FormatLiteral(text, quote: true))))))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.ConstKeyword));
+
+        var idField = FieldDeclaration(
+                VariableDeclaration(PredefinedType(Token(SyntaxKind.StringKeyword)))
+                    .AddVariables(
+                        VariableDeclarator(Identifier("DocumentId"))
+                            .WithInitializer(EqualsValueClause(ParseExpression(SymbolDisplay.FormatLiteral(id, quote: true))))))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.ConstKeyword));
 
         var resultType = Qualify(query.ResultType!, model, query.ClientNamespace);
@@ -320,7 +336,7 @@ public class ClientGenerator : IIncrementalGenerator
 
         var members = ClassDeclaration(Identifier(name))
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
-            .AddMembers(document, binder);
+            .AddMembers(documentField, idField, binder);
 
         MemberDeclarationSyntax emitted = query.Namespace is null
             ? members
@@ -332,7 +348,95 @@ public class ClientGenerator : IIncrementalGenerator
         output.AddSource(
             query.Namespace is null ? $"{name}.g.cs" : $"{query.Namespace}.{name}.g.cs",
             SourceText.From(File(emitted), Encoding.UTF8));
+
+        return (id, query.Namespace is null ? $"global::{name}" : $"global::{query.Namespace}.{name}");
     }
+
+    /// <summary>
+    /// Emits the documents every declared query in the project registered, by the id each is sent under.
+    /// </summary>
+    /// <param name="output">The source output.</param>
+    /// <param name="queries">Every emitted declaration's id and the type holding its document.</param>
+    /// <remarks>
+    /// The registry is what makes a declared query a persisted operation: the server reads the documents from it
+    /// and the client sends the id beside the same document. Two declarations of one document are one operation,
+    /// so the first of them is the one the registry names. A project without declarations gets no registry.
+    /// </remarks>
+    private static void EmitPersistedQueries(SourceProductionContext output, IReadOnlyList<(string Id, string Reference)> queries)
+    {
+        if (queries.Count == 0)
+        {
+            return;
+        }
+
+        var declarations = new SortedDictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var (id, reference) in queries)
+        {
+            if (!declarations.ContainsKey(id))
+            {
+                declarations[id] = reference;
+            }
+        }
+
+        var members = new List<MemberDeclarationSyntax>();
+        var index = 0;
+
+        foreach (var reference in declarations.Values)
+        {
+            index++;
+
+            // The registry aliases each document's constants by number, so the build task can pair them from the
+            // assembly's metadata without running it: the target runs after the build and must not load the output.
+            members.Add(AliasedConstant("DocumentId" + index.ToString(CultureInfo.InvariantCulture), Member(ParseTypeName(reference), "DocumentId")));
+            members.Add(AliasedConstant("Document" + index.ToString(CultureInfo.InvariantCulture), Member(ParseTypeName(reference), "Document")));
+        }
+
+        var entries = string.Join(
+            ", ",
+            Enumerable.Range(1, index).Select(x => $"[DocumentId{x}] = Document{x}"));
+
+        var documents = PropertyDeclaration(
+                ParseTypeName("global::System.Collections.Generic.IReadOnlyDictionary<string, string>"),
+                Identifier("Documents"))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+            .AddAccessorListAccessors(
+                AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
+            .WithInitializer(EqualsValueClause(ParseExpression(
+                $"new global::System.Collections.Generic.Dictionary<string, string>(global::System.StringComparer.Ordinal) {{ {entries} }}")))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+
+        members.Add(documents);
+
+        var registry = ClassDeclaration(Identifier("PersistedQueries"))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+            .AddMembers([.. members]);
+
+        output.AddSource(
+            "PersistedQueries.g.cs",
+            SourceText.From(
+                File(NamespaceDeclaration(ParseName("LinQL.Generated")).AddMembers(registry)),
+                Encoding.UTF8));
+    }
+
+    /// <summary>
+    /// Emits a constant that aliases a generated query's constant.
+    /// </summary>
+    /// <param name="name">The constant's name in the registry.</param>
+    /// <param name="value">The constant it aliases.</param>
+    /// <returns>The constant.</returns>
+    /// <remarks>
+    /// A registry constant is initialised from the generated query's own constant rather than from a copy of the
+    /// text, so the document exists once in the assembly and the two cannot disagree.
+    /// </remarks>
+    private static FieldDeclarationSyntax AliasedConstant(string name, ExpressionSyntax value)
+        => FieldDeclaration(
+                VariableDeclaration(PredefinedType(Token(SyntaxKind.StringKeyword)))
+                    .AddVariables(
+                        VariableDeclarator(Identifier(name))
+                            .WithInitializer(EqualsValueClause(value))))
+            .AddModifiers(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.ConstKeyword));
 
     /// <summary>
     /// Writes a generated file, with the contexts its annotations assume.
@@ -379,6 +483,7 @@ public class ClientGenerator : IIncrementalGenerator
         List<ArgumentSyntax> arguments =
         [
             Argument(IdentifierName("Document")),
+            Argument(IdentifierName("DocumentId")),
             Argument(ParseExpression($"global::LinQL.Description.RootOperationType.{translation.Operation}")),
             Argument(ParseExpression(Projection(query))),
         ];

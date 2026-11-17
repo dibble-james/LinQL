@@ -32,6 +32,8 @@
     <!-- Strawberry Shake's HTTP transport pulls 10.0.0, which GHSA-x33c-w48q-qrgc
          flags; keep it on the same patched line as the rest of ASP.NET Core. -->
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.15" />
+    <!-- The MSBuild task that writes persisted operation files runs inside MSBuild, which supplies these. -->
+    <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.8.43" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
     <!-- Mvc.Testing 10.x pulls Hosting 10.x, so the whole graph has to sit on
@@ -56,6 +58,8 @@
     <PackageVersion Include="StrawberryShake.Core" Version="16.7.3" />
     <PackageVersion Include="StrawberryShake.Transport.Http" Version="16.7.3" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
+    <!-- Read by the MSBuild task from the assembly's metadata; the host supplies it at runtime. -->
+    <PackageVersion Include="System.Reflection.Metadata" Version="8.0.1" />
     <!-- Also packed into analyzers/dotnet/cs for the generator, so the version
          here decides the DLL that ships. It must be a 10.0 assembly version:
          net10.0 consumers already have System.Text.Json 10.0.0.0 in the shared
