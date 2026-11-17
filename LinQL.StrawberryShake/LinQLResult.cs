@@ -13,13 +13,17 @@ public sealed class LinQLResult<TData> : IOperationResult, IEquatable<LinQLResul
         IReadOnlyList<IClientError> errors,
         IReadOnlyDictionary<string, object?> extensions,
         IReadOnlyDictionary<string, object?> contextData,
-        string query)
+        string query,
+        IOperationResultDataInfo? dataInfo,
+        IOperationResultDataFactory dataFactory)
     {
         this.Data = data;
         this.Errors = errors;
         this.Extensions = extensions;
         this.ContextData = contextData;
         this.Query = query;
+        this.DataInfo = dataInfo;
+        this.DataFactory = dataFactory;
     }
 
     /// <summary>
@@ -58,11 +62,17 @@ public sealed class LinQLResult<TData> : IOperationResult, IEquatable<LinQLResul
     /// <inheritdoc />
     Type IOperationResult.DataType => typeof(TData);
 
-    /// <inheritdoc />
-    IOperationResultDataInfo? IOperationResult.DataInfo => null;
+    // Gets what the result was built from, which the entity store rebuilds it with.
+    internal IOperationResultDataInfo? DataInfo { get; }
+
+    // Gets the factory that rebuilds this result from the entity store.
+    internal IOperationResultDataFactory DataFactory { get; }
 
     /// <inheritdoc />
-    object IOperationResult.DataFactory => LinQLResultDataFactory<TData>.Instance;
+    IOperationResultDataInfo? IOperationResult.DataInfo => this.DataInfo;
+
+    /// <inheritdoc />
+    object IOperationResult.DataFactory => this.DataFactory;
 
     /// <summary>
     /// Determines whether the specified result has the same projected data and errors as this result.

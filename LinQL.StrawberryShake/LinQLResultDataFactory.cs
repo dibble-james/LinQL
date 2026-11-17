@@ -1,33 +1,50 @@
 namespace LinQL.StrawberryShake;
 
 using global::StrawberryShake;
+using LinQL.Caching;
 
-// The data factory for LinQLResult{TData}.
+// Rebuilds a LinQLResult{TData} from the entity store.
 //
-// LinQL results are created from a response document and the compiled projection; they are not built from an
-// entity store, so there is nothing to reconstruct from an IOperationResultDataInfo.
-internal sealed class LinQLResultDataFactory<TData> : IOperationResultDataFactory<LinQLResult<TData>>
+// The factory is created per result rather than shared, because it closes over what that result was built from.
+// Strawberry Shake holds a factory per operation and rebuilds the generated result type from ids; LinQL carries
+// the operation's root in LinQLResultDataInfo{TRoot} instead, replaces its selected entities with the stored
+// instances and projects the result again.
+internal sealed class LinQLResultDataFactory<TRoot, TData>(
+    LinQLOperationCache<TRoot>? cache,
+    Func<TRoot, TData> projection,
+    EntityStore store) : IOperationResultDataFactory<LinQLResult<TData>>, IOperationResultDataFactory
+    where TRoot : RootType<TRoot>
 {
-    /// <summary>
-    /// The shared factory instance.
-    /// </summary>
-    public static readonly LinQLResultDataFactory<TData> Instance = new();
-
-    private const string NotSupported =
-        "LinQL results are projected from the response document and cannot be rebuilt from an entity store.";
-
-    private LinQLResultDataFactory()
-    {
-    }
-
     /// <inheritdoc />
     public Type ResultType => typeof(LinQLResult<TData>);
 
     /// <inheritdoc />
     public LinQLResult<TData> Create(IOperationResultDataInfo dataInfo, IEntityStoreSnapshot? snapshot = null)
-        => throw new NotSupportedException(NotSupported);
+    {
+        if (dataInfo is not LinQLResultDataInfo<TRoot> info)
+        {
+            throw new GraphQLClientException(
+                "The result was not built by LinQL, so there is nothing to rebuild it from.");
+        }
+
+        var root = info.Root;
+
+        if (cache is not null)
+        {
+            root = cache.Rebuild(root, new EntityStoreReader(snapshot ?? store.CurrentSnapshot));
+        }
+
+        return new LinQLResult<TData>(
+            projection(root),
+            info.Errors,
+            info.Extensions,
+            info.ContextData,
+            info.Query,
+            info,
+            this);
+    }
 
     /// <inheritdoc />
     object IOperationResultDataFactory.Create(IOperationResultDataInfo dataInfo, IEntityStoreSnapshot? snapshot)
-        => throw new NotSupportedException(NotSupported);
+        => this.Create(dataInfo, snapshot);
 }

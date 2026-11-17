@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using LinQL.Caching;
 using LinQL.Description;
 using LinQL.Filters;
 
@@ -49,6 +50,23 @@ public sealed class LinQLQuery<TRoot, TData>(
     /// Gets the value of each variable the document declares, by the name it uses.
     /// </summary>
     public IReadOnlyDictionary<string, object?> Variables { get; } = variables;
+
+    /// <summary>
+    /// Gets the entity-cache hook the generator emitted for this declaration, or <see langword="null"/> when the
+    /// operation does not take part in entity caching.
+    /// </summary>
+    public LinQLOperationCache<TRoot>? Cache { get; private init; }
+
+    /// <summary>
+    /// Attaches the entity-cache hook the generator emitted for this declaration.
+    /// </summary>
+    /// <param name="cache">The hook.</param>
+    /// <returns>The query, with its cache hook attached.</returns>
+    /// <remarks>
+    /// The generated binder calls this, so a hand-written query keeps the operation-level cache it always had.
+    /// </remarks>
+    public LinQLQuery<TRoot, TData> WithCache(LinQLOperationCache<TRoot> cache)
+        => new(this.Document, this.OperationType, this.Projection, this.Variables) { Cache = cache };
 
     /// <summary>
     /// Binds values to the variables a generated document declares.

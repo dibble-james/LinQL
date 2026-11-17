@@ -188,7 +188,7 @@ public class ClientGeneratorDiagnosticTests
         Assert.Contains("'Nope'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
 
         // The diagnostic points at the declared field, not at the file.
-        Assert.Equal(21, diagnostic.Location.GetLineSpan().StartLinePosition.Line);
+        Assert.Equal(23, diagnostic.Location.GetLineSpan().StartLinePosition.Line);
     }
 
     [Fact]
@@ -552,6 +552,99 @@ public class ClientGeneratorDiagnosticTests
             Generate(EntityKeySdl, extensions: "extend schema @key(fields: \"id\")"),
             x => x.Id is "LINQLGEN16" or "LINQLGEN17" or "LINQLGEN18");
 
+    // A schema whose root field returns an entity a declaration can select without its key.
+    private const string EntitySelectionSdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          hero: Film
+        }
+
+        type Film {
+          id: ID!
+          title: String!
+        }
+        """;
+
+    // A schema whose root field returns an interface a declared query has to select through.
+    private const string EntityInterfaceSdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          hero: Character
+        }
+
+        interface Character {
+          id: ID!
+          name: String!
+        }
+
+        type Film implements Character {
+          id: ID!
+          name: String!
+          title: String!
+        }
+        """;
+
+    // A stub whose type can be selected, so the declaration's body reads as a selection.
+    private const string SelectableFilm = "public class Film : ICanHaveIncludes { public string? Id { get; set; } public string? Title { get; set; } }";
+
+    [Fact]
+    public void AnEntitySelectedWithoutItsKeyIsReported()
+    {
+        var diagnostics = Generate(
+            EntitySelectionSdl,
+            source: DeclaredQuerySource("Filtering", body: "x.Hero.Includes(h => new { h.Title })", heroType: "Film", extraTypes: SelectableFilm),
+            extensions: "extend schema @key(fields: \"id\")");
+
+        var diagnostic = Assert.Single(diagnostics, x => x.Id == "LINQLGEN20");
+
+        Assert.Contains("'Declarations.Value'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'Film'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'id'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ASelectionThroughAnInterfaceIsReported()
+    {
+        var diagnostics = Generate(
+            EntityInterfaceSdl,
+            source: DeclaredQuerySource(
+                "Filtering",
+                body: "x.Hero.SelectAll()",
+                heroType: "Character",
+                extraTypes: "public class Character : ICanHaveIncludes { public string? Id { get; set; } public string? Name { get; set; } }"),
+            extensions: "extend schema @key(fields: \"id\")");
+
+        var diagnostic = Assert.Single(diagnostics, x => x.Id == "LINQLGEN19");
+
+        Assert.Contains("'Character'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ANormalisedEntitySelectionIsNotReported()
+        => Assert.DoesNotContain(
+            Generate(
+                EntitySelectionSdl,
+                source: DeclaredQuerySource("Filtering", body: "x.Hero.SelectAll()", heroType: "Film", extraTypes: SelectableFilm),
+                extensions: "extend schema @key(fields: \"id\")"),
+            x => x.Id is "LINQLGEN19" or "LINQLGEN20");
+
+    [Fact]
+    public void ASchemaWithoutEntityKeysReportsNoOptOut()
+        => Assert.DoesNotContain(
+            Generate(
+                EntitySelectionSdl,
+                source: DeclaredQuerySource("Filtering", body: "x.Hero.Includes(h => new { h.Title })", heroType: "Film", extraTypes: SelectableFilm)),
+            x => x.Id is "LINQLGEN19" or "LINQLGEN20");
+
+    // Gets the generated declared-query file a source produces.
+    //
+    // Returns the generated source.
     private static string DeclaredQueryTree(string body, string? values = null, string sdl = PlainSdl)
         => Assert.Single(
             Run(sdl, source: DeclaredQuerySource("Filtering", body: body, values: values)).GeneratedTrees,
@@ -590,26 +683,37 @@ public class ClientGeneratorDiagnosticTests
         MetadataReference.CreateFromFile(typeof(LinQLOptions).Assembly.Location),
     ];
 
-    private static string DeclaredQuerySource(string clientNamespace, string rootType = "Query", string body = "null", string? values = null)
+    // Builds a source file declaring one query.
+    //
+    // Returns the source, whose declared field is on line 24.
+    private static string DeclaredQuerySource(
+        string clientNamespace,
+        string rootType = "Query",
+        string body = "null",
+        string? values = null,
+        string heroType = "string",
+        string extraTypes = "")
     {
         var parameters = values is null ? "x" : $"(x, {values})";
         var valueTypes = values is null ? string.Empty : string.Concat(Enumerable.Repeat(", object?", values.Split(',').Length));
 
         return $$"""
             using System.Linq.Expressions;
+            using LinQL;
             using LinQL.Description;
 
             namespace Filtering
             {
                 public class Query
                 {
-                    public string? Hero { get; set; }
+                    public {{heroType}}? Hero { get; set; }
                 }
 
                 public class Product
                 {
                     public string? Name { get; set; }
                 }
+                {{extraTypes}}
             }
 
             namespace Queries
