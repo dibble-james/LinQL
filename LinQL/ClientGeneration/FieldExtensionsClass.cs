@@ -14,15 +14,12 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 /// </summary>
 internal sealed record FieldExtension(FieldDefinitionNode Field, InputValueDefinitionNode Argument, bool IsFilter);
 
-/// <summary>
-/// Generates the extension methods that attach field arguments, so a filter is written
-/// <c>q.Products.Filter(f => f.Name(n => n.Contains("widget")))</c> rather than passed to a companion.
-/// </summary>
-/// <remarks>
-/// An extension sees only the type it extends, so one method is emitted per receiver type, method name
-/// and parameter type. Filter methods are all called <c>Filter</c> — they overload by filter input type —
-/// and the other arguments get a method named after them (<c>In</c>, <c>First</c>, <c>Order</c>).
-/// </remarks>
+// Generates the extension methods that attach field arguments, so a filter is written q.Products.Filter(f =>
+// f.Name(n => n.Contains("widget"))) rather than passed to a companion.
+//
+// An extension sees only the type it extends, so one method is emitted per receiver type, method name and
+// parameter type. Filter methods are all called Filter — they overload by filter input type — and the other
+// arguments get a method named after them (In, First, Order).
 internal class FieldExtensionsClass : IClassFactory
 {
     public MemberDeclarationSyntax Create(SchemaModel model)
@@ -40,11 +37,8 @@ internal class FieldExtensionsClass : IClassFactory
                 .GroupBy(x => $"{x.Receiver}|{x.Method}|{x.Parameter}", StringComparer.Ordinal)
                 .Select(g => CreateMember(g.First().Extension, g.First().Method, g.First().Receiver, model))]);
 
-    /// <remarks>
-    /// The schema's own name always comes first. <c>order</c> also gets <c>Sort</c>, because ordering is
-    /// the one argument every call site reads as a verb (`q.Products.Sort(...)`), while the rest keep the
-    /// schema spelling.
-    /// </remarks>
+    // The schema's own name always comes first. order also gets Sort, because ordering is the one argument
+    // every call site reads as a verb (`q.Products.Sort(...)`), while the rest keep the schema spelling.
     private static IEnumerable<string> MethodNames(FieldExtension extension)
     {
         if (extension.IsFilter)

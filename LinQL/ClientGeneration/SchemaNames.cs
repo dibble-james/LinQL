@@ -4,19 +4,14 @@ using LinQL.Expressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-/// <summary>
-/// The rules that turn GraphQL names into the C# names the generator emits.
-/// </summary>
-/// <remarks>
-/// Every rule here is a pure function of a name, so they live apart from <see cref="SchemaModel"/>:
-/// an emitter or a diagnostic can apply them without holding a schema.
-/// </remarks>
+// The rules that turn GraphQL names into the C# names the generator emits.
+//
+// Every rule here is a pure function of a name, so they live apart from SchemaModel: an emitter or a diagnostic
+// can apply them without holding a schema.
 internal static class SchemaNames
 {
-    /// <remarks>
-    /// Hot Chocolate names the input type of a <c>where</c> argument this way, and the generator keys
-    /// its filter builders, extensions and diagnostics on it.
-    /// </remarks>
+    // Hot Chocolate names the input type of a where argument this way, and the generator keys its filter
+    // builders, extensions and diagnostics on it.
     internal const string FilterInputSuffix = "FilterInput";
 
     /// <summary>

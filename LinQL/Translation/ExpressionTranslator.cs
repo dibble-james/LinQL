@@ -205,12 +205,9 @@ public class ExpressionTranslator : ExpressionVisitor
         return field;
     }
 
-    /// <remarks>
-    /// The lambda is translated with the receiver's field expression as its root, which is what lets an
-    /// include target a nested selection instead of only the document root. Inside a <c>Select</c> or an
-    /// <c>On</c> lambda the receiver is that lambda's parameter, and the include joins the selection the
-    /// lambda is scoped to.
-    /// </remarks>
+    // The lambda is translated with the receiver's field expression as its root, which is what lets an include
+    // target a nested selection instead of only the document root. Inside a Select or an On lambda the
+    // receiver is that lambda's parameter, and the include joins the selection the lambda is scoped to.
     private Expression TraverseIncludes(MethodCallExpression node)
     {
         var field = this.TraverseIncludeTarget(node);
@@ -263,12 +260,10 @@ public class ExpressionTranslator : ExpressionVisitor
         => this.Visit(extension.Arguments[0]) as TypeFieldExpression
             ?? throw new InvalidOperationException($"'{extension.Method.Name}' must be called on a field.");
 
-    /// <remarks>
-    /// The argument name comes from <see cref="GraphQLArgumentAttribute.Name"/>, which the generator
-    /// writes from the SDL, rather than from the parameter's own name: a hand-written client type, or a
-    /// renamed parameter, would otherwise put a name in the document that the server never declared.
-    /// The parameter name is the fallback for a type that declares a type but no name.
-    /// </remarks>
+    // The argument name comes from GraphQLArgumentAttribute.Name, which the generator writes from the SDL,
+    // rather than from the parameter's own name: a hand-written client type, or a renamed parameter, would
+    // otherwise put a name in the document that the server never declared. The parameter name is the fallback
+    // for a type that declares a type but no name.
     private static FieldExpression VisitFieldWithArguments(MethodCallExpression node, IRootExpression root)
     {
         var field = node.Method.ToField(root);

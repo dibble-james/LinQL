@@ -2,14 +2,11 @@ namespace LinQL.ClientGeneration;
 
 using Microsoft.CodeAnalysis;
 
-/// <summary>
-/// The diagnostics an entity key pattern can produce.
-/// </summary>
-/// <remarks>
-/// A pattern that cannot identify an entity is reported rather than ignored, because the feature it opts
-/// into is silent when it is absent: a type that is not an entity is never normalised, and nothing else
-/// would tell the author why.
-/// </remarks>
+// The diagnostics an entity key pattern can produce.
+//
+// A pattern that cannot identify an entity is reported rather than ignored, because the feature it opts into is
+// silent when it is absent: a type that is not an entity is never normalised, and nothing else would tell the
+// author why.
 internal static class EntityKeyDiagnostics
 {
     /// <summary>

@@ -258,15 +258,12 @@ public sealed class FilterValue
         _ => false,
     };
 
-    /// <summary>
-    /// Gets the entries of a dictionary, so one is never mistaken for a sequence.
-    /// </summary>
-    /// <remarks>
-    /// A dictionary is usually typed more tightly than <c>Dictionary&lt;string, object?&gt;</c>
-    /// (<c>Dictionary&lt;string, string&gt;</c> is the common case), and the non-generic implementations
-    /// such as <see cref="Hashtable"/> match no generic arm at all. Without this they would reach the
-    /// enumerable arm and serialise as <c>[{{"key": …}}]</c> instead of a JSON object.
-    /// </remarks>
+    // Gets the entries of a dictionary, so one is never mistaken for a sequence.
+    //
+    // A dictionary is usually typed more tightly than Dictionary<string, object?> (Dictionary<string, string>
+    // is the common case), and the non-generic implementations such as Hashtable match no generic arm at all.
+    // Without this they would reach the enumerable arm and serialise as [{{"key": …}}] instead of a JSON
+    // object.
     private static bool TryGetEntries(object value, out IEnumerable<KeyValuePair<string, object?>>? entries)
     {
         switch (value)
@@ -291,11 +288,9 @@ public sealed class FilterValue
         }
     }
 
-    /// <remarks>
-    /// Casting the dictionary to <c>IEnumerable&lt;DictionaryEntry&gt;</c> does not work: a generic
-    /// dictionary enumerates as <c>KeyValuePair&lt;,&gt;</c> through <see cref="IEnumerable"/>, even when
-    /// it is typed as <see cref="IDictionary"/>, so only the dictionary's own enumerator yields entries.
-    /// </remarks>
+    // Casting the dictionary to IEnumerable<DictionaryEntry> does not work: a generic dictionary enumerates as
+    // KeyValuePair<,> through IEnumerable, even when it is typed as IDictionary, so only the dictionary's own
+    // enumerator yields entries.
     private static IEnumerable<KeyValuePair<string, object?>> Entries(IDictionary dictionary)
     {
         var enumerator = dictionary.GetEnumerator();

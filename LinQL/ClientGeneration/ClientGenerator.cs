@@ -252,11 +252,9 @@ public class ClientGenerator : IIncrementalGenerator
         }
     }
 
-    /// <remarks>
-    /// The document does not depend on a call, so it is a constant; the binder takes the lambda's own parameters
-    /// and binds them to the names the document gave the variables, returning the <c>LinQLQuery</c> an adapter
-    /// sends.
-    /// </remarks>
+    // The document does not depend on a call, so it is a constant; the binder takes the lambda's own
+    // parameters and binds them to the names the document gave the variables, returning the LinQLQuery an
+    // adapter sends.
     private static void EmitDeclaredQuery(SourceProductionContext output, DeclaredQuery query, DeclaredQueryTranslation translation)
     {
         var name = query.ContainingType + query.FieldName;
@@ -309,12 +307,10 @@ public class ClientGenerator : IIncrementalGenerator
         return $"{queryType}.Bind({string.Join(", ", arguments)})";
     }
 
-    /// <remarks>
-    /// A filter is one variable holding the whole filter, so its value is built here rather than read from a
-    /// parameter. Emitting that construction is what makes a filter's values follow the declaration's parameters
-    /// without the document depending on them. The expression is fully qualified, so the generated file needs no
-    /// usings.
-    /// </remarks>
+    // A filter is one variable holding the whole filter, so its value is built here rather than read from a
+    // parameter. Emitting that construction is what makes a filter's values follow the declaration's
+    // parameters without the document depending on them. The expression is fully qualified, so the generated
+    // file needs no usings.
     private static string BoundValue(DeclaredQueryBoundValue value) => value switch
     {
         DeclaredQueryParameterValue parameter => $"(object?){SchemaNames.IdentifierFor(parameter.Parameter).Text}",
@@ -324,10 +320,8 @@ public class ClientGenerator : IIncrementalGenerator
         _ => "(object?)null",
     };
 
-    /// <remarks>
-    /// The calls mirror the runtime translator: a combinator folds what was built so far into its first branch,
-    /// and every other field is set under the name the schema gives it.
-    /// </remarks>
+    // The calls mirror the runtime translator: a combinator folds what was built so far into its first branch,
+    // and every other field is set under the name the schema gives it.
     private static string FilterValue(DeclaredQueryFilterValue filter)
     {
         var code = "global::LinQL.Filters.FilterValue.Create()";
@@ -373,13 +367,10 @@ public class ClientGenerator : IIncrementalGenerator
             ? $"global::{query.ContainingType}.{query.FieldName}"
             : $"global::{query.Namespace}.{query.ContainingType}.{query.FieldName}";
 
-    /// <summary>
-    /// Builds the schema model an SDL describes, without emitting a client from it.
-    /// </summary>
-    /// <remarks>
-    /// The walk is turned away from reporting: the client's own walk already reports the filter diagnostics,
-    /// and repeating them once per declared query would multiply them.
-    /// </remarks>
+    // Builds the schema model an SDL describes, without emitting a client from it.
+    //
+    // The walk is turned away from reporting: the client's own walk already reports the filter diagnostics,
+    // and repeating them once per declared query would multiply them.
     internal static SchemaModel CreateModel(string sdl, string graphNamespace, LinQLTypesAs typesAs)
     {
         var document = HotChocolate.Language.Utf8GraphQLParser.Parse(sdl);

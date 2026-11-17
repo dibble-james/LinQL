@@ -189,16 +189,13 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         return base.VisitChildren(node, context);
     }
 
-    /// <summary>
-    /// Reports a field whose filter argument name is ignored, because another field returning the same
-    /// type was seen first.
-    /// </summary>
-    /// <remarks>
-    /// An extension only knows the type it extends, so the generated <c>Filter</c> method takes the
-    /// argument name and filter input type of the first field in document order. A second field returning
-    /// the same type with a different argument name cannot be expressed by that method, and silently
-    /// filtering through the wrong argument would produce a document the server rejects.
-    /// </remarks>
+    // Reports a field whose filter argument name is ignored, because another field returning the same type was
+    // seen first.
+    //
+    // An extension only knows the type it extends, so the generated Filter method takes the argument name and
+    // filter input type of the first field in document order. A second field returning the same type with a
+    // different argument name cannot be expressed by that method, and silently filtering through the wrong
+    // argument would produce a document the server rejects.
     private static void ReportConflictingFilterExtensions(DocumentWalkerContext context)
     {
         var chosen = new Dictionary<string, (string Field, string Argument)>(StringComparer.Ordinal);
@@ -246,15 +243,12 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
     }
 
-    /// <summary>
-    /// Records the field arguments that get an extension method. Only a list of arguments is kept: the
-    /// types are rendered once the whole document has been walked and the scalars are known.
-    /// </summary>
-    /// <remarks>
-    /// Only filterable fields take part. The extensions exist so a filter composes with the field's other
-    /// arguments (<c>q.Featured.First(2).Filter(…)</c>); a field with no filter argument has no reason to
-    /// grow an extension per argument.
-    /// </remarks>
+    // Records the field arguments that get an extension method. Only a list of arguments is kept: the types
+    // are rendered once the whole document has been walked and the scalars are known.
+    //
+    // Only filterable fields take part. The extensions exist so a filter composes with the field's other
+    // arguments (q.Featured.First(2).Filter(…)); a field with no filter argument has no reason to grow an
+    // extension per argument.
     private static void CollectFieldExtensions(IReadOnlyList<FieldDefinitionNode> fields, DocumentWalkerContext context)
     {
         foreach (var field in fields.Where(x => x.Arguments.Any(a => SchemaNames.IsFilterInputType(a.Type.NamedType().Name.Value))))
@@ -298,10 +292,8 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
     }
 
-    /// <remarks>
-    /// The pattern is recorded as written. Whether it names a usable field is decided once the whole document
-    /// has been read, because the type it extends may be declared after its extension.
-    /// </remarks>
+    // The pattern is recorded as written. Whether it names a usable field is decided once the whole document
+    // has been read, because the type it extends may be declared after its extension.
     private static void CollectEntityKeyPatterns(
         IReadOnlyList<DirectiveNode> directives,
         string? typeName,
@@ -320,13 +312,11 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
     }
 
-    /// <remarks>
-    /// A global pattern applies wherever its field exists, which is how Strawberry Shake applies one: a type
-    /// that does not declare the field is simply not an entity, and that is not a diagnostic. A per-type
-    /// pattern is explicit, so it is reported when it cannot be used and the type is left uncached rather than
-    /// silently falling back to the global key the author replaced.
-    /// Root operation types and interfaces are never entities.
-    /// </remarks>
+    // A global pattern applies wherever its field exists, which is how Strawberry Shake applies one: a type
+    // that does not declare the field is simply not an entity, and that is not a diagnostic. A per-type
+    // pattern is explicit, so it is reported when it cannot be used and the type is left uncached rather than
+    // silently falling back to the global key the author replaced. Root operation types and interfaces are
+    // never entities.
     private static void ResolveEntityKeys(DocumentWalkerContext context)
     {
         var model = context.Model;

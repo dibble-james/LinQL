@@ -50,10 +50,8 @@ internal class ComplexTypeClass : IClassFactory
         }
     }
 
-    /// <remarks>
-    /// The brace tokens are supplied explicitly: the short factory overloads produce a declaration with
-    /// missing tokens, which renders without a body once members are added.
-    /// </remarks>
+    // The brace tokens are supplied explicitly: the short factory overloads produce a declaration with missing
+    // tokens, which renders without a body once members are added.
     private TypeDeclarationSyntax RecordType()
         => RecordDeclaration(
             kind: SyntaxKind.RecordDeclaration,

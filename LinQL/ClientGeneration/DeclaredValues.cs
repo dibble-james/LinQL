@@ -6,14 +6,11 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-/// <summary>
-/// A value a declared query writes into its document, as the compiler saw it at the declaration.
-/// </summary>
-/// <remarks>
-/// The tree is read where the semantic model is and consumed where the schema is, because resolving a value
-/// needs the first and naming it needs the second. It holds no symbols and no syntax, so two runs over
-/// unchanged source compare equal.
-/// </remarks>
+// A value a declared query writes into its document, as the compiler saw it at the declaration.
+//
+// The tree is read where the semantic model is and consumed where the schema is, because resolving a value needs
+// the first and naming it needs the second. It holds no symbols and no syntax, so two runs over unchanged source
+// compare equal.
 internal abstract record DeclaredValue;
 
 /// <summary>
@@ -51,14 +48,11 @@ internal sealed record DeclaredParameter(string Name) : DeclaredValue;
 /// </summary>
 internal sealed record DeclaredValueAt(int Start, DeclaredValue Value);
 
-/// <summary>
-/// Reads the values a declared query writes as its arguments.
-/// </summary>
-/// <remarks>
-/// Only what the compiler can see through is read: constants and literals, enum members, and object and
-/// collection initialisers of the same. Everything else is left out, so the translator reports it instead of
-/// writing a value the document does not really carry.
-/// </remarks>
+// Reads the values a declared query writes as its arguments.
+//
+// Only what the compiler can see through is read: constants and literals, enum members, and object and collection
+// initialisers of the same. Everything else is left out, so the translator reports it instead of writing a value
+// the document does not really carry.
 internal static class DeclaredValues
 {
     /// <summary>

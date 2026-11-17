@@ -4,12 +4,7 @@ using System.Text.Json;
 using global::StrawberryShake;
 using global::StrawberryShake.Json;
 
-/// <summary>
-/// Builds a <see cref="LinQLResult{TData}"/> from a Strawberry Shake response document.
-/// </summary>
-/// <remarks>
-/// Initializes a new instance of the <see cref="LinQLResultBuilder{TRoot, TData}"/> class.
-/// </remarks>
+// Builds a LinQLResult{TData} from a Strawberry Shake response document.
 internal sealed class LinQLResultBuilder<TRoot, TData>(Func<TRoot, TData> projection, JsonSerializerOptions serializer, string query) : IOperationResultBuilder<JsonDocument, LinQLResult<TData>>
     where TRoot : RootType<TRoot>
 {

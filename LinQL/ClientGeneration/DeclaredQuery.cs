@@ -21,13 +21,10 @@ internal sealed record DeclaredQuery(
     IReadOnlyList<DeclaredValueAt> Values,
     Location Location)
 {
-    /// <summary>
-    /// The format the binder's parameter types are written in.
-    /// </summary>
-    /// <remarks>
-    /// Fully qualified, because the generated file has none of the declaring file's usings, and with nullable
-    /// annotations kept, because the parameter's nullability is part of what a caller is allowed to pass.
-    /// </remarks>
+    // The format the binder's parameter types are written in.
+    //
+    // Fully qualified, because the generated file has none of the declaring file's usings, and with nullable
+    // annotations kept, because the parameter's nullability is part of what a caller is allowed to pass.
     private static readonly SymbolDisplayFormat ValueTypeFormat = SymbolDisplayFormat.FullyQualifiedFormat
         .AddMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 

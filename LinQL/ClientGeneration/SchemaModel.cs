@@ -4,15 +4,11 @@ using System.Collections.Generic;
 using HotChocolate.Language;
 using LinQL.Description;
 
-/// <summary>
-/// The schema an SDL document describes, as the walk that reads the document found it.
-/// </summary>
-/// <remarks>
-/// The walk that fills this in and the emitter that renders it are separate passes. The model is
-/// read-only once the walk is under way: the collections are only changed through the <c>Add</c>
-/// methods, which the walker alone calls, and everything else reads the read-only views.
-/// Naming lives in <see cref="SchemaNames"/>, because those rules need no schema.
-/// </remarks>
+// The schema an SDL document describes, as the walk that reads the document found it.
+//
+// The walk that fills this in and the emitter that renders it are separate passes. The model is read-only once the
+// walk is under way: the collections are only changed through the Add methods, which the walker alone calls, and
+// everything else reads the read-only views. Naming lives in SchemaNames, because those rules need no schema.
 internal sealed class SchemaModel
 {
     private readonly List<RootTypeClass> rootOperations = [];

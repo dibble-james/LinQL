@@ -91,15 +91,13 @@ public sealed class LinQLQuery<TRoot, TData>(
         (string Variable, object? Value) value)
         => Bind(document, operationType, projection, [value]);
 
-    /// <summary>
-    /// Reduces a declared query's expression to the projection a response is read through.
-    /// </summary>
-    /// <returns>The projection, which takes only the root.</returns>
-    /// <remarks>
-    /// A declaration's parameters are document values, not projection inputs, so replacing them with their defaults
-    /// leaves the body that depends on the response alone. The generator reports a projection that reads one as
-    /// <c>LINQLGEN10</c>, so a body reaching this method does not depend on a value.
-    /// </remarks>
+    // Reduces a declared query's expression to the projection a response is read through.
+    //
+    // A declaration's parameters are document values, not projection inputs, so replacing them with their
+    // defaults leaves the body that depends on the response alone. The generator reports a projection that
+    // reads one as LINQLGEN10, so a body reaching this method does not depend on a value.
+    //
+    // Returns the projection, which takes only the root.
     private static Expression<Func<TRoot, TData>> Project(LambdaExpression declaration)
     {
         var values = new HashSet<ParameterExpression>(declaration.Parameters.Skip(1));

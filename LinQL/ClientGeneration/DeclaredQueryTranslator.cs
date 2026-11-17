@@ -9,30 +9,26 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-/// <summary>
-/// Translates a declared query's lambda into the document model, reading the schema from
-/// <see cref="SchemaModel"/> instead of reflection.
-/// </summary>
-/// <remarks>
-/// The pass only reads the lambda's syntax: a source generator has no <c>Expression</c> tree, so the
-/// runtime translator cannot be used. What it can support is decided here and nothing is approximated —
-/// a construct the translator does not handle is reported as <see cref="DeclaredQueryDiagnostics.UnsupportedConstruct"/>
-/// rather than dropped from the document, because a document that looks precomputed and is not is the one
-/// outcome the compile-time path cannot ship.
-/// A field's argument is either one of the declaration's parameters, which becomes a variable named
-/// <c>var1…varN</c> in traversal order and typed from the SDL argument, or a value the compiler saw —
-/// a constant, an enum member, an object or collection initialiser — which is written into the document. A
-/// parameter standing inside such a value is still a variable, so values and variables mix the way GraphQL
-/// input literals allow. An argument is the only place a parameter may stand: a projection that reads one is
-/// reported as <see cref="DeclaredQueryDiagnostics.ProjectionReadsValue"/>, because the document does not depend
-/// on the values and a projection that did would silently read the default substituted for them.
-/// An <c>Includes</c> call grows the selection it is attached to rather than the document root, which is what the
-/// runtime translator does, so <c>q.Hero.Includes(h => h.Name)</c> writes into <c>hero</c>'s selection set. An
-/// <c>On</c> spread attaches in the same way and writes an inline fragment, so <c>q.Result.On((Film f) => f.Title)</c>
-/// writes a fragment on <c>Film</c> into <c>result</c>'s selection set. A cast and an <c>OfType</c> write the same fragment by a
-/// shorter route — <c>((Film)q.Result).Title</c> and <c>q.Results.OfType&lt;Film&gt;().Select(f => f.Title)</c> — because on the
-/// wire both are a type condition over the field's selection.
-/// </remarks>
+// Translates a declared query's lambda into the document model, reading the schema from SchemaModel instead of
+// reflection.
+//
+// The pass only reads the lambda's syntax: a source generator has no Expression tree, so the runtime translator
+// cannot be used. What it can support is decided here and nothing is approximated — a construct the translator
+// does not handle is reported as DeclaredQueryDiagnostics.UnsupportedConstruct rather than dropped from the
+// document, because a document that looks precomputed and is not is the one outcome the compile-time path cannot
+// ship. A field's argument is either one of the declaration's parameters, which becomes a variable named var1…varN
+// in traversal order and typed from the SDL argument, or a value the compiler saw — a constant, an enum member, an
+// object or collection initialiser — which is written into the document. A parameter standing inside such a value
+// is still a variable, so values and variables mix the way GraphQL input literals allow. An argument is the only
+// place a parameter may stand: a projection that reads one is reported as
+// DeclaredQueryDiagnostics.ProjectionReadsValue, because the document does not depend on the values and a
+// projection that did would silently read the default substituted for them. An Includes call grows the selection
+// it is attached to rather than the document root, which is what the runtime translator does, so q.Hero.Includes(h
+// => h.Name) writes into hero's selection set. An On spread attaches in the same way and writes an inline
+// fragment, so q.Result.On((Film f) => f.Title) writes a fragment on Film into result's selection set. A cast and
+// an OfType write the same fragment by a shorter route — ((Film)q.Result).Title and
+// q.Results.OfType<Film>().Select(f => f.Title) — because on the wire both are a type condition over the field's
+// selection.
 internal sealed class DeclaredQueryTranslator
 {
     private readonly SchemaModel model;
@@ -213,11 +209,9 @@ internal sealed class DeclaredQueryTranslator
         }
     }
 
-    /// <remarks>
-    /// A projection that is one of the declaration's values is reported as
-    /// <see cref="DeclaredQueryDiagnostics.ProjectionReadsValue"/> rather than as a malformed projection, because
-    /// the value is what is wrong with it: the document does not depend on the values, so the projection cannot.
-    /// </remarks>
+    // A projection that is one of the declaration's values is reported as
+    // DeclaredQueryDiagnostics.ProjectionReadsValue rather than as a malformed projection, because the value
+    // is what is wrong with it: the document does not depend on the values, so the projection cannot.
     private void AddSelectedField(
         ExpressionSyntax receiver,
         string typeName,
@@ -258,14 +252,12 @@ internal sealed class DeclaredQueryTranslator
         selections.Add(Field(field, new SelectionSetNode(children)));
     }
 
-    /// <remarks>
-    /// An include attaches to the selection it is called on, as the runtime translator attaches it: on a field it
-    /// grows that field's selection, and on the enclosing lambda's own parameter it grows the selection that
-    /// lambda is already inside. A chain is read from the outside in, so
-    /// <c>q.Hero.Select(h => new { h.Name }).Includes(h => h.Friend.Select(f => new { f.Name }))</c> writes both
-    /// into <c>hero</c>'s selection set. Anything else the call is made on is reported, because an include with
-    /// no selection to grow would silently drop the fields it names.
-    /// </remarks>
+    // An include attaches to the selection it is called on, as the runtime translator attaches it: on a field
+    // it grows that field's selection, and on the enclosing lambda's own parameter it grows the selection that
+    // lambda is already inside. A chain is read from the outside in, so q.Hero.Select(h => new { h.Name
+    // }).Includes(h => h.Friend.Select(f => new { f.Name })) writes both into hero's selection set. Anything
+    // else the call is made on is reported, because an include with no selection to grow would silently drop
+    // the fields it names.
     private void AddIncludedSelections(
         InvocationExpressionSyntax invocation,
         string typeName,
@@ -361,13 +353,11 @@ internal sealed class DeclaredQueryTranslator
         return (expression, selections);
     }
 
-    /// <remarks>
-    /// A cast is a spread: <c>((Film)q.Result).Title</c> writes <c>result</c>'s selection as a fragment on <c>Film</c>
-    /// holding <c>title</c>, and a cast applied to a lambda's own parameter writes the fragment into the selection
-    /// that lambda is already inside. The selections inside the fragment are the ones the cast was applied to with
-    /// the cast replaced by the parameter, so they are read against the fragment's type instead of the field's.
-    /// A cast with nothing selected from it is the fragment's scalar fields, which is what <c>SelectAll</c> writes.
-    /// </remarks>
+    // A cast is a spread: ((Film)q.Result).Title writes result's selection as a fragment on Film holding
+    // title, and a cast applied to a lambda's own parameter writes the fragment into the selection that lambda
+    // is already inside. The selections inside the fragment are the ones the cast was applied to with the cast
+    // replaced by the parameter, so they are read against the fragment's type instead of the field's. A cast
+    // with nothing selected from it is the fragment's scalar fields, which is what SelectAll writes.
     private void AddCastSelections(
         ExpressionSyntax expression,
         (SyntaxNode Node, ExpressionSyntax Operand, string? Type) cast,
@@ -417,11 +407,9 @@ internal sealed class DeclaredQueryTranslator
         this.AddSelections(inner, typeName, parameter, values, selections);
     }
 
-    /// <remarks>
-    /// <c>OfType</c> filters a collection to one of its possible types, so the fragment belongs to the field's
-    /// selection and whatever is chained after the call selects from the filtered type. With nothing chained the
-    /// fragment selects that type's scalars, which is what the runtime path writes.
-    /// </remarks>
+    // OfType filters a collection to one of its possible types, so the fragment belongs to the field's
+    // selection and whatever is chained after the call selects from the filtered type. With nothing chained
+    // the fragment selects that type's scalars, which is what the runtime path writes.
     private void AddOfTypeSelections(
         ExpressionSyntax expression,
         InvocationExpressionSyntax ofType,
@@ -493,12 +481,10 @@ internal sealed class DeclaredQueryTranslator
             selectionSet: new SelectionSetNode(selections));
     }
 
-    /// <remarks>
-    /// Like an include, a spread attaches to the selection it is called on: on a field it writes the fragments into
-    /// that field's selection, and on the enclosing lambda's own parameter into the selection the lambda is already
-    /// inside. A chain writes one sibling fragment per call, because the runtime translator resolves each
-    /// <c>On</c> to its own spread.
-    /// </remarks>
+    // Like an include, a spread attaches to the selection it is called on: on a field it writes the fragments
+    // into that field's selection, and on the enclosing lambda's own parameter into the selection the lambda
+    // is already inside. A chain writes one sibling fragment per call, because the runtime translator resolves
+    // each On to its own spread.
     private void AddSpreadSelections(
         InvocationExpressionSyntax invocation,
         string typeName,
@@ -539,12 +525,10 @@ internal sealed class DeclaredQueryTranslator
         selections.Add(Field(field, new SelectionSetNode(children)));
     }
 
-    /// <remarks>
-    /// The fragment's type is read from the lambda's parameter, because a generator has no semantic model to ask
-    /// what the extension's constraint resolved to. The type has to be one the schema declares, since the document
-    /// names it; whether the type can actually be a member of the union is left to the server, as every other name
-    /// in the document is.
-    /// </remarks>
+    // The fragment's type is read from the lambda's parameter, because a generator has no semantic model to
+    // ask what the extension's constraint resolved to. The type has to be one the schema declares, since the
+    // document names it; whether the type can actually be a member of the union is left to the server, as
+    // every other name in the document is.
     private ISelectionNode? Fragment(ExpressionSyntax spread, IReadOnlyList<string> values)
     {
         if (spread is not LambdaExpressionSyntax lambda
@@ -739,13 +723,11 @@ internal sealed class DeclaredQueryTranslator
         return new ResolvedField(field, attached);
     }
 
-    /// <remarks>
-    /// The extensions the generator emits are named after the arguments they attach, except that every filter is
-    /// called <c>Filter</c>: a filter's argument is therefore found by its filter input type, and <c>Sort</c> is read
-    /// as the schema's <c>order</c>. A filter is one variable holding the whole filter, so it is rebuilt by the
-    /// binder rather than bound as a parameter; every other argument goes through the same value reading a field's
-    /// own argument does.
-    /// </remarks>
+    // The extensions the generator emits are named after the arguments they attach, except that every filter
+    // is called Filter: a filter's argument is therefore found by its filter input type, and Sort is read as
+    // the schema's order. A filter is one variable holding the whole filter, so it is rebuilt by the binder
+    // rather than bound as a parameter; every other argument goes through the same value reading a field's own
+    // argument does.
     private ResolvedField? AttachArgument(
         ResolvedField receiver,
         SimpleNameSyntax name,
@@ -850,10 +832,8 @@ internal sealed class DeclaredQueryTranslator
             : null;
     }
 
-    /// <remarks>
-    /// A filter is one variable holding the whole filter, so the values inside it are not variables of their own:
-    /// the binder rebuilds the dictionary from the declaration's parameters when the query is sent.
-    /// </remarks>
+    // A filter is one variable holding the whole filter, so the values inside it are not variables of their
+    // own: the binder rebuilds the dictionary from the declaration's parameters when the query is sent.
     private DeclaredQueryFilterValue? FilterValue(LambdaExpressionSyntax lambda, ITypeNode type)
     {
         if (ParameterName(lambda) is not { } parameter || lambda.Body is not ExpressionSyntax body)
@@ -991,10 +971,8 @@ internal sealed class DeclaredQueryTranslator
         return this.BoundValue(value, expression);
     }
 
-    /// <remarks>
-    /// An enum member is bound by name, because that is the form it takes on the wire. An object initialiser is
-    /// not rebuildable inside a filter: a filter operation takes a scalar or a list of scalars.
-    /// </remarks>
+    // An enum member is bound by name, because that is the form it takes on the wire. An object initialiser is
+    // not rebuildable inside a filter: a filter operation takes a scalar or a list of scalars.
     private DeclaredQueryBoundValue? BoundValue(DeclaredValue value, SyntaxNode location) => value switch
     {
         DeclaredConstant constant => new DeclaredQueryConstantValue(constant.Constant),
@@ -1155,10 +1133,8 @@ internal sealed class DeclaredQueryTranslator
         _ => null,
     };
 
-    /// <remarks>
-    /// A positional argument fills the schema's argument in the same position, because the generated
-    /// <c>Execute*</c> method declares its parameters in schema order and under the schema's own names.
-    /// </remarks>
+    // A positional argument fills the schema's argument in the same position, because the generated Execute*
+    // method declares its parameters in schema order and under the schema's own names.
     private static InputValueDefinitionNode? DeclaredArgument(FieldDefinitionNode field, ArgumentSyntax argument, int position)
         => argument.NameColon is { } named
             ? field.Arguments.FirstOrDefault(x => x.Name.Value == named.Name.Identifier.ValueText)
@@ -1172,10 +1148,8 @@ internal sealed class DeclaredQueryTranslator
     private static ExpressionSyntax Unparenthesised(ExpressionSyntax expression)
         => expression is ParenthesizedExpressionSyntax parenthesized ? Unparenthesised(parenthesized.Expression) : expression;
 
-    /// <remarks>
-    /// Outermost first, because that is the cast whose fragment wraps the whole selection, and never inside a lambda:
-    /// a cast in a projection belongs to that projection's own selection.
-    /// </remarks>
+    // Outermost first, because that is the cast whose fragment wraps the whole selection, and never inside a
+    // lambda: a cast in a projection belongs to that projection's own selection.
     private static (SyntaxNode Node, ExpressionSyntax Operand, string? Type)? CastOf(ExpressionSyntax expression)
     {
         foreach (var node in expression.DescendantNodesAndSelf())

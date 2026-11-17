@@ -19,14 +19,11 @@ internal sealed record DeclaredQueryTranslation(
 /// </summary>
 internal sealed record DeclaredQueryBinding(string Variable, DeclaredQueryBoundValue Value);
 
-/// <summary>
-/// A value the generated binder produces when a declared query is sent.
-/// </summary>
-/// <remarks>
-/// A document's values are not all one of its parameters: a filter is a single variable holding a whole
-/// dictionary, and its entries may read several parameters, so the binder needs the shape of the value rather
-/// than a parameter-to-variable-name table.
-/// </remarks>
+// A value the generated binder produces when a declared query is sent.
+//
+// A document's values are not all one of its parameters: a filter is a single variable holding a whole dictionary,
+// and its entries may read several parameters, so the binder needs the shape of the value rather than a parameter-
+// to-variable-name table.
 internal abstract record DeclaredQueryBoundValue;
 
 /// <summary>
@@ -44,14 +41,11 @@ internal sealed record DeclaredQueryConstantValue(object? Constant) : DeclaredQu
 /// </summary>
 internal sealed record DeclaredQueryListValue(IReadOnlyList<DeclaredQueryBoundValue> Items) : DeclaredQueryBoundValue;
 
-/// <summary>
-/// A filter the binder rebuilds through <c>FilterValue</c> on every call.
-/// </summary>
-/// <remarks>
-/// Hot Chocolate takes a filter as one <c>where</c> variable holding nested dictionaries, so the document cannot
-/// carry a variable per value the way an ordinary argument can. The entries are therefore emitted as calls on
-/// <c>FilterValue</c>, which produces the same shape the runtime translator builds from an expression.
-/// </remarks>
+// A filter the binder rebuilds through FilterValue on every call.
+//
+// Hot Chocolate takes a filter as one where variable holding nested dictionaries, so the document cannot carry a
+// variable per value the way an ordinary argument can. The entries are therefore emitted as calls on FilterValue,
+// which produces the same shape the runtime translator builds from an expression.
 internal sealed record DeclaredQueryFilterValue(IReadOnlyList<DeclaredQueryFilterField> Fields) : DeclaredQueryBoundValue;
 
 /// <summary>

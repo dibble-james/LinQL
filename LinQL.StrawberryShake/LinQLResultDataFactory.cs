@@ -2,13 +2,10 @@ namespace LinQL.StrawberryShake;
 
 using global::StrawberryShake;
 
-/// <summary>
-/// The data factory for <see cref="LinQLResult{TData}"/>.
-/// </summary>
-/// <remarks>
-/// LinQL results are created from a response document and the compiled projection; they are not built from an
-/// entity store, so there is nothing to reconstruct from an <see cref="IOperationResultDataInfo"/>.
-/// </remarks>
+// The data factory for LinQLResult{TData}.
+//
+// LinQL results are created from a response document and the compiled projection; they are not built from an
+// entity store, so there is nothing to reconstruct from an IOperationResultDataInfo.
 internal sealed class LinQLResultDataFactory<TData> : IOperationResultDataFactory<LinQLResult<TData>>
 {
     /// <summary>

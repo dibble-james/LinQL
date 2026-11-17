@@ -9,13 +9,10 @@ using LinQL.Description;
 using LinQL.Expressions;
 using LinQL.Filters;
 
-/// <summary>
-/// Translates a filter builder expression into a <see cref="FilterValue"/>.
-/// </summary>
-/// <remarks>
-/// Only builder methods carrying <see cref="GraphQLFilterFieldAttribute"/> are understood; no C#
-/// operator or method name is interpreted, so the filter can only express what the schema declares.
-/// </remarks>
+// Translates a filter builder expression into a FilterValue.
+//
+// Only builder methods carrying GraphQLFilterFieldAttribute are understood; no C# operator or method name is
+// interpreted, so the filter can only express what the schema declares.
 internal static class FilterExpressionTranslator
 {
     public static FilterValue Translate(Expression expression)
