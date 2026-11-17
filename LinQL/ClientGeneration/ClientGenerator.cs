@@ -297,9 +297,16 @@ public class ClientGenerator : IIncrementalGenerator
 
         if (cache is not null)
         {
+            // The cache class goes in the same namespace as the binder that names it, which calls it unqualified.
+            // Emitted at the top level it lands in the global namespace, where the binder only finds it through
+            // the lookup fallback and two clients declaring the same query name would collide.
+            MemberDeclarationSyntax emittedCache = query.Namespace is null
+                ? cache
+                : NamespaceDeclaration(ParseName(query.Namespace)).AddMembers(cache);
+
             output.AddSource(
                 query.Namespace is null ? $"{name}Cache.g.cs" : $"{query.Namespace}.{name}Cache.g.cs",
-                SourceText.From(File(cache, "#pragma warning disable CS8601"), Encoding.UTF8));
+                SourceText.From(File(emittedCache, "#pragma warning disable CS8601"), Encoding.UTF8));
         }
 
         var document = FieldDeclaration(
