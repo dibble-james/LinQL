@@ -350,9 +350,8 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A declaration written against the client types the generator emits, so the emitted binder can be compiled.
-    /// </summary>
+    // A declaration written against the client types the generator emits, so the emitted binder can be
+    // compiled.
     private const string DeclaredQueryWithoutClientTypes = """
         using System;
         using System.Linq.Expressions;
@@ -370,9 +369,7 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A declaration whose expression is produced by a method, so there is no source to read.
-    /// </summary>
+    // A declaration whose expression is produced by a method, so there is no source to read.
     private const string FactorySource = """
         using System;
         using System.Linq.Expressions;
@@ -391,9 +388,7 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// Two declarations that agree on their containing type and field name, which is legal across namespaces.
-    /// </summary>
+    // Two declarations that agree on their containing type and field name, which is legal across namespaces.
     private const string TwoNamespacesSource = """
         using System;
         using System.Linq.Expressions;
@@ -420,9 +415,8 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A declaration filtered through the client types the generator emits, so the emitted binder can be compiled.
-    /// </summary>
+    // A declaration filtered through the client types the generator emits, so the emitted binder can be
+    // compiled.
     private const string DeclaredFilterWithoutClientTypes = """
         using System;
         using System.Linq.Expressions;
@@ -469,9 +463,7 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A schema whose query takes a filter and an order, so the binder a filter emits can be compared.
-    /// </summary>
+    // A schema whose query takes a filter and an order, so the binder a filter emits can be compared.
     private const string FilteredQuerySdl = """
         schema {
           query: Query
@@ -499,9 +491,7 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A schema whose types cover the ways an entity key can be written.
-    /// </summary>
+    // A schema whose types cover the ways an entity key can be written.
     private const string EntityKeySdl = """
         schema {
           query: Query
@@ -562,9 +552,7 @@ public class ClientGeneratorDiagnosticTests
             Generate(EntityKeySdl, extensions: "extend schema @key(fields: \"id\")"),
             x => x.Id is "LINQLGEN16" or "LINQLGEN17" or "LINQLGEN18");
 
-    /// <summary>
-    /// A schema whose root field returns an entity a declaration can select without its key.
-    /// </summary>
+    // A schema whose root field returns an entity a declaration can select without its key.
     private const string EntitySelectionSdl = """
         schema {
           query: Query
@@ -580,9 +568,7 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A schema whose root field returns an interface a declared query has to select through.
-    /// </summary>
+    // A schema whose root field returns an interface a declared query has to select through.
     private const string EntityInterfaceSdl = """
         schema {
           query: Query
@@ -604,9 +590,7 @@ public class ClientGeneratorDiagnosticTests
         }
         """;
 
-    /// <summary>
-    /// A stub whose type can be selected, so the declaration's body reads as a selection.
-    /// </summary>
+    // A stub whose type can be selected, so the declaration's body reads as a selection.
     private const string SelectableFilm = "public class Film : ICanHaveIncludes { public string? Id { get; set; } public string? Title { get; set; } }";
 
     [Fact]
@@ -658,13 +642,9 @@ public class ClientGeneratorDiagnosticTests
                 source: DeclaredQuerySource("Filtering", body: "x.Hero.Includes(h => new { h.Title })", heroType: "Film", extraTypes: SelectableFilm)),
             x => x.Id is "LINQLGEN19" or "LINQLGEN20");
 
-    /// <summary>
-    /// Gets the generated declared-query file a source produces.
-    /// </summary>
-    /// <param name="body">The lambda's body.</param>
-    /// <param name="values">The declaration's lambda parameters after the root, comma separated.</param>
-    /// <param name="sdl">The schema the declaration is written against.</param>
-    /// <returns>The generated source.</returns>
+    // Gets the generated declared-query file a source produces.
+    //
+    // Returns the generated source.
     private static string DeclaredQueryTree(string body, string? values = null, string sdl = PlainSdl)
         => Assert.Single(
             Run(sdl, source: DeclaredQuerySource("Filtering", body: body, values: values)).GeneratedTrees,
@@ -693,10 +673,8 @@ public class ClientGeneratorDiagnosticTests
         .GetRunResult();
     }
 
-    /// <summary>
-    /// The references a declared query needs to be understood: the framework, and LinQL itself for the
-    /// attribute and the root type it names.
-    /// </summary>
+    // The references a declared query needs to be understood: the framework, and LinQL itself for the
+    // attribute and the root type it names.
     private static readonly MetadataReference[] References =
     [
         .. (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? string.Empty)
@@ -705,16 +683,9 @@ public class ClientGeneratorDiagnosticTests
         MetadataReference.CreateFromFile(typeof(LinQLOptions).Assembly.Location),
     ];
 
-    /// <summary>
-    /// Builds a source file declaring one query.
-    /// </summary>
-    /// <param name="clientNamespace">The schema the query names.</param>
-    /// <param name="rootType">The root type its expression uses.</param>
-    /// <param name="body">The lambda's body.</param>
-    /// <param name="values">The declaration's lambda parameters after the root, comma separated, or <see langword="null"/> for none.</param>
-    /// <param name="heroType">The type of the stub root's field, so a selection can read a complex type.</param>
-    /// <param name="extraTypes">Stub types the root's field selects, written into the schema's namespace.</param>
-    /// <returns>The source, whose declared field is on line 24.</returns>
+    // Builds a source file declaring one query.
+    //
+    // Returns the source, whose declared field is on line 24.
     private static string DeclaredQuerySource(
         string clientNamespace,
         string rootType = "Query",
@@ -764,9 +735,7 @@ public class ClientGeneratorDiagnosticTests
             => SourceText.From(content);
     }
 
-    /// <summary>
-    /// Supplies the additional-file metadata <c>LinQL.props</c> would add to the csproj.
-    /// </summary>
+    // Supplies the additional-file metadata LinQL.props would add to the csproj.
     private sealed class NamespaceOptions(string? typesAs) : AnalyzerConfigOptionsProvider
     {
         private readonly TestOptions options = new(typesAs);

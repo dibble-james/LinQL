@@ -135,13 +135,8 @@ internal class GraphQLExpressionTranslator<TRoot, TData> : ExpressionVisitor
         return field;
     }
 
-    /// <summary>
-    /// Writes a spread as the inline fragment it is.
-    /// </summary>
-    /// <remarks>
-    /// A fragment carries <c>__typename</c> for the same reason a field does: the type of a value selected
-    /// through a fragment is only known at runtime.
-    /// </remarks>
+    // A fragment carries __typename for the same reason a field does: the type of a value selected through a
+    // fragment is only known at runtime.
     private Expression VisitSpread(SpreadExpression spread)
     {
         var parent = this.selections

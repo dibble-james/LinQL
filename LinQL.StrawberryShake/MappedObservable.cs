@@ -1,15 +1,6 @@
 namespace LinQL.StrawberryShake;
 
-/// <summary>
-/// Maps the values of an observable sequence.
-/// </summary>
-/// <typeparam name="TSource">The source value type.</typeparam>
-/// <typeparam name="TResult">The mapped value type.</typeparam>
-/// <remarks>
-/// Initializes a new instance of the <see cref="MappedObservable{TSource, TResult}"/> class.
-/// </remarks>
-/// <param name="source">The sequence to map.</param>
-/// <param name="selector">The mapping.</param>
+// Maps the values of an observable sequence.
 internal sealed class MappedObservable<TSource, TResult>(IObservable<TSource> source, Func<TSource, TResult> selector) : IObservable<TResult>
 {
     private readonly IObservable<TSource> source = source;

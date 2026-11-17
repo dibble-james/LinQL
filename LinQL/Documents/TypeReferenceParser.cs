@@ -2,15 +2,11 @@ namespace LinQL.Documents;
 
 using HotChocolate.Language;
 
-/// <summary>
-/// Parses the GraphQL type reference the generator writes into an argument attribute.
-/// </summary>
-/// <remarks>
-/// The document model is Hot Chocolate's syntax tree, whose variable definitions carry an
-/// <see cref="ITypeNode"/>. The compile-time translator reads those nodes straight from the SDL; the
-/// runtime path only has the <c>GQLType</c> string the generator emitted, so this is the one place a
-/// type reference is read back into a node.
-/// </remarks>
+// Parses the GraphQL type reference the generator writes into an argument attribute.
+//
+// The document model is Hot Chocolate's syntax tree, whose variable definitions carry an ITypeNode. The compile-
+// time translator reads those nodes straight from the SDL; the runtime path only has the GQLType string the
+// generator emitted, so this is the one place a type reference is read back into a node.
 internal static class TypeReferenceParser
 {
     /// <summary>

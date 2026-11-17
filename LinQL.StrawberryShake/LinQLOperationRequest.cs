@@ -4,9 +4,7 @@ using global::StrawberryShake;
 using LinQL.Description;
 using LinQL.Expressions;
 
-/// <summary>
-/// Builds Strawberry Shake <see cref="OperationRequest"/>s from translated LinQL queries.
-/// </summary>
+// Builds Strawberry Shake OperationRequests from translated LinQL queries.
 internal static class LinQLOperationRequest
 {
     /// <summary>

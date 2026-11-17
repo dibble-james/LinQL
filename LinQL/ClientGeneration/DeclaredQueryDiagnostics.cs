@@ -2,14 +2,11 @@ namespace LinQL.ClientGeneration;
 
 using Microsoft.CodeAnalysis;
 
-/// <summary>
-/// The diagnostics a declared query can produce.
-/// </summary>
-/// <remarks>
-/// Every one of them is reported on the declaration, so a query that the generator cannot compile is not
-/// silently left out of the result. The translator's own rules take LINQLGEN08 to 11; binding a declaration to
-/// a schema takes 12 to 14.
-/// </remarks>
+// The diagnostics a declared query can produce.
+//
+// Every one of them is reported on the declaration, so a query that the generator cannot compile is not silently
+// left out of the result. The translator's own rules take LINQLGEN08 to 11; binding a declaration to a schema
+// takes 12 to 14.
 internal static class DeclaredQueryDiagnostics
 {
     /// <summary>

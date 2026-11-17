@@ -3,9 +3,7 @@ namespace LinQL.StrawberryShake.Tests;
 using System.Text.Json;
 using global::StrawberryShake;
 
-/// <summary>
-/// A connection that replays canned responses and records the requests it received.
-/// </summary>
+// A connection that replays canned responses and records the requests it received.
 internal sealed class StubConnection : IConnection<JsonDocument>
 {
     private readonly Queue<Response<JsonDocument>> responses;

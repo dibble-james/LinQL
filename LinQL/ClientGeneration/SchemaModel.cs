@@ -4,15 +4,11 @@ using System.Collections.Generic;
 using HotChocolate.Language;
 using LinQL.Description;
 
-/// <summary>
-/// The schema an SDL document describes, as the walk that reads the document found it.
-/// </summary>
-/// <remarks>
-/// The walk that fills this in and the emitter that renders it are separate passes. The model is
-/// read-only once the walk is under way: the collections are only changed through the <c>Add</c>
-/// methods, which the walker alone calls, and everything else reads the read-only views.
-/// Naming lives in <see cref="SchemaNames"/>, because those rules need no schema.
-/// </remarks>
+// The schema an SDL document describes, as the walk that reads the document found it.
+//
+// The walk that fills this in and the emitter that renders it are separate passes. The model is read-only once the
+// walk is under way: the collections are only changed through the Add methods, which the walker alone calls, and
+// everything else reads the read-only views. Naming lives in SchemaNames, because those rules need no schema.
 internal sealed class SchemaModel
 {
     private readonly List<RootTypeClass> rootOperations = [];
@@ -178,12 +174,7 @@ internal sealed class SchemaModel
     }
 }
 
-/// <summary>
-/// A type a document declares and the fields it declares.
-/// </summary>
-/// <param name="Name">The type's name.</param>
-/// <param name="Kind">What the document declares the type as.</param>
-/// <param name="Fields">The fields it declares, in document order.</param>
+// A type a document declares and the fields it declares.
 internal sealed record DeclaredType(string Name, DeclaredTypeKind Kind, IReadOnlyList<FieldDefinitionNode> Fields)
 {
     /// <summary>
@@ -196,26 +187,10 @@ internal sealed record DeclaredType(string Name, DeclaredTypeKind Kind, IReadOnl
     public bool IsSelectable => this.Kind is DeclaredTypeKind.Object or DeclaredTypeKind.Interface;
 }
 
-/// <summary>
-/// A <c>@key</c> pattern the document declares.
-/// </summary>
-/// <param name="TypeName">
-/// The type the pattern extends, or <see langword="null"/> for the global pattern.
-/// </param>
-/// <param name="Fields">The fields the pattern names, in source order.</param>
-/// <param name="Location">Where the directive was written, for a diagnostic.</param>
 internal sealed record EntityKeyPattern(string? TypeName, IReadOnlyList<string> Fields, Location? Location);
 
-/// <summary>
-/// The field an entity type is identified by.
-/// </summary>
-/// <param name="TypeName">The type's name.</param>
-/// <param name="FieldName">The leaf field the type's id is read from.</param>
 internal sealed record EntityKey(string TypeName, string FieldName);
 
-/// <summary>
-/// What a document declares a type as.
-/// </summary>
 internal enum DeclaredTypeKind
 {
     /// <summary>An object type, including a root operation type.</summary>

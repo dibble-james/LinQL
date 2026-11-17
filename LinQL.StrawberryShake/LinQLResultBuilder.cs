@@ -5,19 +5,7 @@ using global::StrawberryShake;
 using global::StrawberryShake.Json;
 using LinQL.Caching;
 
-/// <summary>
-/// Builds a <see cref="LinQLResult{TData}"/> from a Strawberry Shake response document.
-/// </summary>
-/// <typeparam name="TRoot">The root operation type.</typeparam>
-/// <typeparam name="TData">The projected result type.</typeparam>
-/// <remarks>
-/// Initializes a new instance of the <see cref="LinQLResultBuilder{TRoot, TData}"/> class.
-/// </remarks>
-/// <param name="projection">The compiled projection applied to the deserialised root data.</param>
-/// <param name="serializer">The serializer options used to read the response.</param>
-/// <param name="query">The document that was sent.</param>
-/// <param name="cache">The operation's cache hook, or <see langword="null"/> for an operation that does not cache entities.</param>
-/// <param name="store">The entity store the response's entities are written to.</param>
+// Builds a LinQLResult{TData} from a Strawberry Shake response document.
 internal sealed class LinQLResultBuilder<TRoot, TData>(
     Func<TRoot, TData> projection,
     JsonSerializerOptions serializer,
@@ -86,18 +74,12 @@ internal sealed class LinQLResultBuilder<TRoot, TData>(
             contextData);
     }
 
-    /// <summary>
-    /// Writes the response's entities to the store and describes the result for a later rebuild.
-    /// </summary>
-    /// <param name="root">The deserialised response root.</param>
-    /// <param name="errors">The result's errors.</param>
-    /// <param name="extensions">The result's server extensions.</param>
-    /// <param name="contextData">The result's transport context data.</param>
-    /// <returns>The data info, or <see langword="null"/> when the operation does not cache entities.</returns>
-    /// <remarks>
-    /// One update session covers the whole response, so every entity a document selected is stored at the same
-    /// version and the operation store sees one update rather than one per entity.
-    /// </remarks>
+    // Writes the response's entities to the store and describes the result for a later rebuild.
+    //
+    // One update session covers the whole response, so every entity a document selected is stored at the same
+    // version and the operation store sees one update rather than one per entity.
+    //
+    // Returns the data info, or null when the operation does not cache entities.
     private LinQLResultDataInfo<TRoot>? Write(
         TRoot root,
         IReadOnlyList<IClientError> errors,

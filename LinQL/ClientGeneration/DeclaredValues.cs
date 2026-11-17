@@ -6,68 +6,36 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-/// <summary>
-/// A value a declared query writes into its document, as the compiler saw it at the declaration.
-/// </summary>
-/// <remarks>
-/// The tree is read where the semantic model is and consumed where the schema is, because resolving a value
-/// needs the first and naming it needs the second. It holds no symbols and no syntax, so two runs over
-/// unchanged source compare equal.
-/// </remarks>
+// A value a declared query writes into its document, as the compiler saw it at the declaration.
+//
+// The tree is read where the semantic model is and consumed where the schema is, because resolving a value needs
+// the first and naming it needs the second. It holds no symbols and no syntax, so two runs over unchanged source
+// compare equal.
 internal abstract record DeclaredValue;
 
-/// <summary>
-/// A value the compiler folded to a constant.
-/// </summary>
-/// <param name="Constant">The constant: a string, a number, a boolean, a character or <see langword="null"/>.</param>
+// A value the compiler folded to a constant.
 internal sealed record DeclaredConstant(object? Constant) : DeclaredValue;
 
-/// <summary>
-/// An enum member, whose name is the value's name in the document.
-/// </summary>
-/// <param name="Member">The member's name.</param>
+// An enum member, whose name is the value's name in the document.
 internal sealed record DeclaredEnumMember(string Member) : DeclaredValue;
 
-/// <summary>
-/// An object initialiser.
-/// </summary>
-/// <param name="Fields">The properties it sets, in source order.</param>
 internal sealed record DeclaredObject(IReadOnlyList<DeclaredValueField> Fields) : DeclaredValue;
 
-/// <summary>
-/// One property an object initialiser sets.
-/// </summary>
-/// <param name="Name">The property's name, before it is resolved to the input field the schema names.</param>
-/// <param name="Value">The value it is set to.</param>
 internal sealed record DeclaredValueField(string Name, DeclaredValue Value);
 
-/// <summary>
-/// A collection or array initialiser.
-/// </summary>
-/// <param name="Items">The items, in source order.</param>
 internal sealed record DeclaredList(IReadOnlyList<DeclaredValue> Items) : DeclaredValue;
 
-/// <summary>
-/// One of the declaration's parameters, which becomes a variable wherever it stands.
-/// </summary>
-/// <param name="Name">The parameter's name.</param>
+// One of the declaration's parameters, which becomes a variable wherever it stands.
 internal sealed record DeclaredParameter(string Name) : DeclaredValue;
 
-/// <summary>
-/// A value the declaration writes, and where in the lambda it wrote it.
-/// </summary>
-/// <param name="Start">The expression's start, which finds it again when the declaration is translated.</param>
-/// <param name="Value">The value.</param>
+// A value the declaration writes, and where in the lambda it wrote it.
 internal sealed record DeclaredValueAt(int Start, DeclaredValue Value);
 
-/// <summary>
-/// Reads the values a declared query writes as its arguments.
-/// </summary>
-/// <remarks>
-/// Only what the compiler can see through is read: constants and literals, enum members, and object and
-/// collection initialisers of the same. Everything else is left out, so the translator reports it instead of
-/// writing a value the document does not really carry.
-/// </remarks>
+// Reads the values a declared query writes as its arguments.
+//
+// Only what the compiler can see through is read: constants and literals, enum members, and object and collection
+// initialisers of the same. Everything else is left out, so the translator reports it instead of writing a value
+// the document does not really carry.
 internal static class DeclaredValues
 {
     /// <summary>
@@ -126,12 +94,6 @@ internal static class DeclaredValues
         };
     }
 
-    /// <summary>
-    /// Reads an initialiser as an object or as a list, whichever it is.
-    /// </summary>
-    /// <param name="initializer">The initialiser.</param>
-    /// <param name="semantics">The semantic model of the initialiser's tree.</param>
-    /// <returns>The value, or <see langword="null"/> when any part of it cannot be read.</returns>
     private static DeclaredValue? ObjectOrList(InitializerExpressionSyntax initializer, SemanticModel semantics)
     {
         if (initializer.Kind() == SyntaxKind.CollectionInitializerExpression)
