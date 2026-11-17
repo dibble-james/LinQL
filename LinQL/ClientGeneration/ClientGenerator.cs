@@ -2,6 +2,7 @@ namespace LinQL.ClientGeneration;
 
 using System.Collections.Immutable;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -298,7 +299,7 @@ public class ClientGenerator : IIncrementalGenerator
         {
             output.AddSource(
                 query.Namespace is null ? $"{name}Cache.g.cs" : $"{query.Namespace}.{name}Cache.g.cs",
-                SourceText.From(Nullable(cache), Encoding.UTF8));
+                SourceText.From(File(cache, "#pragma warning disable CS8601"), Encoding.UTF8));
         }
 
         var document = FieldDeclaration(
@@ -330,20 +331,36 @@ public class ClientGenerator : IIncrementalGenerator
         // type alone would fail the run instead of emitting both.
         output.AddSource(
             query.Namespace is null ? $"{name}.g.cs" : $"{query.Namespace}.{name}.g.cs",
-            SourceText.From(Nullable(emitted.NormalizeWhitespace().ToFullString()), Encoding.UTF8));
+            SourceText.From(File(emitted), Encoding.UTF8));
     }
 
     /// <summary>
-    /// Opens a generated file with the nullable context its annotations assume.
+    /// Writes a generated file, with the contexts its annotations assume.
     /// </summary>
-    /// <param name="source">The file's source.</param>
-    /// <returns>The source, with <c>#nullable enable</c> in front of it.</returns>
+    /// <param name="unit">The file's contents.</param>
+    /// <param name="pragma">A warning the file disables, if it needs to.</param>
+    /// <returns>The file's source.</returns>
     /// <remarks>
     /// A generated file is a compilation unit of its own, so it does not inherit the declaring file's context. A
     /// declaration whose result type is a generated type renders as <c>Film?</c>, which is an error outside an
-    /// annotations context.
+    /// annotations context. The entity cache disables the warning its property assignments raise when the graph a
+    /// response deserialised holds null where the schema promises a value, which is why the schema file disables
+    /// the equivalent one.
     /// </remarks>
-    private static string Nullable(string source) => "#nullable enable\n" + source;
+    private static string File(MemberDeclarationSyntax unit, string? pragma = null)
+    {
+        using var source = new StringWriter();
+        source.WriteLine("#nullable enable");
+
+        if (pragma is not null)
+        {
+            source.WriteLine(pragma);
+        }
+
+        unit.NormalizeWhitespace().WriteTo(source);
+
+        return source.ToString();
+    }
 
     /// <summary>
     /// Writes the call that joins a document to its operation, its projection and its values.

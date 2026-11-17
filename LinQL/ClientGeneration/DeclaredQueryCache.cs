@@ -2,10 +2,12 @@ namespace LinQL.ClientGeneration;
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using HotChocolate.Language;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using Location = Microsoft.CodeAnalysis.Location;
+using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 /// <summary>
 /// Emits the entity-cache hook of a declared query.
@@ -30,8 +32,8 @@ internal sealed class DeclaredQueryCache
     private int locals;
 
     private DeclaredQueryCache(SchemaModel model, string clientNamespace, string declaration, Location location)
-        => (this.model, this.clientNamespace, this.declaration, this.location, this.locals)
-            = (model, clientNamespace, declaration, location, 0);
+        => (this.model, this.clientNamespace, this.declaration, this.location)
+            = (model, clientNamespace, declaration, location);
 
     /// <summary>
     /// Emits the cache class of a declared query.
@@ -47,7 +49,7 @@ internal sealed class DeclaredQueryCache
     /// The class, or <see langword="null"/> when the operation cannot be cached, and the reason it could not be if
     /// there is one to give.
     /// </returns>
-    public static (string? Source, IReadOnlyList<Diagnostic> Problems) Emit(
+    public static (ClassDeclarationSyntax? Class, IReadOnlyList<Diagnostic> Problems) Emit(
         DocumentNode document,
         SchemaModel model,
         string rootTypeName,
@@ -188,70 +190,67 @@ internal sealed class DeclaredQueryCache
     /// <param name="rootTypeName">The root operation type's name.</param>
     /// <param name="name">The name of the class to emit.</param>
     /// <returns>The class.</returns>
-    private string Class(IReadOnlyList<CacheField> fields, string rootTypeName, string name)
+    private ClassDeclarationSyntax Class(IReadOnlyList<CacheField> fields, string rootTypeName, string name)
     {
-        var root = $"global::{this.clientNamespace}.{rootTypeName}";
-        var code = new StringBuilder();
+        var root = ParseTypeName($"global::{this.clientNamespace}.{rootTypeName}");
+        var className = name + "Cache";
 
-        // The graph a response deserialises into can hold null where the schema promises a value, which is what
-        // the emitted property assignments would otherwise warn about. The generated schema file suppresses the
-        // equivalent warning for the same reason.
-        code.AppendLine("#pragma warning disable CS8601");
-        code.AppendLine();
-        code.AppendLine($"/// <summary>");
-        code.AppendLine($"/// Writes and rebuilds the entities the declared query selects.</summary>");
-        code.AppendLine($"/// <remarks>Generated from the declaration's document; do not edit.</remarks>");
-        code.AppendLine($"public sealed class {name}Cache : global::LinQL.Caching.LinQLOperationCache<{root}>");
-        code.AppendLine("{");
-        code.AppendLine($"    /// <summary>The shared instance.</summary>");
-        code.AppendLine($"    public static readonly {name}Cache Instance = new();");
-        code.AppendLine();
-        code.AppendLine($"    private {name}Cache()");
-        code.AppendLine("    {");
-        code.AppendLine("    }");
-        code.AppendLine();
-        code.AppendLine("    /// <inheritdoc />");
-        code.AppendLine($"    public override void Write({root} root, global::LinQL.Caching.IEntityWriter writer)");
-        code.AppendLine("    {");
+        var write = new List<StatementSyntax>();
 
         foreach (var field in fields)
         {
-            this.Value($"root.{SchemaNames.FieldName(field.Definition.Name.Value)}", field, rebuild: false, "writer", "w", code, 2);
+            this.Value(Member(IdentifierName("root"), SchemaNames.FieldName(field.Definition.Name.Value)), field, rebuild: false, "writer", "w", write);
         }
 
-        code.AppendLine("    }");
-        code.AppendLine();
-        code.AppendLine("    /// <inheritdoc />");
-        code.AppendLine($"    public override {root} Rebuild({root} root, global::LinQL.Caching.IEntityReader reader)");
-        code.AppendLine("    {");
-
-        var rebuilt = new List<(string Property, string Expression)>();
+        var rebuild = new List<StatementSyntax>();
+        var rebuilt = new List<(string Property, ExpressionSyntax? Expression)>();
 
         foreach (var field in fields)
         {
             var property = SchemaNames.FieldName(field.Definition.Name.Value);
-            var expression = this.Value($"root.{property}", field, rebuild: true, "reader", "r", code, 2);
+            var expression = this.Value(Member(IdentifierName("root"), property), field, rebuild: true, "reader", "r", rebuild);
 
             rebuilt.Add((property, expression));
         }
 
-        code.AppendLine();
-        code.Append($"        return new {root}").AppendLine();
-        code.AppendLine("        {");
+        rebuild.Add(ReturnStatement(
+            ObjectCreationExpression(root).WithInitializer(InitializerExpression(
+                SyntaxKind.ObjectInitializerExpression,
+                SeparatedList([.. this.model.FieldsOf(rootTypeName).Select(x => Copied(x, rebuilt))])))));
 
-        foreach (var definition in this.model.FieldsOf(rootTypeName))
-        {
-            var property = SchemaNames.FieldName(definition.Name.Value);
-            var (_, expression) = rebuilt.FirstOrDefault(x => x.Property == property);
-
-            code.AppendLine($"            {property} = {expression ?? $"root.{property}"},");
-        }
-
-        code.AppendLine("        };");
-        code.AppendLine("    }");
-        code.AppendLine("}");
-
-        return code.ToString();
+        // Documentation is attached last: a node's leading trivia belongs to its first token, so adding the
+        // modifiers afterwards would put the comment between them and the declaration's keyword.
+        return ClassDeclaration(Identifier(className))
+            .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.SealedKeyword))
+            .AddBaseListTypes(SimpleBaseType(ParseTypeName($"global::LinQL.Caching.LinQLOperationCache<{root}>")))
+            .AddMembers(
+                FieldDeclaration(VariableDeclaration(IdentifierName(className))
+                        .AddVariables(VariableDeclarator(Identifier("Instance"))
+                            .WithInitializer(EqualsValueClause(ImplicitObjectCreationExpression()))))
+                    .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.ReadOnlyKeyword))
+                    .WithLeadingTrivia(Doc("/// <summary>The shared instance.</summary>")),
+                ConstructorDeclaration(Identifier(className))
+                    .AddModifiers(Token(SyntaxKind.PrivateKeyword))
+                    .WithBody(Block()),
+                MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), Identifier("Write"))
+                    .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword))
+                    .AddParameterListParameters(
+                        Parameter(Identifier("root")).WithType(root),
+                        Parameter(Identifier("writer")).WithType(ParseTypeName("global::LinQL.Caching.IEntityWriter")))
+                    .WithBody(Body(write))
+                    .WithLeadingTrivia(Doc("/// <inheritdoc />")),
+                MethodDeclaration(root, Identifier("Rebuild"))
+                    .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword))
+                    .AddParameterListParameters(
+                        Parameter(Identifier("root")).WithType(root),
+                        Parameter(Identifier("reader")).WithType(ParseTypeName("global::LinQL.Caching.IEntityReader")))
+                    .WithBody(Body(rebuild))
+                    .WithLeadingTrivia(Doc("/// <inheritdoc />")))
+            .WithLeadingTrivia(Doc(
+                "/// <summary>",
+                "/// Writes and rebuilds the entities the declared query selects.",
+                "/// </summary>",
+                "/// <remarks>Generated from the declaration's document; do not edit.</remarks>"));
     }
 
     /// <summary>
@@ -262,29 +261,26 @@ internal sealed class DeclaredQueryCache
     /// <param name="rebuild">Whether the code rebuilds rather than writes.</param>
     /// <param name="accessor">The writer or reader parameter's name.</param>
     /// <param name="prefix">The prefix of the locals emitted here.</param>
-    /// <param name="code">The code being emitted.</param>
-    /// <param name="depth">The indentation depth.</param>
+    /// <param name="body">The statements being emitted.</param>
     /// <returns>The expression holding the result, which is the input when nothing needs normalising.</returns>
-    private string Value(
-        string expression,
+    private ExpressionSyntax Value(
+        ExpressionSyntax expression,
         CacheField field,
         bool rebuild,
         string accessor,
         string prefix,
-        StringBuilder code,
-        int depth)
-        => this.Value(expression, field.Definition.Type.NamedType().Name.Value, field.Children, field.IsList, rebuild, accessor, prefix, code, depth);
+        List<StatementSyntax> body)
+        => this.Value(expression, field.Definition.Type.NamedType().Name.Value, field.Children, field.IsList, rebuild, accessor, prefix, body);
 
-    private string Value(
-        string expression,
+    private ExpressionSyntax Value(
+        ExpressionSyntax expression,
         string typeName,
         IReadOnlyList<CacheField> children,
         bool isList,
         bool rebuild,
         string accessor,
         string prefix,
-        StringBuilder code,
-        int depth)
+        List<StatementSyntax> body)
     {
         // A subtree with no entity in it needs no normalising: its fields are copied with the type that holds
         // them, and the store never sees them.
@@ -294,35 +290,34 @@ internal sealed class DeclaredQueryCache
         }
 
         var value = this.Next(prefix);
-
-        Line(code, depth, $"var {value} = {expression};");
-        Line(code, depth, $"if ({value} is not null)");
-        Line(code, depth, "{");
+        var normalised = new List<StatementSyntax>();
 
         if (isList)
         {
-            var itemName = typeName;
             var list = this.Next(prefix);
+            var index = "i" + list;
 
-            Line(code, depth + 1, $"var {list} = new global::{this.clientNamespace}.{itemName}[{value}.Length];");
-            Line(code, depth + 1, $"for (var i{list} = 0; i{list} < {value}.Length; i{list}++)");
-            Line(code, depth + 1, "{");
+            var items = new List<StatementSyntax>();
+            var item = this.Value(ElementAccess(IdentifierName(value), IdentifierName(index)), typeName, children, isList: false, rebuild, accessor, prefix, items);
 
-            var item = this.Value($"{value}[i{list}]", typeName, children, isList: false, rebuild, accessor, prefix, code, depth + 2);
+            items.Add(Assign(ElementAccess(IdentifierName(list), IdentifierName(index)), item));
 
-            Line(code, depth + 2, $"{list}[i{list}] = {item};");
-            Line(code, depth + 1, "}");
-            Line(code, depth + 1, $"{value} = {list};");
+            normalised.Add(Local(list, ArrayCreationExpression(ArrayType(
+                ParseTypeName($"global::{this.clientNamespace}.{typeName}"),
+                SingletonList(ArrayRankSpecifier(SingletonSeparatedList<ExpressionSyntax>(Member(IdentifierName(value), "Length"))))))));
+
+            normalised.Add(For(index, Member(IdentifierName(value), "Length"), items));
+            normalised.Add(Assign(IdentifierName(value), IdentifierName(list)));
         }
         else
         {
-            this.Node(value, typeName, children, rebuild, accessor, prefix, code, depth + 1);
+            this.Node(IdentifierName(value), typeName, children, rebuild, accessor, prefix, normalised);
         }
 
-        Line(code, depth, "}");
-        code.AppendLine();
+        body.Add(Local(value, expression));
+        body.Add(If(IsNotNull(value), Body(normalised)));
 
-        return value;
+        return IdentifierName(value);
     }
 
     /// <summary>
@@ -334,19 +329,17 @@ internal sealed class DeclaredQueryCache
     /// <param name="rebuild">Whether the code rebuilds rather than writes.</param>
     /// <param name="accessor">The writer or reader parameter's name.</param>
     /// <param name="prefix">The prefix of the locals emitted here.</param>
-    /// <param name="code">The code being emitted.</param>
-    /// <param name="depth">The indentation depth.</param>
+    /// <param name="body">The statements being emitted.</param>
     private void Node(
-        string value,
+        ExpressionSyntax value,
         string typeName,
         IReadOnlyList<CacheField> children,
         bool rebuild,
         string accessor,
         string prefix,
-        StringBuilder code,
-        int depth)
+        List<StatementSyntax> body)
     {
-        var type = $"global::{this.clientNamespace}.{typeName}";
+        var type = ParseTypeName($"global::{this.clientNamespace}.{typeName}");
         var key = this.model.EntityKeys.TryGetValue(typeName, out var entityKey) ? entityKey : null;
         string? existing = null;
 
@@ -357,10 +350,12 @@ internal sealed class DeclaredQueryCache
                 var stored = this.Next(prefix);
                 var current = this.Next(prefix);
 
-                Line(code, depth, $"if ({accessor}.TryRead(\"{typeName}\", {value}.{SchemaNames.FieldName(key.FieldName)}!, out var {stored}) && {stored} is {type} {current})");
-                Line(code, depth, "{");
-                Line(code, depth + 1, $"{value} = {current};");
-                Line(code, depth, "}");
+                body.Add(If(
+                    BinaryExpression(
+                        SyntaxKind.LogicalAndExpression,
+                        TryRead(accessor, typeName, Key(value, key), stored),
+                        IsPattern(IdentifierName(stored), DeclarationPattern(type, SingleVariableDesignation(Identifier(current))))),
+                    Body([Assign(value, IdentifierName(current))])));
             }
         }
         else if (key is not null)
@@ -369,11 +364,11 @@ internal sealed class DeclaredQueryCache
 
             existing = this.Next(prefix);
 
-            Line(code, depth, $"{accessor}.TryRead(\"{typeName}\", {value}.{SchemaNames.FieldName(key.FieldName)}!, out var {stored});");
-            Line(code, depth, $"var {existing} = {stored} as {type};");
+            body.Add(ExpressionStatement(TryRead(accessor, typeName, Key(value, key), stored)));
+            body.Add(Local(existing, BinaryExpression(SyntaxKind.AsExpression, IdentifierName(stored), type)));
         }
 
-        var written = new List<(string Property, string Expression)>();
+        var written = new List<(string Property, ExpressionSyntax? Expression)>();
 
         // A child is normalised before the object that holds it, so an entity nested in a selection is stored
         // before the instance referring to it.
@@ -387,7 +382,7 @@ internal sealed class DeclaredQueryCache
                 continue;
             }
 
-            written.Add((property, this.Value($"{value}.{property}", childType, child.Children, child.IsList, rebuild, accessor, prefix, code, depth)));
+            written.Add((property, this.Value(Member(value, property), childType, child.Children, child.IsList, rebuild, accessor, prefix, body)));
         }
 
         // A rebuild only has to copy an instance when a nested entity changed under it, and a first write
@@ -399,21 +394,20 @@ internal sealed class DeclaredQueryCache
         {
             if (!rebuild && key is not null)
             {
-                Line(code, depth, $"{accessor}.Write(\"{typeName}\", {value}.{SchemaNames.FieldName(key.FieldName)}!, {value});");
+                body.Add(ExpressionStatement(Write(accessor, typeName, Key(value, key), value)));
             }
 
             return;
         }
 
-        Line(code, depth, $"{value} = new {type}");
-        Line(code, depth, "{");
+        var initializer = new List<ExpressionSyntax>();
 
         foreach (var definition in this.model.FieldsOf(typeName))
         {
             var property = SchemaNames.FieldName(definition.Name.Value);
             var (_, childExpression) = written.FirstOrDefault(x => x.Property == property);
 
-            string expression;
+            ExpressionSyntax expression;
 
             if (childExpression is not null)
             {
@@ -423,21 +417,25 @@ internal sealed class DeclaredQueryCache
             {
                 // The write did not select this property, so what the store holds is still the truth. A first
                 // write has nothing to carry forward, and fills it with default! as a generated client does.
-                expression = $"{existing}?.{property} ?? default!";
+                expression = BinaryExpression(
+                    SyntaxKind.CoalesceExpression,
+                    ConditionalAccessExpression(IdentifierName(existing), MemberBindingExpression(IdentifierName(property))),
+                    PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, LiteralExpression(SyntaxKind.DefaultLiteralExpression)));
             }
             else
             {
-                expression = $"{value}.{property}";
+                expression = Member(value, property);
             }
 
-            Line(code, depth + 1, $"{property} = {expression},");
+            initializer.Add(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, IdentifierName(property), expression));
         }
 
-        Line(code, depth, "};");
+        body.Add(Assign(value, ObjectCreationExpression(type).WithInitializer(
+            InitializerExpression(SyntaxKind.ObjectInitializerExpression, SeparatedList(initializer)))));
 
         if (!rebuild && key is not null)
         {
-            Line(code, depth, $"{accessor}.Write(\"{typeName}\", {value}.{SchemaNames.FieldName(key.FieldName)}!, {value});");
+            body.Add(ExpressionStatement(Write(accessor, typeName, Key(value, key), value)));
         }
     }
 
@@ -451,10 +449,114 @@ internal sealed class DeclaredQueryCache
         => this.model.EntityKeys.ContainsKey(typeName)
             || children.Any(x => this.ContainsEntities(x.Definition.Type.NamedType().Name.Value, x.Children));
 
+    /// <summary>
+    /// Emits one property of the root the rebuild returns: the expression the rebuild produced for it, or the
+    /// value the root already held.
+    /// </summary>
+    /// <param name="definition">The root type's field.</param>
+    /// <param name="rebuilt">The expressions the rebuild produced, by property.</param>
+    /// <returns>The assignment.</returns>
+    private static ExpressionSyntax Copied(FieldDefinitionNode definition, List<(string Property, ExpressionSyntax? Expression)> rebuilt)
+    {
+        var property = SchemaNames.FieldName(definition.Name.Value);
+        var (_, expression) = rebuilt.FirstOrDefault(x => x.Property == property);
+
+        return AssignmentExpression(
+            SyntaxKind.SimpleAssignmentExpression,
+            IdentifierName(property),
+            expression ?? Member(IdentifierName("root"), property));
+    }
+
     private string Next(string prefix) => prefix + this.locals++.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-    private static void Line(StringBuilder code, int depth, string text)
-        => code.Append(' ', depth * 4).AppendLine(text);
+    /// <summary>
+    /// Emits a <c>var</c> declaration.
+    /// </summary>
+    /// <param name="name">The local's name.</param>
+    /// <param name="value">The value it holds.</param>
+    /// <returns>The declaration.</returns>
+    private static LocalDeclarationStatementSyntax Local(string name, ExpressionSyntax value)
+        => LocalDeclarationStatement(VariableDeclaration(IdentifierName("var"))
+            .AddVariables(VariableDeclarator(Identifier(name)).WithInitializer(EqualsValueClause(value))));
+
+    /// <summary>
+    /// Emits a <c>for</c> loop that walks a value by index, the way a generated client materialises a list.
+    /// </summary>
+    /// <param name="index">The index's name.</param>
+    /// <param name="length">The expression holding the list's length.</param>
+    /// <param name="body">The loop's statements.</param>
+    /// <returns>The loop.</returns>
+    private static ForStatementSyntax For(string index, ExpressionSyntax length, IReadOnlyList<StatementSyntax> body)
+        => ForStatement(
+            declaration: VariableDeclaration(IdentifierName("var"))
+                .AddVariables(VariableDeclarator(Identifier(index))
+                    .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))))),
+            initializers: default,
+            condition: BinaryExpression(SyntaxKind.LessThanExpression, IdentifierName(index), length),
+            incrementors: SingletonSeparatedList<ExpressionSyntax>(
+                PostfixUnaryExpression(SyntaxKind.PostIncrementExpression, IdentifierName(index))),
+            statement: Body(body));
+
+    /// <summary>
+    /// Emits a block holding the given statements.
+    /// </summary>
+    /// <param name="statements">The statements.</param>
+    /// <returns>The block.</returns>
+    private static BlockSyntax Body(IEnumerable<StatementSyntax> statements)
+        => Block().AddStatements([.. statements]);
+
+    private static ExpressionStatementSyntax Assign(ExpressionSyntax target, ExpressionSyntax value)
+        => ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, target, value));
+
+    private static ElementAccessExpressionSyntax ElementAccess(ExpressionSyntax expression, ExpressionSyntax index)
+        => ElementAccessExpression(expression).AddArgumentListArguments(Argument(index));
+
+    private static MemberAccessExpressionSyntax Member(ExpressionSyntax expression, string name)
+        => MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, expression, IdentifierName(name));
+
+    private static IfStatementSyntax If(ExpressionSyntax condition, StatementSyntax statement)
+        => IfStatement(condition, statement);
+
+    private static BinaryExpressionSyntax IsNotNull(string name)
+        => BinaryExpression(SyntaxKind.NotEqualsExpression, IdentifierName(name), LiteralExpression(SyntaxKind.NullLiteralExpression));
+
+    private static IsPatternExpressionSyntax IsPattern(ExpressionSyntax expression, PatternSyntax pattern)
+        => IsPatternExpression(expression, pattern);
+
+    private static InvocationExpressionSyntax TryRead(string accessor, string typeName, ExpressionSyntax key, string stored)
+        => Call(accessor, "TryRead", Argument(Text(typeName)), Argument(key), Out(stored));
+
+    private static InvocationExpressionSyntax Write(string accessor, string typeName, ExpressionSyntax key, ExpressionSyntax entity)
+        => Call(accessor, "Write", Argument(Text(typeName)), Argument(key), Argument(entity));
+
+    private static InvocationExpressionSyntax Call(string accessor, string method, params ArgumentSyntax[] arguments)
+        => InvocationExpression(Member(IdentifierName(accessor), method))
+            .WithArgumentList(ArgumentList(SeparatedList(arguments)));
+
+    private static ArgumentSyntax Out(string name)
+        => Argument(DeclarationExpression(IdentifierName("var"), SingleVariableDesignation(Identifier(name))))
+            .WithRefKindKeyword(Token(SyntaxKind.OutKeyword));
+
+    /// <summary>
+    /// Emits the key read of an entity value, which is asserted non-null the way a generated client does: the
+    /// schema promises the key is there, and the value is only reached once a null check has passed.
+    /// </summary>
+    /// <param name="value">The entity.</param>
+    /// <param name="key">The entity's key.</param>
+    /// <returns>The key expression.</returns>
+    private static ExpressionSyntax Key(ExpressionSyntax value, EntityKey key)
+        => PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, Member(value, SchemaNames.FieldName(key.FieldName)));
+
+    private static LiteralExpressionSyntax Text(string value)
+        => LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(value));
+
+    /// <summary>
+    /// Emits documentation comment trivia.
+    /// </summary>
+    /// <param name="lines">The comment's lines, each including its <c>///</c>.</param>
+    /// <returns>The trivia.</returns>
+    private static SyntaxTriviaList Doc(params string[] lines)
+        => TriviaList([.. lines.SelectMany(line => new[] { Comment(line), EndOfLine("\n") })]);
 
     /// <summary>
     /// One selected field, and the fields its selection covers.
