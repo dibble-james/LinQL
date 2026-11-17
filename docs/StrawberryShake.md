@@ -165,9 +165,11 @@ extend schema @key(fields: "id")
 
 # Or one type at a time, which overrides the global pattern for that type.
 extend type Film @key(fields: "id")
-``` A response is then written to the client's entity
-store alongside the operation cache, and Strawberry Shake's operation store
-rebuilds the result from entities when one of them changes:
+```
+
+A response is then written to the client's entity store alongside the
+operation cache, and Strawberry Shake's operation store rebuilds the result
+from entities when one of them changes:
 
 ```csharp
 // Both watch the same entity, so the mutation refreshes the query's watch.
