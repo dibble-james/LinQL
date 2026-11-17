@@ -18,11 +18,6 @@ internal class InterfaceRegistrationExtensionsClass : IClassFactory
                 .AddBodyStatements([.. Registrations(model).Select(i => ParseStatement(@$"options.RegisterInterface<{i.Key}>({string.Join(", ", i.Select(t => $"typeof({t})"))});"))])
                 .AddBodyStatements(ParseStatement("return options;")));
 
-    /// <summary>
-    /// Gets the types that implement each interface, keyed by interface name.
-    /// </summary>
-    /// <param name="model">The schema.</param>
-    /// <returns>The implementing types per interface, in document order.</returns>
     private static ILookup<string, string> Registrations(SchemaModel model)
         => model.Types.OfType<ComplexTypeClass>()
             .Where(type => type.Interfaces.Any())

@@ -562,13 +562,6 @@ public class ClientGeneratorDiagnosticTests
             Generate(EntityKeySdl, extensions: "extend schema @key(fields: \"id\")"),
             x => x.Id is "LINQLGEN16" or "LINQLGEN17" or "LINQLGEN18");
 
-    /// <summary>
-    /// Gets the generated declared-query file a source produces.
-    /// </summary>
-    /// <param name="body">The lambda's body.</param>
-    /// <param name="values">The declaration's lambda parameters after the root, comma separated.</param>
-    /// <param name="sdl">The schema the declaration is written against.</param>
-    /// <returns>The generated source.</returns>
     private static string DeclaredQueryTree(string body, string? values = null, string sdl = PlainSdl)
         => Assert.Single(
             Run(sdl, source: DeclaredQuerySource("Filtering", body: body, values: values)).GeneratedTrees,
@@ -609,14 +602,6 @@ public class ClientGeneratorDiagnosticTests
         MetadataReference.CreateFromFile(typeof(LinQLOptions).Assembly.Location),
     ];
 
-    /// <summary>
-    /// Builds a source file declaring one query.
-    /// </summary>
-    /// <param name="clientNamespace">The schema the query names.</param>
-    /// <param name="rootType">The root type its expression uses.</param>
-    /// <param name="body">The lambda's body.</param>
-    /// <param name="values">The declaration's lambda parameters after the root, comma separated, or <see langword="null"/> for none.</param>
-    /// <returns>The source, whose declared field is on line 22.</returns>
     private static string DeclaredQuerySource(string clientNamespace, string rootType = "Query", string body = "null", string? values = null)
     {
         var parameters = values is null ? "x" : $"(x, {values})";

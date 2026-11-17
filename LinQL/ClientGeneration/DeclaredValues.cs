@@ -19,45 +19,36 @@ internal abstract record DeclaredValue;
 /// <summary>
 /// A value the compiler folded to a constant.
 /// </summary>
-/// <param name="Constant">The constant: a string, a number, a boolean, a character or <see langword="null"/>.</param>
 internal sealed record DeclaredConstant(object? Constant) : DeclaredValue;
 
 /// <summary>
 /// An enum member, whose name is the value's name in the document.
 /// </summary>
-/// <param name="Member">The member's name.</param>
 internal sealed record DeclaredEnumMember(string Member) : DeclaredValue;
 
 /// <summary>
 /// An object initialiser.
 /// </summary>
-/// <param name="Fields">The properties it sets, in source order.</param>
 internal sealed record DeclaredObject(IReadOnlyList<DeclaredValueField> Fields) : DeclaredValue;
 
 /// <summary>
 /// One property an object initialiser sets.
 /// </summary>
-/// <param name="Name">The property's name, before it is resolved to the input field the schema names.</param>
-/// <param name="Value">The value it is set to.</param>
 internal sealed record DeclaredValueField(string Name, DeclaredValue Value);
 
 /// <summary>
 /// A collection or array initialiser.
 /// </summary>
-/// <param name="Items">The items, in source order.</param>
 internal sealed record DeclaredList(IReadOnlyList<DeclaredValue> Items) : DeclaredValue;
 
 /// <summary>
 /// One of the declaration's parameters, which becomes a variable wherever it stands.
 /// </summary>
-/// <param name="Name">The parameter's name.</param>
 internal sealed record DeclaredParameter(string Name) : DeclaredValue;
 
 /// <summary>
 /// A value the declaration writes, and where in the lambda it wrote it.
 /// </summary>
-/// <param name="Start">The expression's start, which finds it again when the declaration is translated.</param>
-/// <param name="Value">The value.</param>
 internal sealed record DeclaredValueAt(int Start, DeclaredValue Value);
 
 /// <summary>
@@ -126,12 +117,6 @@ internal static class DeclaredValues
         };
     }
 
-    /// <summary>
-    /// Reads an initialiser as an object or as a list, whichever it is.
-    /// </summary>
-    /// <param name="initializer">The initialiser.</param>
-    /// <param name="semantics">The semantic model of the initialiser's tree.</param>
-    /// <returns>The value, or <see langword="null"/> when any part of it cannot be read.</returns>
     private static DeclaredValue? ObjectOrList(InitializerExpressionSyntax initializer, SemanticModel semantics)
     {
         if (initializer.Kind() == SyntaxKind.CollectionInitializerExpression)

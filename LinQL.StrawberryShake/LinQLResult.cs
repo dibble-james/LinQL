@@ -8,14 +8,6 @@ using global::StrawberryShake;
 /// <typeparam name="TData">The projected result type.</typeparam>
 public sealed class LinQLResult<TData> : IOperationResult, IEquatable<LinQLResult<TData>>
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LinQLResult{TData}"/> class.
-    /// </summary>
-    /// <param name="data">The projected data.</param>
-    /// <param name="errors">The GraphQL server errors.</param>
-    /// <param name="extensions">Additional data provided by the server.</param>
-    /// <param name="contextData">Additional data provided by the transport.</param>
-    /// <param name="query">The document that was sent.</param>
     internal LinQLResult(
         TData data,
         IReadOnlyList<IClientError> errors,

@@ -12,9 +12,6 @@ using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 /// <summary>
 /// A field argument that gets an extension method.
 /// </summary>
-/// <param name="Field">The field the argument belongs to.</param>
-/// <param name="Argument">The argument itself.</param>
-/// <param name="IsFilter">Whether the argument carries a filter, which the translator builds from a lambda.</param>
 internal sealed record FieldExtension(FieldDefinitionNode Field, InputValueDefinitionNode Argument, bool IsFilter);
 
 /// <summary>
@@ -43,9 +40,6 @@ internal class FieldExtensionsClass : IClassFactory
                 .GroupBy(x => $"{x.Receiver}|{x.Method}|{x.Parameter}", StringComparer.Ordinal)
                 .Select(g => CreateMember(g.First().Extension, g.First().Method, g.First().Receiver, model))]);
 
-    /// <summary>
-    /// Gets the method names an argument is attached by.
-    /// </summary>
     /// <remarks>
     /// The schema's own name always comes first. <c>order</c> also gets <c>Sort</c>, because ordering is
     /// the one argument every call site reads as a verb (`q.Products.Sort(...)`), while the rest keep the

@@ -181,9 +181,6 @@ internal sealed class SchemaModel
 /// <summary>
 /// A type a document declares and the fields it declares.
 /// </summary>
-/// <param name="Name">The type's name.</param>
-/// <param name="Kind">What the document declares the type as.</param>
-/// <param name="Fields">The fields it declares, in document order.</param>
 internal sealed record DeclaredType(string Name, DeclaredTypeKind Kind, IReadOnlyList<FieldDefinitionNode> Fields)
 {
     /// <summary>
@@ -199,18 +196,11 @@ internal sealed record DeclaredType(string Name, DeclaredTypeKind Kind, IReadOnl
 /// <summary>
 /// A <c>@key</c> pattern the document declares.
 /// </summary>
-/// <param name="TypeName">
-/// The type the pattern extends, or <see langword="null"/> for the global pattern.
-/// </param>
-/// <param name="Fields">The fields the pattern names, in source order.</param>
-/// <param name="Location">Where the directive was written, for a diagnostic.</param>
 internal sealed record EntityKeyPattern(string? TypeName, IReadOnlyList<string> Fields, Location? Location);
 
 /// <summary>
 /// The field an entity type is identified by.
 /// </summary>
-/// <param name="TypeName">The type's name.</param>
-/// <param name="FieldName">The leaf field the type's id is read from.</param>
 internal sealed record EntityKey(string TypeName, string FieldName);
 
 /// <summary>

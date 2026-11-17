@@ -7,14 +7,9 @@ using global::StrawberryShake.Json;
 /// <summary>
 /// Builds a <see cref="LinQLResult{TData}"/> from a Strawberry Shake response document.
 /// </summary>
-/// <typeparam name="TRoot">The root operation type.</typeparam>
-/// <typeparam name="TData">The projected result type.</typeparam>
 /// <remarks>
 /// Initializes a new instance of the <see cref="LinQLResultBuilder{TRoot, TData}"/> class.
 /// </remarks>
-/// <param name="projection">The compiled projection applied to the deserialised root data.</param>
-/// <param name="serializer">The serializer options used to read the response.</param>
-/// <param name="query">The document that was sent.</param>
 internal sealed class LinQLResultBuilder<TRoot, TData>(Func<TRoot, TData> projection, JsonSerializerOptions serializer, string query) : IOperationResultBuilder<JsonDocument, LinQLResult<TData>>
     where TRoot : RootType<TRoot>
 {

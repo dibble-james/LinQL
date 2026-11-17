@@ -13,9 +13,6 @@ using Microsoft.CodeAnalysis.CSharp;
 /// </remarks>
 internal static class SchemaNames
 {
-    /// <summary>
-    /// The suffix that marks a filter input type.
-    /// </summary>
     /// <remarks>
     /// Hot Chocolate names the input type of a <c>where</c> argument this way, and the generator keys
     /// its filter builders, extensions and diagnostics on it.

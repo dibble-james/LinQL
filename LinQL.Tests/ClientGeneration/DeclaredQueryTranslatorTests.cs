@@ -506,13 +506,6 @@ public class DeclaredQueryTranslatorTests
         translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'missing'");
     }
 
-    /// <summary>
-    /// Translates a body written in a class, so a const or an enum can be declared beside it.
-    /// </summary>
-    /// <param name="body">The lambda's body.</param>
-    /// <param name="values">The declaration's lambda parameters after the root.</param>
-    /// <param name="declarations">Members the body may refer to.</param>
-    /// <returns>What the translation produced.</returns>
     private static Translation Translate(
         string body,
         string[]? values = null,
@@ -552,7 +545,5 @@ public class DeclaredQueryTranslatorTests
     /// <summary>
     /// What a translation produced, reduced to what these tests compare.
     /// </summary>
-    /// <param name="Document">The document's text, or <see langword="null"/> when there is none.</param>
-    /// <param name="Problems">What stopped the translation.</param>
     private sealed record Translation(string? Document, IReadOnlyList<Diagnostic> Problems);
 }

@@ -50,9 +50,6 @@ internal class ComplexTypeClass : IClassFactory
         }
     }
 
-    /// <summary>
-    /// Creates an empty <c>record</c> declaration for this type.
-    /// </summary>
     /// <remarks>
     /// The brace tokens are supplied explicitly: the short factory overloads produce a declaration with
     /// missing tokens, which renders without a body once members are added.
@@ -124,22 +121,9 @@ internal class ComplexTypeClass : IClassFactory
             this.CreateCommandMethod(f, model),
         ];
 
-    /// <summary>
-    /// Creates the property that holds the value an <c>Execute*</c> method returns.
-    /// </summary>
-    /// <param name="field">The field.</param>
-    /// <param name="model">The schema.</param>
-    /// <returns>The property declaration.</returns>
     private PropertyDeclarationSyntax CreateCommandProperty(FieldDefinitionNode field, SchemaModel model)
         => this.CreateProperty(field, model, initialise: this.ImplementsCommands);
 
-    /// <summary>
-    /// Creates the property that holds a field's value.
-    /// </summary>
-    /// <param name="field">The field.</param>
-    /// <param name="model">The schema.</param>
-    /// <param name="initialise">Whether the property starts as <see langword="null"/>.</param>
-    /// <returns>The property declaration.</returns>
     private PropertyDeclarationSyntax CreateProperty(FieldDefinitionNode field, SchemaModel model, bool initialise)
     {
         var property = PropertyDeclaration(ParseTypeName(model.TypeName(field.Type)), Identifier(SchemaNames.FieldName(field.Name.Value)))
@@ -152,12 +136,6 @@ internal class ComplexTypeClass : IClassFactory
             : property;
     }
 
-    /// <summary>
-    /// Creates the <c>Execute*</c> method that calls a field with arguments.
-    /// </summary>
-    /// <param name="field">The field.</param>
-    /// <param name="model">The schema.</param>
-    /// <returns>The method declaration.</returns>
     private MethodDeclarationSyntax CreateCommandMethod(FieldDefinitionNode field, SchemaModel model)
     {
         var method = MethodDeclaration(ParseTypeName(model.TypeName(field.Type)), Identifier(SchemaNames.ExecuteName(field.Name.Value)))

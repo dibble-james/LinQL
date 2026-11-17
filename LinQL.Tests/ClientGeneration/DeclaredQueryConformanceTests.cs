@@ -269,16 +269,6 @@ public class DeclaredQueryConformanceTests
             "q.Renamed.Select(c => new { c.Name })",
             rootType: "Subscription");
 
-    /// <summary>
-    /// Asserts that both translators produce the same document and the same variables.
-    /// </summary>
-    /// <typeparam name="TRoot">The root operation type the runtime expression is written against.</typeparam>
-    /// <typeparam name="TData">The runtime expression's result type.</typeparam>
-    /// <param name="runtime">The query as a runtime expression.</param>
-    /// <param name="declared">The same query written as a declared query's lambda body.</param>
-    /// <param name="rootType">The root the declaration is written against.</param>
-    /// <param name="parameters">The declaration's parameters after the root.</param>
-    /// <param name="values">The value each parameter is given, in the same order.</param>
     private static void AssertConforms<TRoot, TData>(
         Expression<Func<TRoot, TData>> runtime,
         string declared,
@@ -312,13 +302,6 @@ public class DeclaredQueryConformanceTests
         bound.Should().BeEquivalentTo(translated);
     }
 
-    /// <summary>
-    /// Reads a declared query's lambda the way the generator does.
-    /// </summary>
-    /// <param name="body">The lambda's body.</param>
-    /// <param name="parameters">The declaration's parameters after the root.</param>
-    /// <param name="rootType">The root type name the declaration uses.</param>
-    /// <returns>What the translation produced.</returns>
     private static DeclaredQueryTranslation Translate(string body, string[]? parameters, string rootType)
     {
         var lambda = parameters is null || parameters.Length == 0
@@ -346,12 +329,6 @@ public class DeclaredQueryConformanceTests
             DeclaredValues.ReadAll(bodyNode, semantics));
     }
 
-    /// <summary>
-    /// Computes the value a generated binder would produce for one variable.
-    /// </summary>
-    /// <param name="value">The value the translation recorded.</param>
-    /// <param name="inputs">Each parameter's value, by the name the declaration uses.</param>
-    /// <returns>The value.</returns>
     private static object? Evaluate(DeclaredQueryBoundValue value, IReadOnlyDictionary<string, object?> inputs) => value switch
     {
         DeclaredQueryParameterValue parameter => inputs[parameter.Parameter],
@@ -361,13 +338,6 @@ public class DeclaredQueryConformanceTests
         _ => null,
     };
 
-    /// <summary>
-    /// Rebuilds a filter the way the emitted binder does: a combinator folds what came before it, and every other
-    /// field is set under the name the schema gives it.
-    /// </summary>
-    /// <param name="filter">The filter.</param>
-    /// <param name="inputs">Each parameter's value, by the name the declaration uses.</param>
-    /// <returns>The filter value.</returns>
     private static FilterValue EvaluateFilter(DeclaredQueryFilterValue filter, IReadOnlyDictionary<string, object?> inputs)
     {
         var value = FilterValue.Create();

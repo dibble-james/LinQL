@@ -159,7 +159,6 @@ public class ClientGenerator : IIncrementalGenerator
     /// <summary>
     /// Reads the root type names an SDL declares.
     /// </summary>
-    /// <param name="sdl">The SDL.</param>
     /// <returns>The names, joined with <c>;</c> so that the same schema compares equal between runs.</returns>
     private static string ReadRootTypes(string sdl)
     {
@@ -172,12 +171,6 @@ public class ClientGenerator : IIncrementalGenerator
             : string.Join(";", schema.OperationTypes.Select(x => x.Type.Name.Value));
     }
 
-    /// <summary>
-    /// Reports the declared queries that this project's schemas cannot satisfy.
-    /// </summary>
-    /// <param name="output">The source output.</param>
-    /// <param name="schemas">Every schema's client namespace and root type names.</param>
-    /// <param name="queries">The declarations found.</param>
     private static void ReportDeclaredQueries(
         SourceProductionContext output,
         ImmutableArray<(string? Namespace, string Roots, string Sdl, string? TypesAs)> schemas,
@@ -259,12 +252,6 @@ public class ClientGenerator : IIncrementalGenerator
         }
     }
 
-    /// <summary>
-    /// Emits the document a declared query compiles to and the binder a call site uses to send it.
-    /// </summary>
-    /// <param name="output">The source output.</param>
-    /// <param name="query">The declaration.</param>
-    /// <param name="translation">Its document and the variables its parameters fill.</param>
     /// <remarks>
     /// The document does not depend on a call, so it is a constant; the binder takes the lambda's own parameters
     /// and binds them to the names the document gave the variables, returning the <c>LinQLQuery</c> an adapter
@@ -305,13 +292,6 @@ public class ClientGenerator : IIncrementalGenerator
             SourceText.From(emitted.NormalizeWhitespace().ToFullString(), Encoding.UTF8));
     }
 
-    /// <summary>
-    /// Writes the call that joins a document to its operation, its projection and its values.
-    /// </summary>
-    /// <param name="query">The declaration.</param>
-    /// <param name="queryType">The type the binder returns.</param>
-    /// <param name="translation">Its operation and the variables its parameters fill.</param>
-    /// <returns>The call, with one tuple per variable.</returns>
     private static string BinderCall(DeclaredQuery query, string queryType, DeclaredQueryTranslation translation)
     {
         List<string> arguments =
@@ -329,15 +309,11 @@ public class ClientGenerator : IIncrementalGenerator
         return $"{queryType}.Bind({string.Join(", ", arguments)})";
     }
 
-    /// <summary>
-    /// Writes the expression that produces a variable's value at call time.
-    /// </summary>
-    /// <param name="value">The value the translation recorded.</param>
-    /// <returns>The expression, fully qualified so the generated file needs no usings.</returns>
     /// <remarks>
     /// A filter is one variable holding the whole filter, so its value is built here rather than read from a
     /// parameter. Emitting that construction is what makes a filter's values follow the declaration's parameters
-    /// without the document depending on them.
+    /// without the document depending on them. The expression is fully qualified, so the generated file needs no
+    /// usings.
     /// </remarks>
     private static string BoundValue(DeclaredQueryBoundValue value) => value switch
     {
@@ -348,11 +324,6 @@ public class ClientGenerator : IIncrementalGenerator
         _ => "(object?)null",
     };
 
-    /// <summary>
-    /// Writes the calls that rebuild a filter through <c>FilterValue</c>.
-    /// </summary>
-    /// <param name="filter">The filter.</param>
-    /// <returns>The expression.</returns>
     /// <remarks>
     /// The calls mirror the runtime translator: a combinator folds what was built so far into its first branch,
     /// and every other field is set under the name the schema gives it.
@@ -376,7 +347,6 @@ public class ClientGenerator : IIncrementalGenerator
     /// <summary>
     /// Writes a constant as a C# literal of the same type.
     /// </summary>
-    /// <param name="constant">The constant.</param>
     /// <returns>The literal, in the invariant culture.</returns>
     private static string ConstantLiteral(object? constant) => constant switch
     {
@@ -397,7 +367,6 @@ public class ClientGenerator : IIncrementalGenerator
     /// <summary>
     /// Names the declared field a call's projection comes from.
     /// </summary>
-    /// <param name="query">The declaration.</param>
     /// <returns>The field, fully qualified so the generated file needs no usings.</returns>
     private static string Projection(DeclaredQuery query)
         => query.Namespace is null
@@ -407,10 +376,6 @@ public class ClientGenerator : IIncrementalGenerator
     /// <summary>
     /// Builds the schema model an SDL describes, without emitting a client from it.
     /// </summary>
-    /// <param name="sdl">The SDL.</param>
-    /// <param name="graphNamespace">The client namespace the schema declares.</param>
-    /// <param name="typesAs">The kind of declaration the schema generates.</param>
-    /// <returns>The model.</returns>
     /// <remarks>
     /// The walk is turned away from reporting: the client's own walk already reports the filter diagnostics,
     /// and repeating them once per declared query would multiply them.
@@ -431,8 +396,6 @@ public class ClientGenerator : IIncrementalGenerator
     /// <summary>
     /// Reads the <c>LinQLTypesAs</c> property.
     /// </summary>
-    /// <param name="value">The raw property value, or <see langword="null"/> when it was not set.</param>
-    /// <param name="typesAs">The kind of declaration to generate.</param>
     /// <returns><see langword="true"/> when the value was understood, so an unrecognised one can be reported.</returns>
     private static bool TryParseTypesAs(string? value, out LinQLTypesAs typesAs)
     {

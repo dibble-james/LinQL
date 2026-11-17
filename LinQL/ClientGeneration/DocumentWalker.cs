@@ -298,12 +298,6 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
     }
 
-    /// <summary>
-    /// Records the <c>@key</c> patterns a node's directives carry.
-    /// </summary>
-    /// <param name="directives">The directives written on the node.</param>
-    /// <param name="typeName">The type the node extends, or <see langword="null"/> for the schema.</param>
-    /// <param name="context">The walk.</param>
     /// <remarks>
     /// The pattern is recorded as written. Whether it names a usable field is decided once the whole document
     /// has been read, because the type it extends may be declared after its extension.
@@ -326,10 +320,6 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
     }
 
-    /// <summary>
-    /// Turns the patterns the document declared into the key each entity type is identified by.
-    /// </summary>
-    /// <param name="context">The walk.</param>
     /// <remarks>
     /// A global pattern applies wherever its field exists, which is how Strawberry Shake applies one: a type
     /// that does not declare the field is simply not an entity, and that is not a diagnostic. A per-type
@@ -411,14 +401,6 @@ internal class DocumentWalker : SyntaxWalker<DocumentWalkerContext>
         }
     }
 
-    /// <summary>
-    /// Reports a diagnostic at the pattern that produced it.
-    /// </summary>
-    /// <param name="context">The walk.</param>
-    /// <param name="descriptor">The diagnostic.</param>
-    /// <param name="target">The type the pattern extends, or the schema.</param>
-    /// <param name="fields">The fields the pattern names.</param>
-    /// <param name="location">Where the directive was written.</param>
     private static void ReportEntityKey(
         DocumentWalkerContext context,
         DiagnosticDescriptor descriptor,

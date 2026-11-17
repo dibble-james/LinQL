@@ -9,7 +9,6 @@ using global::StrawberryShake;
 /// LinQL results are created from a response document and the compiled projection; they are not built from an
 /// entity store, so there is nothing to reconstruct from an <see cref="IOperationResultDataInfo"/>.
 /// </remarks>
-/// <typeparam name="TData">The projected result type.</typeparam>
 internal sealed class LinQLResultDataFactory<TData> : IOperationResultDataFactory<LinQLResult<TData>>
 {
     /// <summary>

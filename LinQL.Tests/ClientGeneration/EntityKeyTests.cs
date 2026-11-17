@@ -116,11 +116,6 @@ public class EntityKeyTests
     public void ASchemaWithoutKeysHasNoEntities()
         => Assert.Empty(Model(string.Empty).EntityKeys);
 
-    /// <summary>
-    /// Builds the schema model for an SDL and its extension companion.
-    /// </summary>
-    /// <param name="extensions">The <c>@key</c> annotations, if any.</param>
-    /// <returns>The model the walk produced.</returns>
     private static SchemaModel Model(string extensions)
     {
         // The model is what these tests read, so the walk builds it without reporting: a diagnostic needs a

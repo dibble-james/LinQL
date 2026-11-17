@@ -94,7 +94,6 @@ public sealed class LinQLQuery<TRoot, TData>(
     /// <summary>
     /// Reduces a declared query's expression to the projection a response is read through.
     /// </summary>
-    /// <param name="declaration">The declaration's expression.</param>
     /// <returns>The projection, which takes only the root.</returns>
     /// <remarks>
     /// A declaration's parameters are document values, not projection inputs, so replacing them with their defaults

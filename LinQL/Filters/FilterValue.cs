@@ -141,8 +141,6 @@ public sealed class FilterValue
     /// Converts a value to the shape GraphQL variables take: camelCased field names, enums by name,
     /// and nulls dropped.
     /// </summary>
-    /// <param name="value">The value to convert.</param>
-    /// <returns>The value as GraphQL variables expect it.</returns>
     internal static object? Normalize(object? value) => Normalize(value, strict: false);
 
     private static object? Normalize(object? value, bool strict) => value switch
@@ -234,8 +232,6 @@ public sealed class FilterValue
     /// Gets whether a type declares its own <see cref="JsonConverter"/>, so its shape is System.Text.Json's
     /// to decide rather than something reflection can reproduce.
     /// </summary>
-    /// <param name="type">The type to inspect.</param>
-    /// <returns>Whether the type declares a converter.</returns>
     private static bool HasConverter(Type type)
         => ConverterCache.GetOrAdd(type, static t => t.GetCustomAttribute<JsonConverterAttribute>(inherit: false) is not null);
 
@@ -244,7 +240,6 @@ public sealed class FilterValue
     /// what reaches the wire — including shapes reflection could not infer, such as a scalar spelled out
     /// from an object.
     /// </summary>
-    /// <param name="value">The value to serialise.</param>
     /// <returns>The serialised value as a <see cref="JsonElement"/>.</returns>
     private static JsonElement Serialize(object value) => JsonSerializer.SerializeToElement(value, value.GetType());
 
@@ -252,10 +247,6 @@ public sealed class FilterValue
     /// Gets whether a property is left out of the payload, either always or because its value counts as
     /// unset for the condition it declares.
     /// </summary>
-    /// <param name="condition">The declared <see cref="JsonIgnoreAttribute.Condition"/>.</param>
-    /// <param name="type">The property type.</param>
-    /// <param name="value">The property value.</param>
-    /// <returns>Whether the property is left out.</returns>
     private static bool IsIgnored(JsonIgnoreCondition? condition, Type type, object? value) => condition switch
     {
         JsonIgnoreCondition.Always or JsonIgnoreCondition.WhenWriting => true,
@@ -270,9 +261,6 @@ public sealed class FilterValue
     /// <summary>
     /// Gets the entries of a dictionary, so one is never mistaken for a sequence.
     /// </summary>
-    /// <param name="value">The value to read.</param>
-    /// <param name="entries">The entries, keyed by the name each one goes out under.</param>
-    /// <returns>Whether the value is a dictionary.</returns>
     /// <remarks>
     /// A dictionary is usually typed more tightly than <c>Dictionary&lt;string, object?&gt;</c>
     /// (<c>Dictionary&lt;string, string&gt;</c> is the common case), and the non-generic implementations
@@ -303,9 +291,6 @@ public sealed class FilterValue
         }
     }
 
-    /// <summary>
-    /// Reads the entries of a dictionary through <see cref="IDictionary.GetEnumerator"/>.
-    /// </summary>
     /// <remarks>
     /// Casting the dictionary to <c>IEnumerable&lt;DictionaryEntry&gt;</c> does not work: a generic
     /// dictionary enumerates as <c>KeyValuePair&lt;,&gt;</c> through <see cref="IEnumerable"/>, even when

@@ -139,7 +139,6 @@ internal sealed class DeclaredQueryTranslator
     /// <summary>
     /// Reads the lambda's parameters, which are the query's receiver and then its values.
     /// </summary>
-    /// <param name="lambda">The declaration's lambda.</param>
     /// <returns>
     /// The root parameter's name and the names of the parameters that become variables, in declaration
     /// order, or <see langword="null"/> when the lambda does not have the shape a query has.
@@ -214,20 +213,11 @@ internal sealed class DeclaredQueryTranslator
         }
     }
 
-    /// <summary>
-    /// Adds a field that carries an explicit selection.
-    /// </summary>
-    /// <param name="receiver">The expression the <c>Select</c> or <c>SelectAll</c> is called on.</param>
-    /// <param name="typeName">The type the selection is made on.</param>
-    /// <param name="parameter">The lambda parameter that type is bound to.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <param name="lambda">The projection, or <see langword="null"/> for <c>SelectAll</c>.</param>
     /// <remarks>
     /// A projection that is one of the declaration's values is reported as
     /// <see cref="DeclaredQueryDiagnostics.ProjectionReadsValue"/> rather than as a malformed projection, because
     /// the value is what is wrong with it: the document does not depend on the values, so the projection cannot.
     /// </remarks>
-    /// <param name="selections">The selection set being built.</param>
     private void AddSelectedField(
         ExpressionSyntax receiver,
         string typeName,
@@ -268,14 +258,6 @@ internal sealed class DeclaredQueryTranslator
         selections.Add(Field(field, new SelectionSetNode(children)));
     }
 
-    /// <summary>
-    /// Adds the fields an include lambda selects to the selection it is called on.
-    /// </summary>
-    /// <param name="invocation">The <c>Includes</c> call.</param>
-    /// <param name="typeName">The type the enclosing selection is made on.</param>
-    /// <param name="parameter">The lambda parameter that type is bound to.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <param name="selections">The selection set being built.</param>
     /// <remarks>
     /// An include attaches to the selection it is called on, as the runtime translator attaches it: on a field it
     /// grows that field's selection, and on the enclosing lambda's own parameter it grows the selection that
@@ -326,13 +308,6 @@ internal sealed class DeclaredQueryTranslator
         selections.Add(Field(field, new SelectionSetNode(children)));
     }
 
-    /// <summary>
-    /// Adds one included selection to a selection set.
-    /// </summary>
-    /// <param name="selection">The include's argument, or <see langword="null"/> for <c>SelectAll</c>.</param>
-    /// <param name="typeName">The type the selection is made on.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <param name="selections">The selection set being built.</param>
     private void AddIncludedSelection(ExpressionSyntax? selection, string typeName, IReadOnlyList<string> values, List<ISelectionNode> selections)
     {
         if (selection is null)
@@ -362,7 +337,6 @@ internal sealed class DeclaredQueryTranslator
     /// <summary>
     /// Reads the selections a field expression already carries, so an include can grow them.
     /// </summary>
-    /// <param name="expression">The expression the include is called on.</param>
     /// <returns>
     /// The field expression the selections belong to, and each selection's argument in source order, with
     /// <see langword="null"/> for <c>SelectAll</c>.
@@ -387,15 +361,6 @@ internal sealed class DeclaredQueryTranslator
         return (expression, selections);
     }
 
-    /// <summary>
-    /// Adds the fragment a cast writes to the selection it is applied to.
-    /// </summary>
-    /// <param name="expression">The whole selection expression, which carries the cast.</param>
-    /// <param name="cast">The cast, the field it is applied to, and the type it casts to.</param>
-    /// <param name="typeName">The type the enclosing selection is made on.</param>
-    /// <param name="parameter">The lambda parameter that type is bound to.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <param name="selections">The selection set being built.</param>
     /// <remarks>
     /// A cast is a spread: <c>((Film)q.Result).Title</c> writes <c>result</c>'s selection as a fragment on <c>Film</c>
     /// holding <c>title</c>, and a cast applied to a lambda's own parameter writes the fragment into the selection
@@ -440,14 +405,6 @@ internal sealed class DeclaredQueryTranslator
         selections.Add(Field(field, new SelectionSetNode(children)));
     }
 
-    /// <summary>
-    /// Adds the selections a fragment carries.
-    /// </summary>
-    /// <param name="inner">The selections, or <see langword="null"/> when the fragment selects the type's scalars.</param>
-    /// <param name="typeName">The type the fragment is on.</param>
-    /// <param name="parameter">The lambda parameter that type is bound to.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <param name="selections">The fragment's selection set being built.</param>
     private void AddFragmentSelections(ExpressionSyntax? inner, string typeName, string parameter, IReadOnlyList<string> values, List<ISelectionNode> selections)
     {
         if (inner is null)
@@ -460,15 +417,6 @@ internal sealed class DeclaredQueryTranslator
         this.AddSelections(inner, typeName, parameter, values, selections);
     }
 
-    /// <summary>
-    /// Adds the fragment an <c>OfType</c> writes to the field it filters.
-    /// </summary>
-    /// <param name="expression">The whole selection expression, which carries the call.</param>
-    /// <param name="ofType">The <c>OfType</c> call.</param>
-    /// <param name="typeName">The type the enclosing selection is made on.</param>
-    /// <param name="parameter">The lambda parameter that type is bound to.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <param name="selections">The selection set being built.</param>
     /// <remarks>
     /// <c>OfType</c> filters a collection to one of its possible types, so the fragment belongs to the field's
     /// selection and whatever is chained after the call selects from the filtered type. With nothing chained the
@@ -518,13 +466,6 @@ internal sealed class DeclaredQueryTranslator
         selections.Add(Field(field, new SelectionSetNode(children)));
     }
 
-    /// <summary>
-    /// Writes an inline fragment of the given type.
-    /// </summary>
-    /// <param name="typeName">The type the fragment is on, or <see langword="null"/> when the syntax does not name one.</param>
-    /// <param name="location">Where to report a type the document cannot name.</param>
-    /// <param name="children">Adds the fragment's selections, given the fragment's type.</param>
-    /// <returns>The fragment, or <see langword="null"/> when the document cannot write it.</returns>
     private ISelectionNode? InlineFragment(string? typeName, SyntaxNode location, Action<string, List<ISelectionNode>> children)
     {
         if (typeName is null)
@@ -552,14 +493,6 @@ internal sealed class DeclaredQueryTranslator
             selectionSet: new SelectionSetNode(selections));
     }
 
-    /// <summary>
-    /// Adds the fragments a spread writes to the selection it is called on.
-    /// </summary>
-    /// <param name="invocation">The outermost <c>On</c> call.</param>
-    /// <param name="typeName">The type the enclosing selection is made on.</param>
-    /// <param name="parameter">The lambda parameter that type is bound to.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <param name="selections">The selection set being built.</param>
     /// <remarks>
     /// Like an include, a spread attaches to the selection it is called on: on a field it writes the fragments into
     /// that field's selection, and on the enclosing lambda's own parameter into the selection the lambda is already
@@ -606,12 +539,6 @@ internal sealed class DeclaredQueryTranslator
         selections.Add(Field(field, new SelectionSetNode(children)));
     }
 
-    /// <summary>
-    /// Writes one spread as an inline fragment.
-    /// </summary>
-    /// <param name="spread">The spread's lambda.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <returns>The fragment, or <see langword="null"/> when the spread cannot be written.</returns>
     /// <remarks>
     /// The fragment's type is read from the lambda's parameter, because a generator has no semantic model to ask
     /// what the extension's constraint resolved to. The type has to be one the schema declares, since the document
@@ -642,7 +569,6 @@ internal sealed class DeclaredQueryTranslator
     /// <summary>
     /// Reads a chain of spreads from the outside in.
     /// </summary>
-    /// <param name="invocation">The outermost <c>On</c> call.</param>
     /// <returns>
     /// The expression the chain is called on, and each spread's argument in source order.
     /// </returns>
@@ -667,11 +593,6 @@ internal sealed class DeclaredQueryTranslator
         return (target, spreads);
     }
 
-    /// <summary>
-    /// Reads the type a spread's lambda is written for.
-    /// </summary>
-    /// <param name="lambda">The spread.</param>
-    /// <returns>The type's name, or <see langword="null"/> when the parameter does not name one.</returns>
     private static string? SpreadTypeName(LambdaExpressionSyntax lambda) => lambda switch
     {
         SimpleLambdaExpressionSyntax simple => TypeName(simple.Parameter.Type),
@@ -680,11 +601,6 @@ internal sealed class DeclaredQueryTranslator
         _ => null,
     };
 
-    /// <summary>
-    /// Reads the name a type syntax declares.
-    /// </summary>
-    /// <param name="type">The type syntax.</param>
-    /// <returns>The name, or <see langword="null"/> when it is not one the schema could declare.</returns>
     private static string? TypeName(TypeSyntax? type) => type switch
     {
         IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
@@ -697,11 +613,6 @@ internal sealed class DeclaredQueryTranslator
     /// <summary>
     /// Adds a field that has no selection of its own.
     /// </summary>
-    /// <param name="expression">The member access or call selecting the field.</param>
-    /// <param name="typeName">The type the selection is made on.</param>
-    /// <param name="parameter">The lambda parameter that type is bound to.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <param name="selections">The selection set being built.</param>
     private void AddLeafOrImplicitField(ExpressionSyntax expression, string typeName, string parameter, IReadOnlyList<string> values, List<ISelectionNode> selections)
     {
         if (this.FieldOf(expression, typeName, parameter, values) is not { } field)
@@ -730,14 +641,6 @@ internal sealed class DeclaredQueryTranslator
             .Where(x => this.model.KnownScalars.ContainsKey(x.Type.NamedType().Name.Value))
             .Select(x => new ResolvedField(x, []));
 
-    /// <summary>
-    /// Resolves the expression selecting a field to the field and the arguments it attaches.
-    /// </summary>
-    /// <param name="expression">The member access or call.</param>
-    /// <param name="typeName">The type the field is selected from.</param>
-    /// <param name="parameter">The lambda parameter bound to that type.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <returns>The field, or <see langword="null"/> when the expression cannot be one.</returns>
     private ResolvedField? FieldOf(ExpressionSyntax expression, string typeName, string parameter, IReadOnlyList<string> values)
     {
         switch (expression)
@@ -790,12 +693,6 @@ internal sealed class DeclaredQueryTranslator
         }
     }
 
-    /// <summary>
-    /// Resolves a C# member to the field the schema declares for it.
-    /// </summary>
-    /// <param name="name">The member's name.</param>
-    /// <param name="typeName">The type the field is selected from.</param>
-    /// <returns>The field, or <see langword="null"/> when the type declares none by that name.</returns>
     private FieldDefinitionNode? FieldNamed(SimpleNameSyntax name, string typeName)
     {
         var memberName = name.Identifier.ValueText;
@@ -812,13 +709,6 @@ internal sealed class DeclaredQueryTranslator
         return field;
     }
 
-    /// <summary>
-    /// Attaches a field's arguments, each one a variable or a value the compiler saw.
-    /// </summary>
-    /// <param name="field">The field being called.</param>
-    /// <param name="arguments">The arguments the call passes.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <returns>The field with its arguments, or <see langword="null"/> when one cannot be written.</returns>
     private ResolvedField? FieldWithArguments(FieldDefinitionNode field, ArgumentListSyntax arguments, IReadOnlyList<string> values)
     {
         var attached = new List<ArgumentNode>();
@@ -849,16 +739,6 @@ internal sealed class DeclaredQueryTranslator
         return new ResolvedField(field, attached);
     }
 
-    /// <summary>
-    /// Attaches the argument a call names to the field it is called on.
-    /// </summary>
-    /// <param name="receiver">The field the call extends.</param>
-    /// <param name="name">The method the call makes, which the schema names the argument after.</param>
-    /// <param name="arguments">The call's arguments.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <returns>
-    /// The field with the argument attached, or <see langword="null"/> when the call cannot be one.
-    /// </returns>
     /// <remarks>
     /// The extensions the generator emits are named after the arguments they attach, except that every filter is
     /// called <c>Filter</c>: a filter's argument is therefore found by its filter input type, and <c>Sort</c> is read
@@ -970,12 +850,6 @@ internal sealed class DeclaredQueryTranslator
             : null;
     }
 
-    /// <summary>
-    /// Reads a filter lambda as the value its variable carries.
-    /// </summary>
-    /// <param name="lambda">The filter's lambda.</param>
-    /// <param name="type">The type the schema declares the filter argument as.</param>
-    /// <returns>The value, or <see langword="null"/> when the lambda cannot be one.</returns>
     /// <remarks>
     /// A filter is one variable holding the whole filter, so the values inside it are not variables of their own:
     /// the binder rebuilds the dictionary from the declaration's parameters when the query is sent.
@@ -1006,13 +880,6 @@ internal sealed class DeclaredQueryTranslator
         return new DeclaredQueryFilterValue(fields);
     }
 
-    /// <summary>
-    /// Reads a chain of filter builder calls as the fields it sets.
-    /// </summary>
-    /// <param name="expression">The chain, whose outermost call is the last field it sets.</param>
-    /// <param name="filterType">The filter input type the chain builds.</param>
-    /// <param name="parameter">The lambda parameter the chain is called on.</param>
-    /// <returns>The fields, inner-most first, or <see langword="null"/> when one of them cannot be read.</returns>
     private List<DeclaredQueryFilterField>? FilterFields(ExpressionSyntax expression, string filterType, string parameter)
     {
         var chain = Unparenthesised(expression);
@@ -1070,13 +937,6 @@ internal sealed class DeclaredQueryTranslator
         return fields;
     }
 
-    /// <summary>
-    /// Reads the value a filter builder call passes.
-    /// </summary>
-    /// <param name="expression">The value the call passes.</param>
-    /// <param name="type">The type the schema declares the filter field as.</param>
-    /// <param name="member">The filter builder method, for a diagnostic.</param>
-    /// <returns>The value, or <see langword="null"/> when it cannot be rebuilt.</returns>
     private DeclaredQueryBoundValue? FilterFieldValue(ExpressionSyntax expression, ITypeNode type, string member)
     {
         var nestedType = type.NamedType().Name.Value;
@@ -1112,11 +972,6 @@ internal sealed class DeclaredQueryTranslator
         return new DeclaredQueryFilterValue(fields);
     }
 
-    /// <summary>
-    /// Reads a filter operation's value, which the binder rebuilds at call time.
-    /// </summary>
-    /// <param name="expression">The value the operation is given.</param>
-    /// <returns>The value, or <see langword="null"/> when it cannot be rebuilt.</returns>
     private DeclaredQueryBoundValue? FilterLeaf(ExpressionSyntax expression)
     {
         if (expression is IdentifierNameSyntax identifier && this.values.Contains(identifier.Identifier.ValueText))
@@ -1136,12 +991,6 @@ internal sealed class DeclaredQueryTranslator
         return this.BoundValue(value, expression);
     }
 
-    /// <summary>
-    /// Reads a value the compiler saw as one the binder can rebuild.
-    /// </summary>
-    /// <param name="value">The value.</param>
-    /// <param name="location">Where it was written, for a diagnostic.</param>
-    /// <returns>The value, or <see langword="null"/> when it cannot be rebuilt.</returns>
     /// <remarks>
     /// An enum member is bound by name, because that is the form it takes on the wire. An object initialiser is
     /// not rebuildable inside a filter: a filter operation takes a scalar or a list of scalars.
@@ -1179,13 +1028,6 @@ internal sealed class DeclaredQueryTranslator
         return null;
     }
 
-    /// <summary>
-    /// Reads an argument's value.
-    /// </summary>
-    /// <param name="expression">The expression the call passes.</param>
-    /// <param name="expected">The type the schema declares the argument as.</param>
-    /// <param name="values">The lambda parameters that become variables.</param>
-    /// <returns>The value, or <see langword="null"/> when it cannot be written.</returns>
     private IValueNode? ValueOf(ExpressionSyntax expression, ITypeNode expected, IReadOnlyList<string> values)
     {
         if (expression is IdentifierNameSyntax identifier && values.Contains(identifier.Identifier.ValueText))
@@ -1205,13 +1047,6 @@ internal sealed class DeclaredQueryTranslator
         return this.Structure(value, expected, expression);
     }
 
-    /// <summary>
-    /// Writes a value the compiler saw into the document.
-    /// </summary>
-    /// <param name="value">The value.</param>
-    /// <param name="expected">The type the schema declares the position as.</param>
-    /// <param name="location">Where the value was written, for a diagnostic.</param>
-    /// <returns>The document node, or <see langword="null"/> when the value cannot be written.</returns>
     private IValueNode? Structure(DeclaredValue value, ITypeNode expected, SyntaxNode location) => value switch
     {
         DeclaredConstant constant => ConstantNode(constant.Constant)
@@ -1224,9 +1059,6 @@ internal sealed class DeclaredQueryTranslator
         _ => this.Unsupported(location, "the value cannot be written into a document"),
     };
 
-    /// <summary>
-    /// Writes an object initialiser as an input object, naming each field the way the schema does.
-    /// </summary>
     private IValueNode? InputObject(DeclaredObject value, ITypeNode expected, SyntaxNode location)
     {
         var typeName = expected.NamedType().Name.Value;
@@ -1258,9 +1090,6 @@ internal sealed class DeclaredQueryTranslator
         return new ObjectValueNode(fields);
     }
 
-    /// <summary>
-    /// Writes a collection initialiser as a list, typing each item as the list's element.
-    /// </summary>
     private IValueNode? ListValue(DeclaredList value, ITypeNode expected, SyntaxNode location)
     {
         if (!expected.IsListType() && !(expected.IsNonNullType() && expected.InnerType().IsListType()))
@@ -1285,21 +1114,9 @@ internal sealed class DeclaredQueryTranslator
         return new ListValueNode(items);
     }
 
-    /// <summary>
-    /// Declares a variable for a parameter at the position it stands in, typed from that position.
-    /// </summary>
-    /// <param name="parameter">The parameter's name.</param>
-    /// <param name="type">The type the schema declares the position as.</param>
-    /// <returns>The reference to the variable.</returns>
     private VariableNode Variable(string parameter, ITypeNode type)
         => this.Declare(new DeclaredQueryParameterValue(parameter), type);
 
-    /// <summary>
-    /// Declares a variable whose value the binder computes, typed from the position it stands in.
-    /// </summary>
-    /// <param name="value">How the binder produces the value.</param>
-    /// <param name="type">The type the schema declares the position as.</param>
-    /// <returns>The reference to the variable.</returns>
     private VariableNode Declare(DeclaredQueryBoundValue value, ITypeNode type)
     {
         var name = "var" + (this.variables.Count + 1);
@@ -1318,11 +1135,6 @@ internal sealed class DeclaredQueryTranslator
         return new VariableNode(name);
     }
 
-    /// <summary>
-    /// Writes a constant as the document value of its shape.
-    /// </summary>
-    /// <param name="constant">The constant.</param>
-    /// <returns>The node, or <see langword="null"/> when the constant has no document form.</returns>
     private static IValueNode? ConstantNode(object? constant) => constant switch
     {
         null => new NullValueNode(location: null),
@@ -1343,13 +1155,6 @@ internal sealed class DeclaredQueryTranslator
         _ => null,
     };
 
-    /// <summary>
-    /// Resolves the SDL argument a call's argument fills.
-    /// </summary>
-    /// <param name="field">The field being called.</param>
-    /// <param name="argument">The call's argument.</param>
-    /// <param name="position">Its position in the call.</param>
-    /// <returns>The argument the schema declares, or <see langword="null"/> when there is none.</returns>
     /// <remarks>
     /// A positional argument fills the schema's argument in the same position, because the generated
     /// <c>Execute*</c> method declares its parameters in schema order and under the schema's own names.
@@ -1359,31 +1164,14 @@ internal sealed class DeclaredQueryTranslator
             ? field.Arguments.FirstOrDefault(x => x.Name.Value == named.Name.Identifier.ValueText)
             : position < field.Arguments.Count ? field.Arguments[position] : null;
 
-    /// <summary>
-    /// Gets the variables the document declares and how the binder computes each one.
-    /// </summary>
-    /// <returns>The bindings in the document's variable order.</returns>
     private IReadOnlyList<DeclaredQueryBinding> Bindings() => [.. this.bindings];
 
     private static bool IsOnParameter(ExpressionSyntax expression, string parameter)
         => Unparenthesised(expression) is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == parameter;
 
-    /// <summary>
-    /// Removes the parentheses around an expression.
-    /// </summary>
-    /// <param name="expression">The expression.</param>
-    /// <returns>The expression inside them, which is the same one when there are none.</returns>
     private static ExpressionSyntax Unparenthesised(ExpressionSyntax expression)
         => expression is ParenthesizedExpressionSyntax parenthesized ? Unparenthesised(parenthesized.Expression) : expression;
 
-    /// <summary>
-    /// Finds the cast a selection is applied through.
-    /// </summary>
-    /// <param name="expression">The selection expression.</param>
-    /// <returns>
-    /// The cast node, the expression it is applied to and the type it casts to, or <see langword="null"/> when the
-    /// selection has no cast in it.
-    /// </returns>
     /// <remarks>
     /// Outermost first, because that is the cast whose fragment wraps the whole selection, and never inside a lambda:
     /// a cast in a projection belongs to that projection's own selection.
@@ -1413,11 +1201,6 @@ internal sealed class DeclaredQueryTranslator
         return null;
     }
 
-    /// <summary>
-    /// Finds the <c>OfType</c> call a selection is applied through.
-    /// </summary>
-    /// <param name="expression">The selection expression.</param>
-    /// <returns>The call, or <see langword="null"/> when the selection has none.</returns>
     private static InvocationExpressionSyntax? OfTypeOf(ExpressionSyntax expression)
     {
         foreach (var node in expression.DescendantNodesAndSelf())
@@ -1433,12 +1216,6 @@ internal sealed class DeclaredQueryTranslator
         return null;
     }
 
-    /// <summary>
-    /// Gets whether a node is what a member is selected from.
-    /// </summary>
-    /// <param name="node">The node.</param>
-    /// <param name="expression">The selection expression it belongs to.</param>
-    /// <returns><see langword="true"/> when the node is the receiver of a member access outside any lambda.</returns>
     private static bool IsReceiver(SyntaxNode node, SyntaxNode expression)
     {
         var current = node;
@@ -1453,12 +1230,6 @@ internal sealed class DeclaredQueryTranslator
             && !WithinLambda(current, expression);
     }
 
-    /// <summary>
-    /// Gets whether a node is inside a lambda in the expression being read.
-    /// </summary>
-    /// <param name="node">The node.</param>
-    /// <param name="expression">The expression the node belongs to.</param>
-    /// <returns><see langword="true"/> when a lambda stands between the node and the expression.</returns>
     private static bool WithinLambda(SyntaxNode node, SyntaxNode expression)
     {
         if (node == expression)
@@ -1481,7 +1252,6 @@ internal sealed class DeclaredQueryTranslator
     /// Finds the identifier an expression is built on, so a value used through a member or a call is still
     /// recognisable as that value.
     /// </summary>
-    /// <param name="expression">The expression.</param>
     /// <returns>The identifier's name, or <see langword="null"/> when the expression is not built on one.</returns>
     private static string? RootIdentifier(ExpressionSyntax expression) => expression switch
     {
@@ -1533,7 +1303,5 @@ internal sealed class DeclaredQueryTranslator
     /// <summary>
     /// A field the declaration selects, with the arguments it attaches.
     /// </summary>
-    /// <param name="Definition">The field the schema declares.</param>
-    /// <param name="Arguments">The arguments the field is selected with, each a variable or a written value.</param>
     private sealed record ResolvedField(FieldDefinitionNode Definition, IReadOnlyList<ArgumentNode> Arguments);
 }
