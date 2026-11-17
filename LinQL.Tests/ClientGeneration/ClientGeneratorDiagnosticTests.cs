@@ -188,7 +188,7 @@ public class ClientGeneratorDiagnosticTests
         Assert.Contains("'Nope'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
 
         // The diagnostic points at the declared field, not at the file.
-        Assert.Equal(21, diagnostic.Location.GetLineSpan().StartLinePosition.Line);
+        Assert.Equal(23, diagnostic.Location.GetLineSpan().StartLinePosition.Line);
     }
 
     [Fact]
@@ -563,6 +563,102 @@ public class ClientGeneratorDiagnosticTests
             x => x.Id is "LINQLGEN16" or "LINQLGEN17" or "LINQLGEN18");
 
     /// <summary>
+    /// A schema whose root field returns an entity a declaration can select without its key.
+    /// </summary>
+    private const string EntitySelectionSdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          hero: Film
+        }
+
+        type Film {
+          id: ID!
+          title: String!
+        }
+        """;
+
+    /// <summary>
+    /// A schema whose root field returns an interface a declared query has to select through.
+    /// </summary>
+    private const string EntityInterfaceSdl = """
+        schema {
+          query: Query
+        }
+
+        type Query {
+          hero: Character
+        }
+
+        interface Character {
+          id: ID!
+          name: String!
+        }
+
+        type Film implements Character {
+          id: ID!
+          name: String!
+          title: String!
+        }
+        """;
+
+    /// <summary>
+    /// A stub whose type can be selected, so the declaration's body reads as a selection.
+    /// </summary>
+    private const string SelectableFilm = "public class Film : ICanHaveIncludes { public string? Id { get; set; } public string? Title { get; set; } }";
+
+    [Fact]
+    public void AnEntitySelectedWithoutItsKeyIsReported()
+    {
+        var diagnostics = Generate(
+            EntitySelectionSdl,
+            source: DeclaredQuerySource("Filtering", body: "x.Hero.Includes(h => new { h.Title })", heroType: "Film", extraTypes: SelectableFilm),
+            extensions: "extend schema @key(fields: \"id\")");
+
+        var diagnostic = Assert.Single(diagnostics, x => x.Id == "LINQLGEN20");
+
+        Assert.Contains("'Declarations.Value'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'Film'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("'id'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ASelectionThroughAnInterfaceIsReported()
+    {
+        var diagnostics = Generate(
+            EntityInterfaceSdl,
+            source: DeclaredQuerySource(
+                "Filtering",
+                body: "x.Hero.SelectAll()",
+                heroType: "Character",
+                extraTypes: "public class Character : ICanHaveIncludes { public string? Id { get; set; } public string? Name { get; set; } }"),
+            extensions: "extend schema @key(fields: \"id\")");
+
+        var diagnostic = Assert.Single(diagnostics, x => x.Id == "LINQLGEN19");
+
+        Assert.Contains("'Character'", diagnostic.GetMessage(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ANormalisedEntitySelectionIsNotReported()
+        => Assert.DoesNotContain(
+            Generate(
+                EntitySelectionSdl,
+                source: DeclaredQuerySource("Filtering", body: "x.Hero.SelectAll()", heroType: "Film", extraTypes: SelectableFilm),
+                extensions: "extend schema @key(fields: \"id\")"),
+            x => x.Id is "LINQLGEN19" or "LINQLGEN20");
+
+    [Fact]
+    public void ASchemaWithoutEntityKeysReportsNoOptOut()
+        => Assert.DoesNotContain(
+            Generate(
+                EntitySelectionSdl,
+                source: DeclaredQuerySource("Filtering", body: "x.Hero.Includes(h => new { h.Title })", heroType: "Film", extraTypes: SelectableFilm)),
+            x => x.Id is "LINQLGEN19" or "LINQLGEN20");
+
+    /// <summary>
     /// Gets the generated declared-query file a source produces.
     /// </summary>
     /// <param name="body">The lambda's body.</param>
@@ -616,27 +712,37 @@ public class ClientGeneratorDiagnosticTests
     /// <param name="rootType">The root type its expression uses.</param>
     /// <param name="body">The lambda's body.</param>
     /// <param name="values">The declaration's lambda parameters after the root, comma separated, or <see langword="null"/> for none.</param>
-    /// <returns>The source, whose declared field is on line 22.</returns>
-    private static string DeclaredQuerySource(string clientNamespace, string rootType = "Query", string body = "null", string? values = null)
+    /// <param name="heroType">The type of the stub root's field, so a selection can read a complex type.</param>
+    /// <param name="extraTypes">Stub types the root's field selects, written into the schema's namespace.</param>
+    /// <returns>The source, whose declared field is on line 24.</returns>
+    private static string DeclaredQuerySource(
+        string clientNamespace,
+        string rootType = "Query",
+        string body = "null",
+        string? values = null,
+        string heroType = "string",
+        string extraTypes = "")
     {
         var parameters = values is null ? "x" : $"(x, {values})";
         var valueTypes = values is null ? string.Empty : string.Concat(Enumerable.Repeat(", object?", values.Split(',').Length));
 
         return $$"""
             using System.Linq.Expressions;
+            using LinQL;
             using LinQL.Description;
 
             namespace Filtering
             {
                 public class Query
                 {
-                    public string? Hero { get; set; }
+                    public {{heroType}}? Hero { get; set; }
                 }
 
                 public class Product
                 {
                     public string? Name { get; set; }
                 }
+                {{extraTypes}}
             }
 
             namespace Queries

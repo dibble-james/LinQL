@@ -1,4 +1,5 @@
-﻿namespace Queries
+﻿#nullable enable
+namespace Queries
 {
     public static class DeclarationsValue
     {

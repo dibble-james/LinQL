@@ -112,8 +112,10 @@ use `Watch` for subscriptions. A disposed client throws
 ## Execution strategies and caching
 
 The client owns its own operation cache and never shares it with a generated
-Strawberry Shake client (that client's stores are private). The cache is
-operation-level only:
+Strawberry Shake client (that client's stores are private). A declared query may
+also take part in the entity store, which is described under [Cache
+boundary](#cache-boundary); a query written inline stays operation-level. The
+operation cache:
 
 - A finished result is stored per `OperationRequest`, which means the translated
   document plus the variable values.
@@ -149,14 +151,72 @@ translation is textually different (for example because it adds a field with
 
 ## Cache boundary
 
-This is a Level 1 cache. Results are stored as finished
-`IOperationResult` values with no `IOperationResultDataInfo`, so:
+The client keeps two layers, and which one an operation takes part in follows
+from how it was written.
 
-- There is no entity normalisation: two operations that fetch the same entity
-  keep two independent copies.
-- Cached results are replayed as-is and are never rebuilt from an entity store,
-  and entity observations do not refresh them.
-- The underlying connection is still responsible for transport-level caching
-  (for example HTTP caching or persisted queries).
+**Declared queries are normalised.** When the schema annotates its entity types
+with `@key`, the generator emits a cache hook for each `[LinQLQuery]` declaration
+and attaches it to the query. The annotation is written in the schema's
+`.extensions.graphql` companion, the same way `@customScalar` is:
 
-Entity-level caching is tracked separately and is out of scope for this cache.
+```graphql
+# A global pattern: every type that declares an `id` field is an entity.
+extend schema @key(fields: "id")
+
+# Or one type at a time, which overrides the global pattern for that type.
+extend type Film @key(fields: "id")
+``` A response is then written to the client's entity
+store alongside the operation cache, and Strawberry Shake's operation store
+rebuilds the result from entities when one of them changes:
+
+```csharp
+// Both watch the same entity, so the mutation refreshes the query's watch.
+var watching = client.Watch(QueriesFilm.FilmById("1"));
+await client.SendAsync(MutationsSetTitle.SetTitleById("1", "Renamed"));
+```
+
+What that means in practice:
+
+-   A mutation or subscription that writes an entity refreshes every cached
+        operation containing it, which is the behaviour a generated Strawberry
+        Shake client has.
+-   Two operations that select the same entity share one stored copy.
+-   A rebuild replaces data and keeps the rest of the result: the errors, the
+        document and the extensions the result was built with survive, so a
+        field error that a later mutation fixes still shows until the operation
+        is sent again.
+-   A rebuild substitutes the entities the operation selected and replays its
+        projection, so `result.Data` is a new object for a generated class even
+        when the stored entity did not change.
+
+**Runtime expressions stay operation-level.** An inline expression is cached by
+document and variables, replayed as-is, and never rebuilt from the entity store.
+A diagnostic would have to tell you that an expression opted out, and none does:
+write the query as a declaration to get entity caching.
+
+**What is not cached.** An operation takes no part in entity caching when its
+selection cannot be described to the store, and it keeps the operation cache:
+
+-   a type the schema has no `@key` pattern for is never an entity, so a schema
+    without annotations caches nothing at the entity level;
+-   an inline fragment selects a concrete type through an interface or union, and
+    those operations are not normalised;
+-   a declaration that selects an entity without selecting its key field cannot
+    identify what it read, so it opts out rather than inventing an entity.
+
+Both of the last two are reported on the declaration, because the feature's
+absence is otherwise invisible: `LINQLGEN19` when the selection covers a type
+that cannot be normalised, and `LINQLGEN20` when an entity was read without its
+key. A schema with no `@key` patterns reports neither — entity caching is not
+configured there, rather than declined.
+
+The write merges the way a generated client's does. A selection covers part of
+a type, so the properties it did not select are copied forward from the stored
+entity. On a **first** write there is nothing to copy, and the unselected
+properties are stored as defaults — an entity first seen through a mutation that
+selects two of its fields holds defaults for the rest, and a cached operation
+selecting those fields is rebuilt showing them. This is the one place where the
+parity is visibly lossy.
+
+The underlying connection is still responsible for transport-level caching (for
+example HTTP caching or persisted queries).
