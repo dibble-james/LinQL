@@ -17,6 +17,7 @@
 -   [x] Auto-generating types via introspection
 -   [x] Subscriptions
 -   [x] Declared queries (`[LinQLQuery]`, translated at build time)
+-   [x] Persisted operations for declared queries
 -   [x] Custom Scalars
 -   [x] Strawberry Shake support
 

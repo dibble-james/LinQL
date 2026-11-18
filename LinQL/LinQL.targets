@@ -1,0 +1,25 @@
+<Project>
+
+  <!--
+    Writes a project's declared queries where a persisted operation store reads them. The documents are generated
+    into the compiled registry, and the compiler can only emit C# source, so the files are written from the
+    assembly once the build has produced it. A project opts in with LinQLPersistedOperationOutput.
+  -->
+  <PropertyGroup>
+    <!-- Packed beside this file; a build of this repository uses the task project's output instead. -->
+    <_LinQLBuildTaskAssembly Condition="'$(_LinQLBuildTaskAssembly)' == '' and Exists('$(MSBuildThisFileDirectory)LinQL.Build.dll')">$(MSBuildThisFileDirectory)LinQL.Build.dll</_LinQLBuildTaskAssembly>
+    <_LinQLBuildTaskAssembly Condition="'$(_LinQLBuildTaskAssembly)' == ''">$(MSBuildThisFileDirectory)..\LinQL.Build\bin\$(Configuration)\netstandard2.0\LinQL.Build.dll</_LinQLBuildTaskAssembly>
+  </PropertyGroup>
+
+  <UsingTask TaskName="LinQL.Build.WritePersistedOperations" AssemblyFile="$(_LinQLBuildTaskAssembly)" />
+
+  <Target Name="LinQLWritePersistedOperations"
+          AfterTargets="Build"
+          Condition="'$(LinQLPersistedOperationOutput)' != '' and '$(TargetPath)' != ''">
+    <WritePersistedOperations
+      AssemblyPath="$(TargetPath)"
+      OutputDirectory="$(LinQLPersistedOperationOutput)"
+      ProjectDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+
+</Project>

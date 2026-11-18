@@ -4,6 +4,7 @@ namespace Queries
     public static class DeclarationsValue
     {
         public const string Document = "query linql {\n  __typename\n  character(id: \"1\") {\n    __typename\n    name\n  }\n}";
-        public static global::LinQL.LinQLQuery<global::Filtering.Query, object?> Value() => global::LinQL.LinQLQuery<global::Filtering.Query, object?>.Bind(Document, global::LinQL.Description.RootOperationType.Query, global::Queries.Declarations.Value);
+        public const string DocumentId = "82e3561d8104ec9908de38f5f9da469b99e6a00d4c8426d166af83237d4f80b9";
+        public static global::LinQL.LinQLQuery<global::Filtering.Query, object?> Value() => global::LinQL.LinQLQuery<global::Filtering.Query, object?>.Bind(Document, DocumentId, global::LinQL.Description.RootOperationType.Query, global::Queries.Declarations.Value);
     }
 }

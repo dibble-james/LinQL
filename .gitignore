@@ -361,4 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Persisted operation manifest written beside each project by LinQL's build target
+linql-*.manifest
 **/__snapshots__/__mismatch__/
