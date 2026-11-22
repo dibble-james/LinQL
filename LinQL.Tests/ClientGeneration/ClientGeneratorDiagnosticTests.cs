@@ -651,6 +651,22 @@ public class ClientGeneratorDiagnosticTests
             x => x.Id is "LINQLGEN19" or "LINQLGEN20");
 
     [Fact]
+    public void TheCacheIsEmittedIntoTheDeclarationsNamespace()
+    {
+        // The binder calls the cache by its bare name, so the two have to share a namespace: a cache emitted at
+        // the top level is only reachable through the fallback and collides with a same-named declaration in
+        // another namespace.
+        var cache = Assert.Single(
+            Run(
+                EntitySelectionSdl,
+                source: DeclaredQuerySource("Filtering", body: "x.Hero.SelectAll()", heroType: "Film", extraTypes: SelectableFilm),
+                extensions: "extend schema @key(fields: \"id\")").GeneratedTrees,
+            x => x.FilePath.EndsWith("DeclarationsValueCache.g.cs", StringComparison.Ordinal)).ToString();
+
+        Assert.Contains("namespace Queries", cache, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ASchemaWithoutEntityKeysReportsNoOptOut()
         => Assert.DoesNotContain(
             Generate(
