@@ -14,9 +14,12 @@ on:
     branches: [main]
 
 # The wiki sync pushes to <repo>.wiki.git, which needs contents: write.
+# id-token: write lets the publish steps request a GitHub OIDC token, which
+# nuget.org exchanges for a short-lived API key (trusted publishing).
 # Pull requests from forks are downgraded to read-only by GitHub regardless.
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   build:
@@ -59,11 +62,30 @@ jobs:
       - name: Smoke test packed analyzers
         run: ./eng/smoke-test-package.sh
 
+      # Trusted publishing: no long-lived NuGet API key is stored. The OIDC token
+      # is checked against the nuget.org policy for owner dibble-james, repo
+      # LinQL and this workflow file (nuget.yml), then traded for a key that is
+      # valid for one hour — so it is requested immediately before the push.
+      - name: NuGet login (OIDC -> temporary API key)
+        if: github.ref_type == 'tag' && !inputs.dry_run
+        id: login
+        uses: NuGet/login@v1
+        with:
+          # The nuget.org profile name, not an email address.
+          user: ${{ secrets.NUGET_USER }}
+
+      # --skip-duplicate keeps a re-run of the same tag green: the packages are
+      # already on nuget.org and there is nothing left to do for them.
       - name: Push
         if: github.ref_type == 'tag' && !inputs.dry_run
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet nuget push "**/LinQL*.$VERSION.nupkg" -s https://api.nuget.org/v3/index.json -k "$NUGET_API_KEY"
+        run: dotnet nuget push "**/LinQL*.$VERSION.nupkg" -s https://api.nuget.org/v3/index.json -k "${{ steps.login.outputs.NUGET_API_KEY }}" --skip-duplicate
+
+      # Pack writes these alongside the .nupkg (/p:SymbolPackageFormat=snupkg).
+      # nuget.org only accepts symbols for a version it already has, so this
+      # runs after the push above.
+      - name: Push symbols
+        if: github.ref_type == 'tag' && !inputs.dry_run
+        run: dotnet nuget push "**/LinQL*.$VERSION.snupkg" -s https://api.nuget.org/v3/index.json -k "${{ steps.login.outputs.NUGET_API_KEY }}" --skip-duplicate
 
       # Mirrors docs/ to the wiki, rewriting in-source links so they resolve on
       # the wiki too. strategy: clone (the default) adds a commit rather than
