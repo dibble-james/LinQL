@@ -85,4 +85,9 @@ using var stream = graph
 `LinQLQueryResponse<TData>` carries `Document` — the text that was sent, which is the generated constant
 here — alongside `Data`, `Errors` and `Extensions`, so a declared query is as easy to debug as a translated
 one. See [Writing queries](Writing-Queries.md#declared-queries) for what a declaration may contain.
+
+The generated registry described under [persisted operations](Writing-Queries.md#persisted-operations) can be
+registered on the server for either adapter, but this one always sends the document: graphql-dotnet's
+`GraphQLRequest` has no operation-id field, so `IGraphQLClient` has no way to carry one. The Strawberry Shake
+adapter sends the id when `PersistedOperations` is enabled.
 ````

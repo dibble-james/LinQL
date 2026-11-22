@@ -60,7 +60,7 @@ public class StarWarsClient
     public StarWarsClient(IGraphQLClient graph) => this.graph = graph;
 
     public async Task<Film> GetFilmById(string id, CancellationToken cancellationToken)
-        => await this.graph.SendAsync((Root x) => x.GetFilm(id), cancellationToken);
+        => await this.graph.SendAsync((Root x) => x.ExecuteFilm(id), cancellationToken);
 }
 ```
 
@@ -84,19 +84,21 @@ using var client = connection.WithLinQL(options =>
     options.Strategy = ExecutionStrategy.CacheAndNetwork;
 });
 
-var film = await client.SendAsync((Root q) => q.GetFilm("1"));
+var film = await client.SendAsync((Root q) => q.ExecuteFilm("1"));
 ```
 
 `Watch` observes queries and subscriptions; `SendAsync` executes queries and mutations.
 
-Some things are not supported by this integration yet:
+A declared query (`[LinQLQuery]`) also takes part in an entity store when the schema annotates its entity types with `@key`: the response is normalised, operations that select the same entity share one stored copy, and a mutation that writes an entity rebuilds every cached operation containing it. A query written inline stays operation-level: its result is cached by document and variables and replayed as-is.
 
--   The cache is operation-level only: there is no entity normalisation, no cross-document dedupe, and cached results are replayed as-is rather than rebuilt from entities.
--   Each LinQL client owns its cache; it cannot share the generated Strawberry Shake client's private operation or entity stores.
--   Cache keys are the translated document plus variables, so a textually different translation of the same fields misses the cache.
--   `SendAsync` always goes to the network. `Watch` honours the configured `ExecutionStrategy`; subscriptions always go to the network.
+Things to know:
 
-See the [Strawberry Shake guide](https://github.com/dibble-james/LinQL/blob/main/docs/StrawberryShake.md) for usage, strategies and the cache boundary.
+-   Each LinQL client owns its operation and entity stores; it cannot share the generated Strawberry Shake client's private stores.
+-   Cache keys are the translated document plus variables, so a textually different translation of the same fields misses the operation cache.
+-   `SendAsync` always goes to the network and writes its result to the cache, so a later `Watch` can replay it. `Watch` honours the configured `ExecutionStrategy`; subscriptions always go to the network.
+-   A declaration that selects an entity without its key field, or that selects a concrete type through an interface or union with an inline fragment, opts out of entity caching; the generator reports `LINQLGEN19` and `LINQLGEN20` for those.
+
+See the [Strawberry Shake guide](https://github.com/dibble-james/LinQL/blob/main/docs/StrawberryShake.md) for usage, strategies and the [cache boundary](https://github.com/dibble-james/LinQL/blob/main/docs/StrawberryShake.md#cache-boundary).
 
 ### Filtering
 

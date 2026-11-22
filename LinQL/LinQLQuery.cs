@@ -15,6 +15,7 @@ using LinQL.Filters;
 /// <typeparam name="TRoot">The root operation type the document queries.</typeparam>
 /// <typeparam name="TData">The projected result type.</typeparam>
 /// <param name="document">The document the generator emitted from the declaration.</param>
+/// <param name="id">The id the document is registered under as a persisted operation.</param>
 /// <param name="operationType">The operation the document is.</param>
 /// <param name="projection">The declaration's expression, which a response is projected through.</param>
 /// <param name="variables">The value of each variable the document declares, by the name it uses.</param>
@@ -26,6 +27,7 @@ using LinQL.Filters;
 /// </remarks>
 public sealed class LinQLQuery<TRoot, TData>(
     string document,
+    string id,
     RootOperationType operationType,
     Expression<Func<TRoot, TData>> projection,
     IReadOnlyDictionary<string, object?> variables)
@@ -35,6 +37,15 @@ public sealed class LinQLQuery<TRoot, TData>(
     /// Gets the document to send, which does not depend on the values.
     /// </summary>
     public string Document { get; } = document;
+
+    /// <summary>
+    /// Gets the id the document is registered under when it is sent as a persisted operation.
+    /// </summary>
+    /// <remarks>
+    /// The generator emits it beside the document, so registering the document under this id tells the server
+    /// which operation a request refers to without the document having to be sent.
+    /// </remarks>
+    public string Id { get; } = id;
 
     /// <summary>
     /// Gets the operation the document is.
@@ -66,12 +77,13 @@ public sealed class LinQLQuery<TRoot, TData>(
     /// The generated binder calls this, so a hand-written query keeps the operation-level cache it always had.
     /// </remarks>
     public LinQLQuery<TRoot, TData> WithCache(LinQLOperationCache<TRoot> cache)
-        => new(this.Document, this.OperationType, this.Projection, this.Variables) { Cache = cache };
+        => new(this.Document, this.Id, this.OperationType, this.Projection, this.Variables) { Cache = cache };
 
     /// <summary>
-    /// Binds values to the variables a generated document declares.
+    /// Binds values to the variables a generated document declares, under the id it is registered with.
     /// </summary>
     /// <param name="document">The document.</param>
+    /// <param name="id">The id the document is registered under as a persisted operation.</param>
     /// <param name="operationType">The operation the document is.</param>
     /// <param name="projection">The declaration's expression, which carries the query's parameters.</param>
     /// <param name="values">The value of each variable, by the name the document uses.</param>
@@ -82,13 +94,52 @@ public sealed class LinQLQuery<TRoot, TData>(
     /// expects, rather than in CLR shape.
     /// The declaration's parameters are document values, not projection inputs, so they are replaced with their
     /// defaults to leave the single-parameter projection a response is read through.
+    /// A generated binder passes the id the generator emitted beside the document, so it is known without the
+    /// document being hashed again.
+    /// </remarks>
+    public static LinQLQuery<TRoot, TData> Bind(
+        string document,
+        string id,
+        RootOperationType operationType,
+        LambdaExpression projection,
+        params (string Variable, object? Value)[] values)
+        => new(document, id, operationType, Project(projection), values.ToDictionary(x => x.Variable, x => FilterValue.Normalize(x.Value), StringComparer.Ordinal));
+
+    /// <summary>
+    /// Binds values to the variables a generated document declares.
+    /// </summary>
+    /// <param name="document">The document.</param>
+    /// <param name="operationType">The operation the document is.</param>
+    /// <param name="projection">The declaration's expression, which carries the query's parameters.</param>
+    /// <param name="values">The value of each variable, by the name the document uses.</param>
+    /// <returns>The query.</returns>
+    /// <remarks>
+    /// A query written without a generated binder has no id to pass, so it is computed from the document. The id
+    /// of a persisted operation is the document's, so both paths register the same operation under the same name.
     /// </remarks>
     public static LinQLQuery<TRoot, TData> Bind(
         string document,
         RootOperationType operationType,
         LambdaExpression projection,
         params (string Variable, object? Value)[] values)
-        => new(document, operationType, Project(projection), values.ToDictionary(x => x.Variable, x => FilterValue.Normalize(x.Value), StringComparer.Ordinal));
+        => Bind(document, PersistedQueryId.Compute(document), operationType, projection, values);
+
+    /// <summary>
+    /// Binds one value to the variable a generated document declares, under the id it is registered with.
+    /// </summary>
+    /// <param name="document">The document.</param>
+    /// <param name="id">The id the document is registered under as a persisted operation.</param>
+    /// <param name="operationType">The operation the document is.</param>
+    /// <param name="projection">The declaration's expression, which carries the query's parameters.</param>
+    /// <param name="value">The variable's name and its value.</param>
+    /// <returns>The query.</returns>
+    public static LinQLQuery<TRoot, TData> Bind(
+        string document,
+        string id,
+        RootOperationType operationType,
+        LambdaExpression projection,
+        (string Variable, object? Value) value)
+        => Bind(document, id, operationType, projection, [value]);
 
     /// <summary>
     /// Binds one value to the variable a generated document declares.

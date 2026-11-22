@@ -79,6 +79,18 @@ when the client is disposed. `SendAsync` rejects a declared subscription exactly
 one — a subscription is a stream, and `Watch` is the way to consume it. See
 [Writing queries](Writing-Queries.md#declared-queries) for what a declaration may contain.
 
+A declared query can also be sent as a persisted operation: its document and id are generated at build time, so
+the server can hold the document and the request only names it.
+
+```csharp
+using var client = connection.WithLinQL(options => options.PersistedOperations = true);
+```
+
+The id is sent in place of the document. The server has to be given the documents first —
+[Writing queries](Writing-Queries.md#persisted-operations) describes the generated registry and the files a Hot
+Chocolate server reads. The option applies to declared queries only: an inline expression has no build-time id,
+so it is always sent as a document.
+
 ## Errors
 
 A failed operation does not throw. `result.Errors` holds the `IClientError`

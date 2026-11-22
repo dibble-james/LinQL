@@ -94,8 +94,31 @@ public class QueryTests
         var request = connection.Requests.Should().ContainSingle().Subject;
 
         request.Name.Should().Be("linql");
+        request.Id.Should().BeNull();
         request.Document.Kind.Should().Be(OperationKind.Query);
         Encoding.UTF8.GetString(request.Document.Body).Should().Be("query linql { __typename number }");
+    }
+
+    [Fact]
+    public async Task SendsADeclaredQueryByIdWhenPersistedOperationsAreEnabled()
+    {
+        var connection = new StubConnection("""{"data":{"number":12345}}""");
+        var client = connection.WithLinQL(options => options.PersistedOperations = true);
+
+        var query = LinQLQuery<TestQuery, int>.Bind(
+            "query linql { __typename number }",
+            RootOperationType.Query,
+            Number);
+
+        var result = await client.SendAsync(query, TestContext.Current.CancellationToken);
+
+        result.Data.Should().Be(12345);
+        result.Query.Should().Be(query.Document);
+
+        var request = connection.Requests.Should().ContainSingle().Subject;
+
+        request.Id.Should().Be(query.Id);
+        request.Id.Should().Be(PersistedQueryId.Compute(query.Document));
     }
 
     [Fact]
