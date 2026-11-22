@@ -91,10 +91,13 @@ jobs:
       # the wiki too. strategy: clone (the default) adds a commit rather than
       # force-pushing, and the .wiki.git repository only exists once the wiki has
       # at least one page, so this assumes it has been initialised.
+      # Every main build syncs, and a tag does too so the released docs match the
+      # released packages. A pull request is skipped: its ref is the merge ref, not
+      # refs/heads/main, and a fork's token is read-only.
       - name: Sync Wiki
-        if: github.ref_type == 'tag' && !inputs.dry_run
+        if: "!inputs.dry_run && (github.ref_type == 'tag' || github.ref == 'refs/heads/main')"
         uses: Andrew-Chen-Wang/github-wiki-action@v5
         with:
           path: docs
-          # No commit on a tag whose docs are unchanged.
+          # No commit when the docs are unchanged.
           disable-empty-commits: true
