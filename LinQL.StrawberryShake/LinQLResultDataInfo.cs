@@ -2,24 +2,13 @@ namespace LinQL.StrawberryShake;
 
 using global::StrawberryShake;
 
-/// <summary>
-/// What a <see cref="LinQLResult{TData}"/> needs to be rebuilt from an entity store.
-/// </summary>
-/// <typeparam name="TRoot">The root operation type.</typeparam>
-/// <param name="root">The response root the result was projected from.</param>
-/// <param name="entityIds">The entities the operation selected.</param>
-/// <param name="version">The entity store version the result was built at.</param>
-/// <param name="errors">The result's errors.</param>
-/// <param name="extensions">The result's server extensions.</param>
-/// <param name="contextData">The result's transport context data.</param>
-/// <param name="query">The document that was sent.</param>
-/// <remarks>
-/// Strawberry Shake rebuilds a generated operation from the ids its result carries. LinQL cannot do that,
-/// because <c>TData</c> is whatever the projection returns rather than a generated result type, so the root is
-/// carried instead and the operation's generated cache replays the projection over a rebuilt copy of it.
-/// Errors, extensions and the document are carried because a rebuild replaces data only: the result keeps the
-/// errors it was built with, as a generated client's does.
-/// </remarks>
+// What a LinQLResult{TData} needs to be rebuilt from an entity store.
+//
+// Strawberry Shake rebuilds a generated operation from the ids its result carries. LinQL cannot do that, because
+// TData is whatever the projection returns rather than a generated result type, so the root is carried instead and
+// the operation's generated cache replays the projection over a rebuilt copy of it. Errors, extensions and the
+// document are carried because a rebuild replaces data only: the result keeps the errors it was built with, as a
+// generated client's does.
 internal sealed class LinQLResultDataInfo<TRoot>(
     TRoot root,
     IReadOnlyCollection<EntityId> entityIds,

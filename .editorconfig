@@ -76,6 +76,12 @@ dotnet_analyzer_diagnostic.severity = error
 # ConfigureAwait, so naming it locks the practice in rather than creating work.
 dotnet_diagnostic.CA2007.severity = error
 
+# CS1591 is the only rule that asks for documentation, and it asks on publicly visible API only:
+# that is the line the AGENTS.md rule draws too. Naming it here states the requirement in the file
+# that carries the rest of the policy, rather than leaving it implied by TreatWarningsAsErrors,
+# which is the property that makes it fatal today.
+dotnet_diagnostic.CS1591.severity = error
+
 ##########################################
 # Language Rules
 # https://docs.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/language-rules

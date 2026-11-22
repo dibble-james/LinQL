@@ -4,14 +4,11 @@ using System.Linq.Expressions;
 using LinQL.Description;
 using LinQL.StrawberryShake.Tests.Cached;
 
-/// <summary>
-/// The declared queries the entity-cache tests send.
-/// </summary>
-/// <remarks>
-/// Each one selects the entity's key, which is what lets the generated cache identify what it read; a
-/// declaration that selects an entity without its key takes no part in entity caching. The selection is written
-/// with <c>SelectAll</c> or <c>Includes</c> because a single object offers no projection of its own.
-/// </remarks>
+// The declared queries the entity-cache tests send.
+//
+// Each one selects the entity's key, which is what lets the generated cache identify what it read; a declaration
+// that selects an entity without its key takes no part in entity caching. The selection is written with SelectAll
+// or Includes because a single object offers no projection of its own.
 internal static class CachingQueries
 {
     private const string Client = "LinQL.StrawberryShake.Tests.Cached";

@@ -52,10 +52,8 @@ public class DeclaredQueryTranslatorTests
         }
         """;
 
-    /// <summary>
-    /// A schema with all three roots, so the operation a declaration writes can be the mutation or the
-    /// subscription one.
-    /// </summary>
+    // A schema with all three roots, so the operation a declaration writes can be the mutation or the
+    // subscription one.
     private const string MultiRootSdl = """
         schema {
           query: Query
@@ -81,9 +79,7 @@ public class DeclaredQueryTranslatorTests
         }
         """;
 
-    /// <summary>
-    /// A schema whose fields take a filter and an order, so the two argument extensions can be read.
-    /// </summary>
+    // A schema whose fields take a filter and an order, so the two argument extensions can be read.
     private const string FilteringSdl = """
         schema {
           query: Query
@@ -133,9 +129,7 @@ public class DeclaredQueryTranslatorTests
         scalar Decimal
         """;
 
-    /// <summary>
-    /// The framework a value has to resolve against for the compiler to see it.
-    /// </summary>
+    // The framework a value has to resolve against for the compiler to see it.
     private static readonly MetadataReference[] References =
     [
         .. (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? string.Empty)
@@ -506,13 +500,6 @@ public class DeclaredQueryTranslatorTests
         translation.Problems[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("'missing'");
     }
 
-    /// <summary>
-    /// Translates a body written in a class, so a const or an enum can be declared beside it.
-    /// </summary>
-    /// <param name="body">The lambda's body.</param>
-    /// <param name="values">The declaration's lambda parameters after the root.</param>
-    /// <param name="declarations">Members the body may refer to.</param>
-    /// <returns>What the translation produced.</returns>
     private static Translation Translate(
         string body,
         string[]? values = null,
@@ -549,10 +536,6 @@ public class DeclaredQueryTranslatorTests
         return new(translation.Document?.ToString(), translation.Problems);
     }
 
-    /// <summary>
-    /// What a translation produced, reduced to what these tests compare.
-    /// </summary>
-    /// <param name="Document">The document's text, or <see langword="null"/> when there is none.</param>
-    /// <param name="Problems">What stopped the translation.</param>
+    // What a translation produced, reduced to what these tests compare.
     private sealed record Translation(string? Document, IReadOnlyList<Diagnostic> Problems);
 }

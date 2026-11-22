@@ -9,19 +9,16 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using Location = Microsoft.CodeAnalysis.Location;
 using SyntaxKind = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
-/// <summary>
-/// Emits the entity-cache hook of a declared query.
-/// </summary>
-/// <remarks>
-/// The hook is generated from the document the declaration compiles to, so it knows exactly which fields the
-/// operation selected. That is what <c>Write</c> needs: the properties a selection did not cover are
-/// copied forward from the entity the store already holds, and filled with <c>default!</c> on a first write, which
-/// is the merge a generated Strawberry Shake client performs. <c>Rebuild</c> replaces the entities the
-/// operation selected with the stored instances and returns the root to project again.
-/// An operation is cached only when its whole selection can be described this way: no inline fragment, and an
-/// entity whose key field is not selected cannot be identified, so it takes the operation out of entity caching
-/// rather than half-populating the store. A declaration that opts out keeps the operation-level cache.
-/// </remarks>
+// Emits the entity-cache hook of a declared query.
+//
+// The hook is generated from the document the declaration compiles to, so it knows exactly which fields the
+// operation selected. That is what Write needs: the properties a selection did not cover are copied forward from
+// the entity the store already holds, and filled with default! on a first write, which is the merge a generated
+// Strawberry Shake client performs. Rebuild replaces the entities the operation selected with the stored instances
+// and returns the root to project again. An operation is cached only when its whole selection can be described
+// this way: no inline fragment, and an entity whose key field is not selected cannot be identified, so it takes
+// the operation out of entity caching rather than half-populating the store. A declaration that opts out keeps the
+// operation-level cache.
 internal sealed class DeclaredQueryCache
 {
     private readonly SchemaModel model;
@@ -83,12 +80,9 @@ internal sealed class DeclaredQueryCache
             : (null, emitter.problems);
     }
 
-    /// <summary>
-    /// Reads one selection set as the fields the cache code walks.
-    /// </summary>
-    /// <param name="set">The selection set.</param>
-    /// <param name="typeName">The type the set is selected from.</param>
-    /// <returns>The fields, or <see langword="null"/> when the set cannot be cached.</returns>
+    // Reads one selection set as the fields the cache code walks.
+    //
+    // Returns the fields, or null when the set cannot be cached.
     private List<CacheField>? Fields(SelectionSetNode set, string typeName)
     {
         var fields = new List<CacheField>();
@@ -166,10 +160,7 @@ internal sealed class DeclaredQueryCache
     private static bool IsList(ITypeNode type)
         => type.IsListType() || (type.IsNonNullType() && type.InnerType().IsListType());
 
-    /// <summary>
-    /// Records why the operation cannot be normalised.
-    /// </summary>
-    /// <param name="reason">The reason, written to follow the declaration in the message.</param>
+    // Records why the operation cannot be normalised.
     private void Report(string reason)
     {
         // The first failure ends the walk, so a nested set cannot add a second reason for the same operation.
@@ -183,13 +174,9 @@ internal sealed class DeclaredQueryCache
         }
     }
 
-    /// <summary>
-    /// Emits the cache class.
-    /// </summary>
-    /// <param name="fields">The root's selected fields.</param>
-    /// <param name="rootTypeName">The root operation type's name.</param>
-    /// <param name="name">The name of the class to emit.</param>
-    /// <returns>The class.</returns>
+    // Emits the cache class.
+    //
+    // Returns the class.
     private ClassDeclarationSyntax Class(IReadOnlyList<CacheField> fields, string rootTypeName, string name)
     {
         var root = ParseTypeName($"global::{this.clientNamespace}.{rootTypeName}");
@@ -253,16 +240,9 @@ internal sealed class DeclaredQueryCache
                 "/// <remarks>Generated from the declaration's document; do not edit.</remarks>"));
     }
 
-    /// <summary>
-    /// Emits the code that normalises one selected field's value.
-    /// </summary>
-    /// <param name="expression">The expression holding the value.</param>
-    /// <param name="field">The selected field.</param>
-    /// <param name="rebuild">Whether the code rebuilds rather than writes.</param>
-    /// <param name="accessor">The writer or reader parameter's name.</param>
-    /// <param name="prefix">The prefix of the locals emitted here.</param>
-    /// <param name="body">The statements being emitted.</param>
-    /// <returns>The expression holding the result, which is the input when nothing needs normalising.</returns>
+    // Emits the code that normalises one selected field's value.
+    //
+    // Returns the expression holding the result, which is the input when nothing needs normalising.
     private ExpressionSyntax Value(
         ExpressionSyntax expression,
         CacheField field,
@@ -320,16 +300,7 @@ internal sealed class DeclaredQueryCache
         return IdentifierName(value);
     }
 
-    /// <summary>
-    /// Emits the code that writes or rebuilds one object value.
-    /// </summary>
-    /// <param name="value">The local holding the value, which is assigned the result.</param>
-    /// <param name="typeName">The type's name.</param>
-    /// <param name="children">The fields the selection covers.</param>
-    /// <param name="rebuild">Whether the code rebuilds rather than writes.</param>
-    /// <param name="accessor">The writer or reader parameter's name.</param>
-    /// <param name="prefix">The prefix of the locals emitted here.</param>
-    /// <param name="body">The statements being emitted.</param>
+    // Emits the code that writes or rebuilds one object value.
     private void Node(
         ExpressionSyntax value,
         string typeName,
@@ -439,23 +410,17 @@ internal sealed class DeclaredQueryCache
         }
     }
 
-    /// <summary>
-    /// Gets whether a selection normalises anything: an entity at this node, or one below it.
-    /// </summary>
-    /// <param name="typeName">The type's name.</param>
-    /// <param name="children">The fields the selection covers.</param>
-    /// <returns><see langword="true"/> when the subtree holds an entity.</returns>
+    // Gets whether a selection normalises anything: an entity at this node, or one below it.
+    //
+    // Returns true when the subtree holds an entity.
     private bool ContainsEntities(string typeName, IReadOnlyList<CacheField> children)
         => this.model.EntityKeys.ContainsKey(typeName)
             || children.Any(x => this.ContainsEntities(x.Definition.Type.NamedType().Name.Value, x.Children));
 
-    /// <summary>
-    /// Emits one property of the root the rebuild returns: the expression the rebuild produced for it, or the
-    /// value the root already held.
-    /// </summary>
-    /// <param name="definition">The root type's field.</param>
-    /// <param name="rebuilt">The expressions the rebuild produced, by property.</param>
-    /// <returns>The assignment.</returns>
+    // Emits one property of the root the rebuild returns: the expression the rebuild produced for it, or the
+    // value the root already held.
+    //
+    // Returns the assignment.
     private static ExpressionSyntax Copied(FieldDefinitionNode definition, List<(string Property, ExpressionSyntax? Expression)> rebuilt)
     {
         var property = SchemaNames.FieldName(definition.Name.Value);
@@ -469,23 +434,16 @@ internal sealed class DeclaredQueryCache
 
     private string Next(string prefix) => prefix + this.locals++.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-    /// <summary>
-    /// Emits a <c>var</c> declaration.
-    /// </summary>
-    /// <param name="name">The local's name.</param>
-    /// <param name="value">The value it holds.</param>
-    /// <returns>The declaration.</returns>
+    // Emits a var declaration.
+    //
+    // Returns the declaration.
     private static LocalDeclarationStatementSyntax Local(string name, ExpressionSyntax value)
         => LocalDeclarationStatement(VariableDeclaration(IdentifierName("var"))
             .AddVariables(VariableDeclarator(Identifier(name)).WithInitializer(EqualsValueClause(value))));
 
-    /// <summary>
-    /// Emits a <c>for</c> loop that walks a value by index, the way a generated client materialises a list.
-    /// </summary>
-    /// <param name="index">The index's name.</param>
-    /// <param name="length">The expression holding the list's length.</param>
-    /// <param name="body">The loop's statements.</param>
-    /// <returns>The loop.</returns>
+    // Emits a for loop that walks a value by index, the way a generated client materialises a list.
+    //
+    // Returns the loop.
     private static ForStatementSyntax For(string index, ExpressionSyntax length, IReadOnlyList<StatementSyntax> body)
         => ForStatement(
             declaration: VariableDeclaration(IdentifierName("var"))
@@ -497,11 +455,9 @@ internal sealed class DeclaredQueryCache
                 PostfixUnaryExpression(SyntaxKind.PostIncrementExpression, IdentifierName(index))),
             statement: Body(body));
 
-    /// <summary>
-    /// Emits a block holding the given statements.
-    /// </summary>
-    /// <param name="statements">The statements.</param>
-    /// <returns>The block.</returns>
+    // Emits a block holding the given statements.
+    //
+    // Returns the block.
     private static BlockSyntax Body(IEnumerable<StatementSyntax> statements)
         => Block().AddStatements([.. statements]);
 
@@ -537,32 +493,22 @@ internal sealed class DeclaredQueryCache
         => Argument(DeclarationExpression(IdentifierName("var"), SingleVariableDesignation(Identifier(name))))
             .WithRefKindKeyword(Token(SyntaxKind.OutKeyword));
 
-    /// <summary>
-    /// Emits the key read of an entity value, which is asserted non-null the way a generated client does: the
-    /// schema promises the key is there, and the value is only reached once a null check has passed.
-    /// </summary>
-    /// <param name="value">The entity.</param>
-    /// <param name="key">The entity's key.</param>
-    /// <returns>The key expression.</returns>
+    // Emits the key read of an entity value, which is asserted non-null the way a generated client does: the
+    // schema promises the key is there, and the value is only reached once a null check has passed.
+    //
+    // Returns the key expression.
     private static ExpressionSyntax Key(ExpressionSyntax value, EntityKey key)
         => PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, Member(value, SchemaNames.FieldName(key.FieldName)));
 
     private static LiteralExpressionSyntax Text(string value)
         => LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(value));
 
-    /// <summary>
-    /// Emits documentation comment trivia.
-    /// </summary>
-    /// <param name="lines">The comment's lines, each including its <c>///</c>.</param>
-    /// <returns>The trivia.</returns>
+    // Emits documentation comment trivia.
+    //
+    // Returns the trivia.
     private static SyntaxTriviaList Doc(params string[] lines)
         => TriviaList([.. lines.SelectMany(line => new[] { Comment(line), EndOfLine("\n") })]);
 
-    /// <summary>
-    /// One selected field, and the fields its selection covers.
-    /// </summary>
-    /// <param name="Definition">The schema's field.</param>
-    /// <param name="Children">The fields its selection covers, empty for a leaf.</param>
-    /// <param name="IsList">Whether the field's type is a list.</param>
+    // One selected field, and the fields its selection covers.
     private sealed record CacheField(FieldDefinitionNode Definition, IReadOnlyList<CacheField> Children, bool IsList);
 }

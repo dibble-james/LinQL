@@ -2,17 +2,13 @@ namespace LinQL.ClientGeneration;
 
 using Microsoft.CodeAnalysis;
 
-/// <summary>
-/// The diagnostics a declared query produces when it cannot take part in entity caching.
-/// </summary>
-/// <remarks>
-/// Entity caching is silent when it is absent: an operation that opts out is still sent, cached by document and
-/// variables, and simply never refreshed by a mutation. Nothing else would tell the author that the one thing
-/// they expected — a mutation updating the query they are watching — cannot happen, so the reason is reported
-/// on the declaration.
-/// A schema that declares no <c>@key</c> patterns reports nothing here: entity caching is then not configured,
-/// rather than declined for a reason a diagnostic could explain.
-/// </remarks>
+// The diagnostics a declared query produces when it cannot take part in entity caching.
+//
+// Entity caching is silent when it is absent: an operation that opts out is still sent, cached by document and
+// variables, and simply never refreshed by a mutation. Nothing else would tell the author that the one thing they
+// expected — a mutation updating the query they are watching — cannot happen, so the reason is reported on the
+// declaration. A schema that declares no @key patterns reports nothing here: entity caching is then not
+// configured, rather than declined for a reason a diagnostic could explain.
 internal static class EntityCacheDiagnostics
 {
     /// <summary>

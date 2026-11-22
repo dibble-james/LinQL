@@ -235,13 +235,7 @@ public sealed class StrawberryShakeLinQLClient : IDisposable
         }
     }
 
-    /// <summary>
-    /// Gets the id a declared query is sent under, or <see langword="null"/> when it is sent as a document.
-    /// </summary>
-    /// <typeparam name="TRoot">The root operation type.</typeparam>
-    /// <typeparam name="TData">The projected result type.</typeparam>
-    /// <param name="query">The declared query.</param>
-    /// <returns>The persisted operation id, or <see langword="null"/>.</returns>
+    // The id a declared query is sent under, or null when it is sent as a document.
     private string? PersistedOperationId<TRoot, TData>(LinQLQuery<TRoot, TData> query)
         where TRoot : RootType<TRoot>
         => this.options.PersistedOperations ? query.Id : null;

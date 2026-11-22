@@ -157,11 +157,9 @@ public class ClientGenerator : IIncrementalGenerator
         });
     }
 
-    /// <summary>
-    /// Reads the root type names an SDL declares.
-    /// </summary>
-    /// <param name="sdl">The SDL.</param>
-    /// <returns>The names, joined with <c>;</c> so that the same schema compares equal between runs.</returns>
+    // Reads the root type names an SDL declares.
+    //
+    // Returns the names, joined with ; so that the same schema compares equal between runs.
     private static string ReadRootTypes(string sdl)
     {
         var schema = HotChocolate.Language.Utf8GraphQLParser.Parse(sdl).Definitions
@@ -173,12 +171,7 @@ public class ClientGenerator : IIncrementalGenerator
             : string.Join(";", schema.OperationTypes.Select(x => x.Type.Name.Value));
     }
 
-    /// <summary>
-    /// Reports the declared queries that this project's schemas cannot satisfy.
-    /// </summary>
-    /// <param name="output">The source output.</param>
-    /// <param name="schemas">Every schema's client namespace and root type names.</param>
-    /// <param name="queries">The declarations found.</param>
+    // Reports the declared queries that this project's schemas cannot satisfy.
     private static void ReportDeclaredQueries(
         SourceProductionContext output,
         ImmutableArray<(string? Namespace, string Roots, string Sdl, string? TypesAs)> schemas,
@@ -263,22 +256,14 @@ public class ClientGenerator : IIncrementalGenerator
         EmitPersistedQueries(output, persisted);
     }
 
-    /// <summary>
-    /// Emits the document a declared query compiles to and the binder a call site uses to send it.
-    /// </summary>
-    /// <param name="output">The source output.</param>
-    /// <param name="query">The declaration.</param>
-    /// <param name="translation">Its document and the variables its parameters fill.</param>
-    /// <param name="model">The schema the declaration is bound to.</param>
-    /// <returns>The id the document is registered under, and the type holding it.</returns>
-    /// <remarks>
-    /// The document does not depend on a call, so it is a constant; the binder takes the lambda's own parameters
-    /// and binds them to the names the document gave the variables, returning the <c>LinQLQuery</c> an adapter
-    /// sends. When the selection can be normalised, the operation's entity cache is emitted beside it and the
-    /// binder attaches it, so the query takes part in entity caching without the call site changing.
-    /// The persisted operation id is emitted beside the document rather than computed by the call site, so the
-    /// build already knows what the server will be asked for.
-    /// </remarks>
+    // Emits the document a declared query compiles to and the binder a call site uses to send it.
+    //
+    // The document does not depend on a call, so it is a constant; the binder takes the lambda's own
+    // parameters and binds them to the names the document gave the variables, returning the LinQLQuery an
+    // adapter sends. When the selection can be normalised, the operation's entity cache is emitted beside it
+    // and the binder attaches it, so the query takes part in entity caching without the call site changing.
+    // The persisted operation id is emitted beside the document rather than computed by the call site, so the
+    // build already knows what the server will be asked for.
     private static (string Id, string Reference) EmitDeclaredQuery(
         SourceProductionContext output,
         DeclaredQuery query,
@@ -352,16 +337,11 @@ public class ClientGenerator : IIncrementalGenerator
         return (id, query.Namespace is null ? $"global::{name}" : $"global::{query.Namespace}.{name}");
     }
 
-    /// <summary>
-    /// Emits the documents every declared query in the project registered, by the id each is sent under.
-    /// </summary>
-    /// <param name="output">The source output.</param>
-    /// <param name="queries">Every emitted declaration's id and the type holding its document.</param>
-    /// <remarks>
-    /// The registry is what makes a declared query a persisted operation: the server reads the documents from it
-    /// and the client sends the id beside the same document. Two declarations of one document are one operation,
-    /// so the first of them is the one the registry names. A project without declarations gets no registry.
-    /// </remarks>
+    // Emits the documents every declared query in the project registered, by the id each is sent under.
+    //
+    // The registry is what makes a declared query a persisted operation: the server reads the documents from it
+    // and the client sends the id beside the same document. Two declarations of one document are one operation,
+    // so the first of them is the one the registry names. A project without declarations gets no registry.
     private static void EmitPersistedQueries(SourceProductionContext output, IReadOnlyList<(string Id, string Reference)> queries)
     {
         if (queries.Count == 0)
@@ -420,16 +400,10 @@ public class ClientGenerator : IIncrementalGenerator
                 Encoding.UTF8));
     }
 
-    /// <summary>
-    /// Emits a constant that aliases a generated query's constant.
-    /// </summary>
-    /// <param name="name">The constant's name in the registry.</param>
-    /// <param name="value">The constant it aliases.</param>
-    /// <returns>The constant.</returns>
-    /// <remarks>
-    /// A registry constant is initialised from the generated query's own constant rather than from a copy of the
-    /// text, so the document exists once in the assembly and the two cannot disagree.
-    /// </remarks>
+    // Emits a constant that aliases a generated query's constant.
+    //
+    // A registry constant is initialised from the generated query's own constant rather than from a copy of the
+    // text, so the document exists once in the assembly and the two cannot disagree.
     private static FieldDeclarationSyntax AliasedConstant(string name, ExpressionSyntax value)
         => FieldDeclaration(
                 VariableDeclaration(PredefinedType(Token(SyntaxKind.StringKeyword)))
@@ -438,19 +412,15 @@ public class ClientGenerator : IIncrementalGenerator
                             .WithInitializer(EqualsValueClause(value))))
             .AddModifiers(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.ConstKeyword));
 
-    /// <summary>
-    /// Writes a generated file, with the contexts its annotations assume.
-    /// </summary>
-    /// <param name="unit">The file's contents.</param>
-    /// <param name="pragma">A warning the file disables, if it needs to.</param>
-    /// <returns>The file's source.</returns>
-    /// <remarks>
-    /// A generated file is a compilation unit of its own, so it does not inherit the declaring file's context. A
-    /// declaration whose result type is a generated type renders as <c>Film?</c>, which is an error outside an
-    /// annotations context. The entity cache disables the warning its property assignments raise when the graph a
-    /// response deserialised holds null where the schema promises a value, which is why the schema file disables
-    /// the equivalent one.
-    /// </remarks>
+    // Writes a generated file, with the contexts its annotations assume.
+    //
+    // A generated file is a compilation unit of its own, so it does not inherit the declaring file's context.
+    // A declaration whose result type is a generated type renders as Film?, which is an error outside an
+    // annotations context. The entity cache disables the warning its property assignments raise when the graph
+    // a response deserialised holds null where the schema promises a value, which is why the schema file
+    // disables the equivalent one.
+    //
+    // Returns the file's source.
     private static string File(MemberDeclarationSyntax unit, string? pragma = null)
     {
         using var source = new StringWriter();
@@ -466,14 +436,9 @@ public class ClientGenerator : IIncrementalGenerator
         return source.ToString();
     }
 
-    /// <summary>
-    /// Emits the call that joins a document to its operation, its projection and its values.
-    /// </summary>
-    /// <param name="query">The declaration.</param>
-    /// <param name="queryType">The type the binder returns.</param>
-    /// <param name="translation">Its operation and the variables its parameters fill.</param>
-    /// <param name="cached">Whether the operation has an entity cache to attach.</param>
-    /// <returns>The call, with one tuple per variable.</returns>
+    // Emits the call that joins a document to its operation, its projection and its values.
+    //
+    // Returns the call, with one tuple per variable.
     private static ExpressionSyntax BinderCall(
         DeclaredQuery query,
         string queryType,
@@ -509,16 +474,13 @@ public class ClientGenerator : IIncrementalGenerator
             : call;
     }
 
-    /// <summary>
-    /// Emits the expression that produces a variable's value at call time.
-    /// </summary>
-    /// <param name="value">The value the translation recorded.</param>
-    /// <returns>The expression, fully qualified so the generated file needs no usings.</returns>
-    /// <remarks>
-    /// A filter is one variable holding the whole filter, so its value is built here rather than read from a
-    /// parameter. Emitting that construction is what makes a filter's values follow the declaration's parameters
-    /// without the document depending on them.
-    /// </remarks>
+    // Emits the expression that produces a variable's value at call time.
+    //
+    // A filter is one variable holding the whole filter, so its value is built here rather than read from a
+    // parameter. Emitting that construction is what makes a filter's values follow the declaration's
+    // parameters without the document depending on them.
+    //
+    // Returns the expression, fully qualified so the generated file needs no usings.
     private static ExpressionSyntax BoundValue(DeclaredQueryBoundValue value) => value switch
     {
         DeclaredQueryParameterValue parameter => Cast(IdentifierName(SchemaNames.IdentifierFor(parameter.Parameter).Text)),
@@ -528,15 +490,12 @@ public class ClientGenerator : IIncrementalGenerator
         _ => Cast(LiteralExpression(SyntaxKind.NullLiteralExpression)),
     };
 
-    /// <summary>
-    /// Emits the calls that rebuild a filter through <c>FilterValue</c>.
-    /// </summary>
-    /// <param name="filter">The filter.</param>
-    /// <returns>The expression.</returns>
-    /// <remarks>
-    /// The calls mirror the runtime translator: a combinator folds what was built so far into its first branch,
-    /// and every other field is set under the name the schema gives it.
-    /// </remarks>
+    // Emits the calls that rebuild a filter through FilterValue.
+    //
+    // The calls mirror the runtime translator: a combinator folds what was built so far into its first branch,
+    // and every other field is set under the name the schema gives it.
+    //
+    // Returns the expression.
     private static ExpressionSyntax FilterValue(DeclaredQueryFilterValue filter)
     {
         ExpressionSyntax code = InvocationExpression(Member(ParseTypeName("global::LinQL.Filters.FilterValue"), "Create"));
@@ -557,16 +516,13 @@ public class ClientGenerator : IIncrementalGenerator
         return code;
     }
 
-    /// <summary>
-    /// Emits a constant as a C# literal of the same type.
-    /// </summary>
-    /// <param name="constant">The constant.</param>
-    /// <returns>The literal, in the invariant culture.</returns>
-    /// <remarks>
-    /// A literal is the leaf of an expression, so it is parsed rather than built: the suffix that keeps a number's
-    /// type belongs to its token, and the parser is what turns the text of one into the node the rest of the call
-    /// is built from.
-    /// </remarks>
+    // Emits a constant as a C# literal of the same type.
+    //
+    // A literal is the leaf of an expression, so it is parsed rather than built: the suffix that keeps a
+    // number's type belongs to its token, and the parser is what turns the text of one into the node the rest
+    // of the call is built from.
+    //
+    // Returns the literal, in the invariant culture.
     private static ExpressionSyntax Constant(object? constant) => ParseExpression(constant switch
     {
         null => "null",
@@ -583,53 +539,39 @@ public class ClientGenerator : IIncrementalGenerator
         _ => "null",
     });
 
-    /// <summary>
-    /// Emits the cast a variable's value is bound as, which matches what a call site passes at run time.
-    /// </summary>
-    /// <param name="value">The value.</param>
-    /// <returns>The cast.</returns>
+    // Emits the cast a variable's value is bound as, which matches what a call site passes at run time.
+    //
+    // Returns the cast.
     private static CastExpressionSyntax Cast(ExpressionSyntax value) => CastExpression(ParseTypeName("object?"), value);
 
-    /// <summary>
-    /// Emits the array a list value is bound as.
-    /// </summary>
-    /// <param name="items">The items.</param>
-    /// <returns>The array creation.</returns>
+    // Emits the array a list value is bound as.
+    //
+    // Returns the array creation.
     private static ExpressionSyntax ArrayValue(IReadOnlyList<DeclaredQueryBoundValue> items)
         => ArrayCreationExpression(
                 ArrayType(ParseTypeName("object?")).WithRankSpecifiers(SingletonList(ArrayRankSpecifier())))
             .WithInitializer(InitializerExpression(SyntaxKind.ArrayInitializerExpression, SeparatedList([.. items.Select(BoundValue)])));
 
-    /// <summary>
-    /// Emits a member access.
-    /// </summary>
-    /// <param name="expression">The expression the member is read from.</param>
-    /// <param name="name">The member's name.</param>
-    /// <returns>The access.</returns>
+    // Emits a member access.
+    //
+    // Returns the access.
     private static MemberAccessExpressionSyntax Member(ExpressionSyntax expression, string name)
         => MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, expression, IdentifierName(name));
 
-    /// <summary>
-    /// Emits a string literal.
-    /// </summary>
-    /// <param name="value">The string.</param>
-    /// <returns>The literal.</returns>
+    // Emits a string literal.
+    //
+    // Returns the literal.
     private static LiteralExpressionSyntax Text(string value)
         => LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(value));
 
-    /// <summary>
-    /// Qualifies a type a declaration names against the schema's client namespace.
-    /// </summary>
-    /// <param name="type">The type as the compiler displayed it.</param>
-    /// <param name="model">The schema the declaration is bound to.</param>
-    /// <param name="clientNamespace">The client namespace the schema declares.</param>
-    /// <returns>The type, qualified when the schema declares it.</returns>
-    /// <remarks>
-    /// A declaration's projection and parameters may name the types the generator emits, which the semantic
-    /// model the generator reads a declaration from cannot resolve: they are that run's output. Such a name
-    /// comes through unqualified, so a name the schema declares is completed with the namespace its client is
-    /// emitted into. A name the caller already qualified, or one the schema does not declare, is left alone.
-    /// </remarks>
+    // Qualifies a type a declaration names against the schema's client namespace.
+    //
+    // A declaration's projection and parameters may name the types the generator emits, which the semantic
+    // model the generator reads a declaration from cannot resolve: they are that run's output. Such a name
+    // comes through unqualified, so a name the schema declares is completed with the namespace its client is
+    // emitted into. A name the caller already qualified, or one the schema does not declare, is left alone.
+    //
+    // Returns the type, qualified when the schema declares it.
     private static string Qualify(string type, SchemaModel model, string clientNamespace)
     {
         var nullable = type.EndsWith("?", StringComparison.Ordinal) ? "?" : string.Empty;
@@ -652,27 +594,20 @@ public class ClientGenerator : IIncrementalGenerator
         return $"global::{clientNamespace}.{name}{array}{nullable}";
     }
 
-    /// <summary>
-    /// Names the declared field a call's projection comes from.
-    /// </summary>
-    /// <param name="query">The declaration.</param>
-    /// <returns>The field, fully qualified so the generated file needs no usings.</returns>
+    // Names the declared field a call's projection comes from.
+    //
+    // Returns the field, fully qualified so the generated file needs no usings.
     private static string Projection(DeclaredQuery query)
         => query.Namespace is null
             ? $"global::{query.ContainingType}.{query.FieldName}"
             : $"global::{query.Namespace}.{query.ContainingType}.{query.FieldName}";
 
-    /// <summary>
-    /// Builds the schema model an SDL describes, without emitting a client from it.
-    /// </summary>
-    /// <param name="sdl">The SDL.</param>
-    /// <param name="graphNamespace">The client namespace the schema declares.</param>
-    /// <param name="typesAs">The kind of declaration the schema generates.</param>
-    /// <returns>The model.</returns>
-    /// <remarks>
-    /// The walk is turned away from reporting: the client's own walk already reports the filter diagnostics,
-    /// and repeating them once per declared query would multiply them.
-    /// </remarks>
+    // Builds the schema model an SDL describes, without emitting a client from it.
+    //
+    // The walk is turned away from reporting: the client's own walk already reports the filter diagnostics,
+    // and repeating them once per declared query would multiply them.
+    //
+    // Returns the model.
     internal static SchemaModel CreateModel(string sdl, string graphNamespace, LinQLTypesAs typesAs)
     {
         var document = HotChocolate.Language.Utf8GraphQLParser.Parse(sdl);
@@ -686,12 +621,9 @@ public class ClientGenerator : IIncrementalGenerator
         return context.Model;
     }
 
-    /// <summary>
-    /// Reads the <c>LinQLTypesAs</c> property.
-    /// </summary>
-    /// <param name="value">The raw property value, or <see langword="null"/> when it was not set.</param>
-    /// <param name="typesAs">The kind of declaration to generate.</param>
-    /// <returns><see langword="true"/> when the value was understood, so an unrecognised one can be reported.</returns>
+    // Reads the LinQLTypesAs property.
+    //
+    // Returns true when the value was understood, so an unrecognised one can be reported.
     private static bool TryParseTypesAs(string? value, out LinQLTypesAs typesAs)
     {
         var trimmed = value?.Trim();

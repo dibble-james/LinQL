@@ -132,10 +132,7 @@ public class EntityCacheTests : IDisposable
         this.server.DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
-    /// <summary>
-    /// Collects the results a watch emits.
-    /// </summary>
-    /// <typeparam name="T">The projected result type.</typeparam>
+    // Collects the results a watch emits.
     private sealed class Recorder<T> : IObserver<LinQLResult<T>>
     {
         private readonly Lock sync = new();
@@ -191,9 +188,7 @@ public class EntityCacheTests : IDisposable
     }
 }
 
-/// <summary>
-/// Reads a property of a result an anonymous projection produced.
-/// </summary>
+// Reads a property of a result an anonymous projection produced.
 internal static class AnonymousResult
 {
     /// <summary>

@@ -3,10 +3,7 @@ namespace LinQL.StrawberryShake;
 using global::StrawberryShake;
 using LinQL.Caching;
 
-/// <summary>
-/// Reads entities from a Strawberry Shake store snapshot.
-/// </summary>
-/// <param name="snapshot">The snapshot to read.</param>
+// Reads entities from a Strawberry Shake store snapshot.
 internal sealed class EntityStoreReader(IEntityStoreSnapshot snapshot) : IEntityReader
 {
     /// <inheritdoc />
@@ -14,13 +11,10 @@ internal sealed class EntityStoreReader(IEntityStoreSnapshot snapshot) : IEntity
         => snapshot.TryGetEntity(new EntityId(typeName, key), out entity);
 }
 
-/// <summary>
-/// Writes entities through a Strawberry Shake update session, recording the ids it wrote.
-/// </summary>
-/// <remarks>
-/// The session only exists inside the callback that <see cref="EntityStore.Update"/> hands it, so it is bound
-/// before the generated write runs and its ids are read afterwards.
-/// </remarks>
+// Writes entities through a Strawberry Shake update session, recording the ids it wrote.
+//
+// The session only exists inside the callback that EntityStore.Update hands it, so it is bound before the
+// generated write runs and its ids are read afterwards.
 internal sealed class EntityStoreWriter : IEntityWriter
 {
     private IEntityStoreUpdateSession? session;

@@ -111,11 +111,7 @@ public sealed class WritePersistedOperations : Microsoft.Build.Utilities.Task
         }
     }
 
-    /// <summary>
-    /// Reads the registered documents from an assembly's metadata.
-    /// </summary>
-    /// <param name="assemblyPath">The assembly.</param>
-    /// <returns>The documents, by the id they are registered under.</returns>
+    // Reads the registered documents from an assembly's metadata, by the id they are registered under.
     private static SortedDictionary<string, string> ReadDocuments(string assemblyPath)
     {
         var documents = new SortedDictionary<string, string>(StringComparer.Ordinal);
@@ -144,12 +140,7 @@ public sealed class WritePersistedOperations : Microsoft.Build.Utilities.Task
         return documents;
     }
 
-    /// <summary>
-    /// Adds one registry's documents, pairing each id constant with the document constant of the same index.
-    /// </summary>
-    /// <param name="reader">The assembly's metadata.</param>
-    /// <param name="type">The registry type.</param>
-    /// <param name="documents">The documents being collected.</param>
+    // Adds one registry's documents, pairing each id constant with the document constant of the same index.
     private static void AddRegisteredDocuments(
         MetadataReader reader,
         TypeDefinition type,
@@ -189,12 +180,7 @@ public sealed class WritePersistedOperations : Microsoft.Build.Utilities.Task
         }
     }
 
-    /// <summary>
-    /// Reads a string constant's value.
-    /// </summary>
-    /// <param name="reader">The assembly's metadata.</param>
-    /// <param name="field">The constant field.</param>
-    /// <returns>The value, or an empty string when the field has no constant.</returns>
+    // Reads a string constant's value, or an empty string when the field has no constant.
     private static string ReadConstant(MetadataReader reader, FieldDefinition field)
     {
         var constant = field.GetDefaultValue();
@@ -209,19 +195,12 @@ public sealed class WritePersistedOperations : Microsoft.Build.Utilities.Task
         return blob.ReadUTF16(blob.Length);
     }
 
-    /// <summary>
-    /// Removes the documents an earlier build of this project wrote that the project no longer declares.
-    /// </summary>
-    /// <param name="directory">The output directory.</param>
-    /// <param name="manifestPath">This project's manifest, which records what its last build wrote.</param>
-    /// <param name="previous">The ids that build wrote.</param>
-    /// <param name="written">The files this build wrote.</param>
-    /// <remarks>
-    /// Only a document this project wrote before is removed, so a directory shared with other projects keeps
-    /// their documents, and documents written by hand are never touched. A query that two projects declare is
-    /// one file, so removing it because one of them dropped it also removes it for the other until that project
-    /// builds again.
-    /// </remarks>
+    // Removes the documents an earlier build of this project wrote that the project no longer declares.
+    //
+    // Only a document this project wrote before is removed, so a directory shared with other projects keeps
+    // their documents, and documents written by hand are never touched. A query that two projects declare is
+    // one file, so removing it because one of them dropped it also removes it for the other until that project
+    // builds again.
     private void RemoveUndeclared(
         string directory,
         ICollection<string> previous,
@@ -264,11 +243,7 @@ public sealed class WritePersistedOperations : Microsoft.Build.Utilities.Task
         }
     }
 
-    /// <summary>
-    /// Reads the ids a manifest records.
-    /// </summary>
-    /// <param name="path">The manifest.</param>
-    /// <returns>The ids, which is nothing when the file does not exist.</returns>
+    // Reads the ids a manifest records, which is nothing when the file does not exist.
     private static HashSet<string> ReadManifest(string path)
     {
         var ids = new HashSet<string>(StringComparer.Ordinal);
@@ -291,15 +266,10 @@ public sealed class WritePersistedOperations : Microsoft.Build.Utilities.Task
         return ids;
     }
 
-    /// <summary>
-    /// Records the ids this build wrote, so a later build can tell which documents are its own.
-    /// </summary>
-    /// <param name="path">The manifest.</param>
-    /// <param name="ids">The ids this build wrote.</param>
-    /// <remarks>
-    /// A project that declares nothing has no manifest, which is what its next build reads as "wrote nothing",
-    /// so the documents of a project that stopped declaring queries are not left claimed by anyone.
-    /// </remarks>
+    // Records the ids this build wrote, so a later build can tell which documents are its own.
+    //
+    // A project that declares nothing has no manifest, which is what its next build reads as "wrote nothing",
+    // so the documents of a project that stopped declaring queries are not left claimed by anyone.
     private static void WriteManifest(string path, ICollection<string> ids)
     {
         if (ids.Count == 0)
@@ -315,11 +285,7 @@ public sealed class WritePersistedOperations : Microsoft.Build.Utilities.Task
         Write(path, string.Join("\n", ids) + "\n", Utf8);
     }
 
-    /// <summary>
-    /// Tells whether a file name is a document id, which is what this target names its files.
-    /// </summary>
-    /// <param name="value">The file name without its extension.</param>
-    /// <returns><see langword="true"/> when the name is a lowercase hexadecimal SHA-256 digest.</returns>
+    // Tells whether a file name is a document id, which is what this target names its files.
     private static bool IsId(string value)
     {
         if (value.Length != 64)
@@ -338,16 +304,10 @@ public sealed class WritePersistedOperations : Microsoft.Build.Utilities.Task
         return true;
     }
 
-    /// <summary>
-    /// Writes a file, leaving an identical one alone.
-    /// </summary>
-    /// <param name="path">The file.</param>
-    /// <param name="content">The content.</param>
-    /// <param name="encoding">The encoding.</param>
-    /// <remarks>
-    /// A project that builds several target frameworks runs the target once per framework, so the same content can
-    /// arrive twice; skipping an identical file keeps the second write from touching it.
-    /// </remarks>
+    // Writes a file, leaving an identical one alone.
+    //
+    // A project that builds several target frameworks runs the target once per framework, so the same content
+    // can arrive twice; skipping an identical file keeps the second write from touching it.
     private static void Write(string path, string content, Encoding encoding)
     {
         if (File.Exists(path) && string.Equals(File.ReadAllText(path), content, StringComparison.Ordinal))
